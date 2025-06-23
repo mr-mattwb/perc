@@ -12,6 +12,8 @@ type out =
     | File of file
     | Buffer of Buffer.t
 
+type elt  
+
 module type ELT = 
     sig
         val printf : ('a, unit, string, unit) format4 -> 'b
@@ -30,5 +32,7 @@ val oprintf : mod_name -> ('a, unit, string, unit) format4 -> 'a
 val eprintf : mod_name -> ('a, unit, string, unit) format4 -> 'a
 val file_printf : file -> mod_name -> ('a, unit, string, unit) format4 -> 'a
 val buffer_printf : Buffer.t -> mod_name -> ('a, unit, string, unit) format4 -> 'a
-val write : out * mod_name -> ('a, unit, string, unit) format4 -> 'a
+val write : elt -> ('a, unit, string, unit) format4 -> 'a
+val make : out -> mod_name -> elt
+
 

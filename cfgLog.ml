@@ -10,6 +10,8 @@ type out =
     | File of CfgEnv.file
     | Buffer of Buffer.t
 
+type elt = out * mod_name
+
 module type ELT = 
     sig
         val printf : ('a, unit, string, unit) format4 -> 'b
@@ -76,5 +78,7 @@ let write (target, modn) fmt =
         | Buffer buf -> bprintf buf "%s\n%!" (msg_string modn msg)
     in
     ksprintf aux fmt
+
+let make out modn = (out, modn)
 
 
