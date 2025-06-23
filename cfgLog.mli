@@ -2,39 +2,54 @@ open Unix
 open Printf 
 open Stdlib
 
+open CfgLex
 open CfgEnv
 
 type mod_name = string
 type out = 
-    | Out
-    | Err
     | Channel of out_channel
     | File of file
-    | Buffer of Buffer.t
 
-type elt  
+type level =
+    | Off
+    | Debug
+    | Info
+    | Warn
+    | Error
+    | Fatal
+
+module type PARAMS = 
+    sig
+        val mod_name : mod_name
+        val level : level
+        val targets : out list
+    end
 
 module type ELT = 
     sig
-        val printf : ('a, unit, string, unit) format4 -> 'b
+        val debug : ('a, unit, string, unit) format4 -> 'a
+        val info : ('a, unit, string, unit) format4 -> 'a
+        val warn : ('a, unit, string, unit) format4 -> 'a
+        val error : ('a, unit, string, unit) format4 -> 'a
+        val throw : exn -> ('a, unit, string, unit) format4 -> 'a
     end
 
 val use : ('a -> 'b) -> ('b -> unit) -> ('b -> 'c) -> 'a -> 'c
 val app_output_file : file -> (out_channel -> 'a) -> 'a
 val open_out_app : file -> out_channel 
+val with_append : file -> (out_channel -> 'a) -> 'a
 
-val msg_string : mod_name -> string -> string
-val msg_output : out_channel -> mod_name -> string -> unit
+module type LEVEL_SER = SERIAL with type elt = level
+module LevelSer : LEVEL_SER
 
-val to_string : string -> ('a, unit, string, string) format4 -> 'a
-val fprintf : out_channel -> mod_name -> ('a, unit, string, unit) format4 -> 'a
-val oprintf : mod_name -> ('a, unit, string, unit) format4 -> 'a
-val eprintf : mod_name -> ('a, unit, string, unit) format4 -> 'a
-val file_printf : file -> mod_name -> ('a, unit, string, unit) format4 -> 'a
-val buffer_printf : Buffer.t -> mod_name -> ('a, unit, string, unit) format4 -> 'a
-val write : elt -> ('a, unit, string, unit) format4 -> 'a
+val msg_string: mod_name -> level -> string -> string
+val msg_output : out_channel -> mod_name -> level -> string -> unit
 
-val make : out -> mod_name -> elt
-val makeb : out -> elt
+val to_string : string -> level -> ('a, unit, string, string) format4 -> 'a
+val fprintf : out_channel -> mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
+val oprintf : mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
+val eprintf : mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
+val file_printf : file -> mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
+val buffer_printf : Buffer.t -> mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
 
 

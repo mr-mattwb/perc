@@ -101,12 +101,12 @@ let eprintf modn lvl fmt =
     let aux msg = msg_output stderr modn lvl msg in
     ksprintf aux fmt
 
-let file_printf fname lvl modn fmt = 
+let file_printf fname modn lvl fmt = 
     let aux2 msg ch = msg_output ch modn lvl msg in
     let aux msg = app_output_file fname (aux2 msg) in
     ksprintf aux fmt
 
-let buffer_printf buf lvl modn fmt = 
+let buffer_printf buf modn fmt = 
     let aux msg = 
         bprintf buf "%s\n%!" (msg_string modn lvl msg)
     in
