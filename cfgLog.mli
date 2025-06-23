@@ -33,6 +33,8 @@ val eprintf : mod_name -> ('a, unit, string, unit) format4 -> 'a
 val file_printf : file -> mod_name -> ('a, unit, string, unit) format4 -> 'a
 val buffer_printf : Buffer.t -> mod_name -> ('a, unit, string, unit) format4 -> 'a
 val write : elt -> ('a, unit, string, unit) format4 -> 'a
+
 val make : out -> mod_name -> elt
+val makeb : out -> elt
 
 

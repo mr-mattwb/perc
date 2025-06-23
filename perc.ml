@@ -58,7 +58,7 @@ module Iterator = MakeInt(
 
 let rec main () = 
     CfgEnv.config ();
-    let log = CfgLog.make Err Sys.argv.(0) in
+    let log = CfgLog.makeb Err in
     CfgLog.write log "%s [%s]" Command.name (Command.get());
     CfgLog.write log "%s [%s]" Play.name (Play.get());
     CfgLog.write log "%s [%s]" PercFile.name (PercFile.get());
