@@ -30,6 +30,13 @@ module type STR_PARAMS =
         val descr : string
         val switch : string
     end 
+module type BOOL_PARAMS = 
+    sig
+        val default : bool
+        val name : string
+        val descr : string
+        val switch : string
+    end
 module type PARAMS = 
     sig
         type elt
@@ -45,9 +52,9 @@ val gSkipArgs : unixflag
 val gSkipArgsIfInteractive : unixflag
 
 type arg = Arg.key * Arg.spec * Arg.doc
-module StrSet : Set.S with type elt = arg
+module StrMap : Map.S with type key = string
 
-val gProgramArgs : StrSet.t ref
+val gProgramArgs : arg StrMap.t ref
 val gHelp : bool ref
 val args : (string -> unit) -> string -> unit
 val parse_args : string -> unit
@@ -64,6 +71,9 @@ module MakeStr(P : PARAMS with type elt = string) : ELT with type elt = string
 module MakeInt(P : PARAMS with type elt = int) : ELT with type elt = int
 module MakeFlt(P : PARAMS with type elt = float) : ELT with type elt = float
 module MakeBool(P : PARAMS with type elt = bool) : ELT with type elt = bool
+module Set(P : BOOL_PARAMS) : ELT with type elt = bool
+module Clear(P : BOOL_PARAMS) : ELT with type elt = bool
+
 
 module MakeFile(P : FILE_PARAMS) : FILE_ELT
 module LogFile : FILE_ELT

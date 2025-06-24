@@ -29,6 +29,13 @@ module type STR_PARAMS =
         val descr : string
         val switch : string
     end 
+module type BOOL_PARAMS = 
+    sig
+        val default : bool
+        val name : string
+        val descr : string
+        val switch : string
+    end
 module type PARAMS = 
     sig
         type elt
@@ -45,15 +52,13 @@ let gSkipArgsIfInteractive = "SKIP_ARGS_IF_INTERACTIVE"
 
 
 type arg = Arg.key * Arg.spec * Arg.doc
-module StrSet = Set.Make(
-    struct
-        type t = arg
-        let compare (a1, b1, c1) (a2, b2, c2) = String.compare a1 a2 
-    end)
+module StrMap = Map.Make(String)
 
-let gProgramArgs = ref StrSet.empty
+let gProgramArgs = ref StrMap.empty
 let gHelp = ref false
-let args anons msg = Arg.parse (StrSet.elements !gProgramArgs) anons msg
+let args anons msg = 
+    let elts = List.map (fun (sw, arg) -> arg) (StrMap.bindings !gProgramArgs) in
+    Arg.parse elts anons msg
 let parse_args msg = 
     let invalid_arg v = 
         eprintf "%s:  Invalid argument [%s]\n%!" Sys.argv.(0) v;
@@ -73,13 +78,17 @@ module Make(S : SERIAL)(P : PARAMS with type elt = S.elt) : ELT with type elt = 
             (P.switch, Arg.String (fun v -> Unix.putenv name v), 
                 sprintf "[%s][%s] %s" P.name (S.to_string P.default) P.descr)
         let get () = 
-            try S.of_string (Unix.getenv name) with e -> P.default
+            try S.of_string (Unix.getenv name) 
+            with e -> 
+                Unix.putenv name (S.to_string P.default);
+                P.default
         let put v = Unix.putenv name (S.to_string v)
 
         let _ = 
-            if not (unix_get_flag gSkipArgs) then gProgramArgs := StrSet.add arg !gProgramArgs;
+            if not (unix_get_flag gSkipArgs) then gProgramArgs := StrMap.add name arg !gProgramArgs;
             if not (unix_get_flag gSkipArgsIfInteractive) then
-                if not !Sys.interactive then gProgramArgs := StrSet.add arg !gProgramArgs
+                if not !Sys.interactive then 
+                    gProgramArgs := StrMap.add name arg !gProgramArgs
     end
 
 module StrSer =
@@ -112,7 +121,29 @@ module MakeStr(P : PARAMS with type elt = string) = Make(StrSer)(P)
 module MakeInt(P : PARAMS with type elt = int) = Make(IntSer)(P)
 module MakeFlt(P : PARAMS with type elt = float) = Make(FltSer)(P)
 module MakeBool(P : PARAMS with type elt = bool) = Make(BoolSer)(P)
-
+module Set(P : BOOL_PARAMS) =
+    struct
+        include MakeBool(
+            struct
+                type elt = bool
+                include P
+            end)
+        let arg = 
+            (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name P.default P.descr)
+        let () = 
+            gProgramArgs := StrMap.add name arg !gProgramArgs;
+            eprintf "Adding the unit parametr fo [%s]\n%!" P.name
+    end
+module Clear(P : BOOL_PARAMS) =
+    struct
+        include MakeBool(
+            struct
+                type elt = bool
+                include P
+            end)
+        let arg = 
+            (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name P.default P.descr)
+    end
 
 module MakeFile(P : FILE_PARAMS) = Make(StrSer)(
     struct

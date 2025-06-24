@@ -69,6 +69,14 @@ module LogFile = MakeFile(
         let switch = "--log-file"
         let descr = "Log file name"
     end)
+module PlayFile = CfgEnv.Set(
+    struct
+        type elt = bool
+        let name = "PLAYFILE"
+        let default = false
+        let switch = "--play-file"
+        let descr = "Play the output"
+    end)
 
 let rec main () = 
     eprintf "LogLevel [%s]\n%!" (LevelSer.to_string (LogLevel.get()));
@@ -88,8 +96,9 @@ let rec main () =
     Log.info "%s [%d]" Iterator.name (Iterator.get());
     Log.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
     Log.debug "%s [%s]" LogFile.name (LogFile.get());
+    Log.debug "%s [%b]" PlayFile.name (PlayFile.get());
     run (Command.get())
-and run start = 
+and run startcommand = 
     let module Log = CfgLog.Make(
         struct
             let mod_name = (Filename.basename Sys.argv.(0))^":run"
@@ -103,9 +112,14 @@ and run start =
         else
             aux (cmd^" "^(PercFile.get())) (count - (Iterator.get()))
     in
-    let cmd = aux start (Seconds.get()) in
+    let cmd = aux startcommand (Seconds.get()) in
     let rsp = Sys.command cmd in
-    Log.info "Command [%s] => [%d]" cmd rsp
+    Log.info "Command [%s] => [%d]" cmd rsp;
+    if (PlayFile.get()) then
+        let cmd = sprintf "%s %s" (Play.get()) (OutFile.get()) in
+        let rsp = Sys.command cmd in
+        Log.info "Command [%s] => [%d]" cmd rsp
+
 ;;
 
 if not !Sys.interactive then
