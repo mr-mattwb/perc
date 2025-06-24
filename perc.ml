@@ -62,11 +62,17 @@ module LogLevel = CfgLog.LevelEnv(
         let switch = "--log-level"
         let descr = "Min log level"
     end)
+module LogFile = MakeFile(
+    struct
+        let name = "LOGFILE"
+        let default = (Filename.basename Sys.argv.(0))^".log"
+        let switch = "--log-file"
+        let descr = "Log file name"
+    end)
 
 let rec main () = 
     eprintf "LogLevel [%s]\n%!" (LevelSer.to_string (LogLevel.get()));
     CfgEnv.config ();
-    eprintf "LOGLEVEL[%s] LogLevel [%s]\n%!" (Unix.getenv "LOGLEVEL") (LevelSer.to_string (LogLevel.get()));
     let module Log = CfgLog.Make(
         struct
             let mod_name = Filename.basename Sys.argv.(0) 
@@ -80,7 +86,26 @@ let rec main () =
     Log.error "%s [%s]" OutFile.name (OutFile.get());
     Log.warn "%s [%d]" Seconds.name (Seconds.get());
     Log.info "%s [%d]" Iterator.name (Iterator.get());
-    Log.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()))
+    Log.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
+    Log.debug "%s [%s]" LogFile.name (LogFile.get());
+    run (Command.get())
+and run start = 
+    let module Log = CfgLog.Make(
+        struct
+            let mod_name = (Filename.basename Sys.argv.(0))^":run"
+            let level = Debug
+            let targets = [Channel stderr]
+        end)
+    in
+    let rec aux cmd count = 
+        if count <= 0 then
+            cmd^" "^(OutFile.get())
+        else
+            aux (cmd^" "^(PercFile.get())) (count - (Iterator.get()))
+    in
+    let cmd = aux start (Seconds.get()) in
+    let rsp = Sys.command cmd in
+    Log.info "Command [%s] => [%d]" cmd rsp
 ;;
 
 if not !Sys.interactive then

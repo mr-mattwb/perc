@@ -62,7 +62,6 @@ let parse_args msg =
     args invalid_arg msg
 let arg_default () = parse_args "Invalid argument"
 
-
 let unix_get_flag f = try bool_of_string (Unix.getenv f) with _ -> false
 
 module Make(S : SERIAL)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
@@ -145,7 +144,9 @@ let try_load_config_file () =
     try
         let fname = CfgFile.get() in
         CfgLex.load_file fname
-    with Sys_error msg -> ()
+    with e ->
+        eprintf "try_load_config_file [%s]\n%!" (Printexc.to_string e)
+
 
 let config () =
     try_load_config_file ();
