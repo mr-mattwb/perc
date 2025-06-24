@@ -73,7 +73,8 @@ module Make(S : SERIAL)(P : PARAMS with type elt = S.elt) : ELT with type elt = 
         let arg = 
             (P.switch, Arg.String (fun v -> Unix.putenv name v), 
                 sprintf "[%s][%s] %s" P.name (S.to_string P.default) P.descr)
-        let get () = try S.of_string (Unix.getenv name) with _ -> P.default
+        let get () = 
+            try S.of_string (Unix.getenv name) with e -> P.default
         let put v = Unix.putenv name (S.to_string v)
 
         let _ = 

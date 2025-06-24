@@ -51,6 +51,13 @@ and open_out_app (fname : file) =
 let with_append (fname : file) fn = app_output_file fname fn
 
 module type LEVEL_SER = SERIAL with type elt = level
+module type LEVEL_ENV = 
+    sig
+        val name : string
+        val default : level
+        val switch : string
+        val descr : string
+    end 
 module LevelSer = 
     struct
         type elt = level
@@ -61,7 +68,8 @@ module LevelSer =
             | Warn -> "WARN"
             | Error -> "ERROR"
             | Fatal -> "FATAL"
-        let of_string = function
+        let of_string v =
+            match String.uppercase_ascii v with
             | "OFF" -> Off
             | "DEBUG" -> Debug
             | "INFO" -> Info
@@ -70,7 +78,11 @@ module LevelSer =
             | "FATAL" -> Fatal
             | lvl -> raise (Failure ("level_of_string:"^lvl))
     end
-
+module LevelEnv(LP : LEVEL_ENV) = CfgEnv.Make(LevelSer)(
+    struct
+        type elt = level
+        include LP
+    end)
 
 let msg_string modn lvl msg =
     let tm = Unix.localtime (Unix.time()) in
@@ -106,7 +118,7 @@ let file_printf fname modn lvl fmt =
     let aux msg = app_output_file fname (aux2 msg) in
     ksprintf aux fmt
 
-let buffer_printf buf modn fmt = 
+let buffer_printf buf modn lvl fmt = 
     let aux msg = 
         bprintf buf "%s\n%!" (msg_string modn lvl msg)
     in
@@ -118,44 +130,44 @@ module Make(P : PARAMS) =
             let aux _ = () in
             ksprintf aux fmt
 
-        let write (msg : string) = function
-            | File f -> with_append f (fun ch -> msg_output ch P.mod_name P.level msg)
-            | Channel ch -> msg_output ch P.mod_name P.level msg
+        let write (lvl : level) (msg : string) = function
+            | File f -> with_append f (fun ch -> msg_output ch P.mod_name lvl msg)
+            | Channel ch -> msg_output ch P.mod_name lvl msg
             
-        let write_targets fmt = 
-            let aux msg = List.iter (write msg) P.targets in
+        let write_targets lvl fmt = 
+            let aux msg = List.iter (write lvl msg) P.targets in
             ksprintf aux fmt
 
         let write_fatal e fmt = 
             let aux msg = 
-                List.iter (write msg) P.targets;
+                List.iter (write Fatal msg) P.targets;
                 raise e
             in
             ksprintf aux fmt
 
-        let debug =
+        let debug (fmt : ('a, unit, string, unit) format4) =
             match P.level with
-            | Debug -> write_targets 
-            | _ -> ignore
-        let info =
+            | Debug -> write_targets Debug fmt
+            | _ -> ignore fmt
+        let info (fmt : ('a, unit, string, unit) format4) =
             match P.level with
             | Debug
-            | Info -> write_targets
-            | _ -> ignore
-        let warn = 
+            | Info -> write_targets Info fmt
+            | _ -> ignore fmt
+        let warn (fmt : ('a, unit, string, unit) format4) = 
             match P.level with
             | Debug
             | Info
-            | Warn -> write_targets
-            | _ -> ignore
-        let error = 
+            | Warn -> write_targets Warn fmt
+            | _ -> ignore fmt
+        let error (fmt : ('a, unit, string, unit) format4) = 
             match P.level with
-            | Debug | Info | Warn | Error -> write_targets
-            | _ -> ignore
-        let throw e fmt = 
+            | Debug | Info | Warn | Error -> write_targets Error fmt
+            | _ -> ignore fmt
+        let throw e (fmt : ('a, unit, string, unit) format4) = 
             match P.level with
-            | Off -> ignore
-            | _ -> (write_fatal e)
+            | Off -> ignore fmt
+            | _ -> write_fatal e fmt
     end
 
 

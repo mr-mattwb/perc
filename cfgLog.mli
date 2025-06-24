@@ -40,10 +40,20 @@ val open_out_app : file -> out_channel
 val with_append : file -> (out_channel -> 'a) -> 'a
 
 module type LEVEL_SER = SERIAL with type elt = level
+module type LEVEL_ENV = 
+    sig
+        val name : string
+        val default : level
+        val switch : string
+        val descr : string
+    end 
 module LevelSer : LEVEL_SER
+module LevelEnv(LP : LEVEL_ENV) : CfgEnv.ELT with type elt = level
 
 val msg_string: mod_name -> level -> string -> string
 val msg_output : out_channel -> mod_name -> level -> string -> unit
+val msg_out : out_channel -> mod_name -> string -> unit
+val msg_outb : out_channel -> string -> unit
 
 val to_string : string -> level -> ('a, unit, string, string) format4 -> 'a
 val fprintf : out_channel -> mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
@@ -51,5 +61,7 @@ val oprintf : mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
 val eprintf : mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
 val file_printf : file -> mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
 val buffer_printf : Buffer.t -> mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
+
+module Make(P : PARAMS) : ELT
 
 

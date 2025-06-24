@@ -55,16 +55,32 @@ module Iterator = MakeInt(
         let switch = "--iterator"
         let descr = "seconds per each percolator file" 
     end)
+module LogLevel = CfgLog.LevelEnv(
+    struct
+        let name = "LOGLEVEL"
+        let default = Debug
+        let switch = "--log-level"
+        let descr = "Min log level"
+    end)
 
 let rec main () = 
+    eprintf "LogLevel [%s]\n%!" (LevelSer.to_string (LogLevel.get()));
     CfgEnv.config ();
-    let log = CfgLog.makeb Err in
-    CfgLog.write log "%s [%s]" Command.name (Command.get());
-    CfgLog.write log "%s [%s]" Play.name (Play.get());
-    CfgLog.write log "%s [%s]" PercFile.name (PercFile.get());
-    CfgLog.write log "%s [%s]" OutFile.name (OutFile.get());
-    CfgLog.write log "%s [%d]" Seconds.name (Seconds.get());
-    CfgLog.write log "%s [%d]" Iterator.name (Iterator.get())
+    eprintf "LOGLEVEL[%s] LogLevel [%s]\n%!" (Unix.getenv "LOGLEVEL") (LevelSer.to_string (LogLevel.get()));
+    let module Log = CfgLog.Make(
+        struct
+            let mod_name = Filename.basename Sys.argv.(0) 
+            let level = LogLevel.get()
+            let targets = [Channel stderr]
+        end)
+    in
+    Log.debug "%s [%s]" Command.name (Command.get());
+    Log.info "%s [%s]" Play.name (Play.get());
+    Log.warn "%s [%s]" PercFile.name (PercFile.get());
+    Log.error "%s [%s]" OutFile.name (OutFile.get());
+    Log.warn "%s [%d]" Seconds.name (Seconds.get());
+    Log.info "%s [%d]" Iterator.name (Iterator.get());
+    Log.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()))
 ;;
 
 if not !Sys.interactive then
