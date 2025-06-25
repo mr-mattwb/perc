@@ -1,4 +1,4 @@
-open CfgEnv
+open Env
 open CfgLog
 open PercCfg
 
@@ -8,7 +8,7 @@ open Stdlib
 open Arg
 
 let rec main () = 
-    CfgEnv.config ();
+    Env.config ();
     let module Log = CfgLog.Make(
         struct
             let mod_name = Filename.basename Sys.argv.(0) 

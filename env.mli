@@ -16,13 +16,6 @@ module type ELT =
 module type FILE_ELT = ELT with type elt = file
 
 
-module type SERIAL = 
-    sig
-        type elt 
-        val of_string : string -> elt
-        val to_string : elt -> string
-    end
-
 module type STR_PARAMS = 
     sig
         val default : string
@@ -74,12 +67,7 @@ val args : (string -> unit) -> string -> unit
 val parse_args : string -> unit
 val arg_default : unit -> unit
 
-module Make(S : SERIAL)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt
-
-module StrSer : SERIAL with type elt = string
-module IntSer : SERIAL with type elt = int
-module FltSer : SERIAL with type elt = float
-module BoolSer : SERIAL with type elt = bool
+module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt
 
 module MakeStr(P : STR_PARAMS) : ELT with type elt = string
 module MakeInt(P : INT_PARAMS) : ELT with type elt = int
@@ -87,7 +75,6 @@ module MakeFlt(P : FLT_PARAMS) : ELT with type elt = float
 module MakeBool(P : BOOL_PARAMS) : ELT with type elt = bool
 module Set(P : BOOL_PARAMS) : ELT with type elt = bool
 module Clear(P : BOOL_PARAMS) : ELT with type elt = bool
-
 
 module MakeFile(P : FILE_PARAMS) : FILE_ELT
 module CfgFile : FILE_ELT

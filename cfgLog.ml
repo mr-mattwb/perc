@@ -4,7 +4,7 @@ open Stdlib
 
 open Tools
 open CfgLex
-open CfgEnv
+open Env
 
 type mod_name = string
 type out = 
@@ -51,7 +51,7 @@ and open_out_app (fname : file) =
     open_out_gen [Open_wronly; Open_append; Open_creat] 0o666 fname
 let with_append (fname : file) fn = app_output_file fname fn
 
-module type LEVEL_SER = SERIAL with type elt = level
+module type LEVEL_SER = Ser.ELT with type elt = level
 module type LEVEL_ENV = 
     sig
         val name : string
@@ -79,7 +79,7 @@ module LevelSer =
             | "FATAL" -> Fatal
             | lvl -> raise (Failure ("level_of_string:"^lvl))
     end
-module LevelEnv(LP : LEVEL_ENV) = CfgEnv.Make(LevelSer)(
+module LevelEnv(LP : LEVEL_ENV) = Env.Make(LevelSer)(
     struct
         type elt = level
         include LP

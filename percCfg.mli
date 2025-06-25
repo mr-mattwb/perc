@@ -4,7 +4,7 @@ open Stdlib
 
 open Tools
 open CfgLog
-open CfgEnv
+open Env
 
 module Command : ELT with type elt = string
 module DurCommand : ELT with type elt = string

@@ -15,13 +15,6 @@ module type ELT =
     end
 module type FILE_ELT = ELT with type elt = file
 
-module type SERIAL = 
-    sig
-        type elt 
-        val of_string : string -> elt
-        val to_string : elt -> string
-    end
-
 module type STR_PARAMS = 
     sig
         val default : string
@@ -64,7 +57,6 @@ type unixflag = string
 let gSkipArgs = "SKIP_ARGS"
 let gSkipArgsIfInteractive = "SKIP_ARGS_IF_INTERACTIVE"
 
-
 type arg = Arg.key * Arg.spec * Arg.doc
 module StrMap = Map.Make(String)
 
@@ -82,8 +74,14 @@ let parse_args msg =
 let arg_default () = parse_args "Invalid argument"
 
 let unix_get_flag f = try bool_of_string (Unix.getenv f) with _ -> false
+let add_program_arg name arg =
+    if not (unix_get_flag gSkipArgs) then gProgramArgs := StrMap.add name arg !gProgramArgs;
+    if not (unix_get_flag gSkipArgsIfInteractive) then
+        if not !Sys.interactive then 
+            gProgramArgs := StrMap.add name arg !gProgramArgs
+        
 
-module Make(S : SERIAL)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
+module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
         type elt = P.elt
         let name = P.name
@@ -95,44 +93,14 @@ module Make(S : SERIAL)(P : PARAMS with type elt = S.elt) : ELT with type elt = 
             try S.of_string (Unix.getenv name) 
             with e -> P.default
         let put v = Unix.putenv name (S.to_string v)
-
-        let _ = 
-            if not (unix_get_flag gSkipArgs) then gProgramArgs := StrMap.add name arg !gProgramArgs;
-            if not (unix_get_flag gSkipArgsIfInteractive) then
-                if not !Sys.interactive then 
-                    gProgramArgs := StrMap.add name arg !gProgramArgs
-    end
-
-module StrSer =
-    struct
-        type elt = string
-        let of_string v = v
-        let to_string v = v
-    end
-module IntSer = 
-    struct
-        type elt = int
-        let of_string v = int_of_string (String.trim v)
-        let to_string = string_of_int
-    end
-module FltSer = 
-    struct
-        type elt = float
-        let of_string v = float_of_string (String.trim v)
-        let to_string = string_of_float
-    end
-module BoolSer = 
-    struct
-        type elt = bool
-        let of_string = bool_of_string
-        let to_string = string_of_bool
+        let () = add_program_arg name arg
     end
 
 
-module MakeStr(P : STR_PARAMS) = Make(StrSer)(struct type elt = string include P end)
-module MakeInt(P : INT_PARAMS) = Make(IntSer)(struct type elt = int include P end)
-module MakeFlt(P : FLT_PARAMS) = Make(FltSer)(struct type elt = float include P end)
-module MakeBool(P : BOOL_PARAMS) = Make(BoolSer)(struct type elt = bool include P end)
+module MakeStr(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
+module MakeInt(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
+module MakeFlt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
+module MakeBool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P end)
 module Set(P : BOOL_PARAMS) =
     struct
         include MakeBool(
@@ -141,7 +109,7 @@ module Set(P : BOOL_PARAMS) =
                 include P
             end)
         let arg = (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name P.default P.descr)
-        let () = gProgramArgs := StrMap.add name arg !gProgramArgs
+        let () = add_program_arg name arg
     end
 module Clear(P : BOOL_PARAMS) =
     struct
@@ -151,11 +119,10 @@ module Clear(P : BOOL_PARAMS) =
                 include P
             end)
         let arg = (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name P.default P.descr)
-        let () = gProgramArgs := StrMap.add name arg !gProgramArgs
-
+        let () = add_program_arg name arg
     end
 
-module MakeFile(P : FILE_PARAMS) = Make(StrSer)(
+module MakeFile(P : FILE_PARAMS) = Make(Ser.Str)(
     struct
         type elt = file
         let name = P.name
@@ -176,7 +143,7 @@ module CfgFile = MakeFile(
 let try_load_config_file () = 
     try
         let fname = CfgFile.get() in
-        CfgLex.load_file fname
+        Lex.load_file fname
     with e ->
         eprintf "try_load_config_file [%s]\n%!" (Printexc.to_string e)
 

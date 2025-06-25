@@ -4,7 +4,7 @@ open Stdlib
 
 open Tools
 open CfgLex
-open CfgEnv
+open Env
 
 type mod_name = string
 type out = 
@@ -40,7 +40,7 @@ val app_output_file : file -> (out_channel -> 'a) -> 'a
 val open_out_app : file -> out_channel 
 val with_append : file -> (out_channel -> 'a) -> 'a
 
-module type LEVEL_SER = SERIAL with type elt = level
+module type LEVEL_SER = Ser.ELT with type elt = level
 module type LEVEL_ENV = 
     sig
         val name : string
@@ -49,7 +49,7 @@ module type LEVEL_ENV =
         val descr : string
     end 
 module LevelSer : LEVEL_SER
-module LevelEnv(LP : LEVEL_ENV) : CfgEnv.ELT with type elt = level
+module LevelEnv(LP : LEVEL_ENV) : Env.ELT with type elt = level
 
 val msg_string: mod_name -> level -> string -> string
 val msg_output : out_channel -> mod_name -> level -> string -> unit
