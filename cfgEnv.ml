@@ -140,11 +140,8 @@ module Set(P : BOOL_PARAMS) =
                 type elt = bool
                 include P
             end)
-        let arg = 
-            (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name P.default P.descr)
-        let () = 
-            gProgramArgs := StrMap.add name arg !gProgramArgs;
-            eprintf "Adding the unit parametr fo [%s]\n%!" P.name
+        let arg = (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name P.default P.descr)
+        let () = gProgramArgs := StrMap.add name arg !gProgramArgs
     end
 module Clear(P : BOOL_PARAMS) =
     struct
@@ -153,8 +150,9 @@ module Clear(P : BOOL_PARAMS) =
                 type elt = bool
                 include P
             end)
-        let arg = 
-            (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name P.default P.descr)
+        let arg = (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name P.default P.descr)
+        let () = gProgramArgs := StrMap.add name arg !gProgramArgs
+
     end
 
 module MakeFile(P : FILE_PARAMS) = Make(StrSer)(
