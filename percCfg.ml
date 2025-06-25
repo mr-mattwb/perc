@@ -4,7 +4,7 @@ open Stdlib
 
 open Tools
 open Env
-open CfgLog
+open Log
 
 module Command = MakeStr(
     struct
@@ -62,7 +62,7 @@ module Iterator = MakeInt(
         let switch = "--iterator"
         let descr = "seconds per each percolator file" 
     end)
-module LogLevel = CfgLog.LevelEnv(
+module LogLevel = Log.LevelEnv(
     struct
         let name = "LOGLEVEL"
         let default = Debug
@@ -84,7 +84,7 @@ module PlayResult = Set(
         let descr = "Play the output file"
     end)
 
-module Log = CfgLog.Make(
+module Log = Log.Make(
     struct
         let mod_name = "PercCfg"
         let level = Debug

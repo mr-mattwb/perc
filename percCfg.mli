@@ -3,7 +3,7 @@ open Printf
 open Stdlib
 
 open Tools
-open CfgLog
+open Log
 open Env
 
 module Command : ELT with type elt = string
@@ -16,8 +16,6 @@ module Iterator : ELT with type elt = int
 module LogLevel : ELT with type elt = level
 module LogFile : FILE_ELT
 module PlayResult : ELT with type elt = bool
-
-module Log : CfgLog.ELT
 
 val file_duration : string -> string -> int
 val play_file : string -> string -> int
