@@ -2,13 +2,14 @@ open Unix
 open Printf
 open Stdlib
 
+open Tools
 open CfgLex
 open CfgEnv
 
 type mod_name = string
 type out = 
     | Channel of out_channel
-    | File of CfgEnv.file
+    | File of Tools.file
 
 type level =
     | Off
@@ -44,7 +45,7 @@ let use ofn cfn ufn arg =
         (try cfn hnd with _ -> ());
         raise e
 
-let rec app_output_file (fname : file) fn = 
+let rec app_output_file (fname : Tools.file) fn = 
     use open_out_app close_out fn fname
 and open_out_app (fname : file) = 
     open_out_gen [Open_wronly; Open_append; Open_creat] 0o666 fname

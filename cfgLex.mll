@@ -29,33 +29,18 @@ and valpart = parse
 open Unix
 open Stdlib
 
-let input_line fin = 
-    try Some (Stdlib.input_line fin)
-    with End_of_file -> None
-
 let rec load_line line = 
     let k, v = keyvaluepair (Lexing.from_string line) in
     Unix.putenv k v 
 
 let rec load_channel fin = 
-    match input_line fin with
+    match Tools.input_line fin with
     | None -> ()
     | Some line ->
         load_line line;
         load_channel fin
 
-let rec load_file fname = with_in_file fname load_channel
-
-and with_in_file fn fname = use open_in close_in fname fn
-and use openf closef usef argf = 
-    let ch = openf argf in
-    try 
-        usef ch;
-        closef ch 
-    with e ->
-        (try closef ch with _ -> ());
-        raise e
-
+let load_file fname = Tools.with_in_file load_channel fname
 }
 
 

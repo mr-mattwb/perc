@@ -2,6 +2,7 @@ open Unix
 open Printf 
 open Stdlib
 
+open Tools
 open CfgLex
 open CfgEnv
 

@@ -2,7 +2,7 @@ open Unix
 open Printf
 open Stdlib
 
-type file = string
+open Tools
 
 module type ELT =
     sig
@@ -29,6 +29,20 @@ module type STR_PARAMS =
         val descr : string
         val switch : string
     end 
+module type INT_PARAMS = 
+    sig
+        val default : int
+        val name : string
+        val descr : string
+        val switch : string
+    end
+module type FLT_PARAMS = 
+    sig
+        val default : float
+        val name : string
+        val descr : string
+        val switch : string
+    end
 module type BOOL_PARAMS = 
     sig
         val default : bool
@@ -79,9 +93,7 @@ module Make(S : SERIAL)(P : PARAMS with type elt = S.elt) : ELT with type elt = 
                 sprintf "[%s][%s] %s" P.name (S.to_string P.default) P.descr)
         let get () = 
             try S.of_string (Unix.getenv name) 
-            with e -> 
-                Unix.putenv name (S.to_string P.default);
-                P.default
+            with e -> P.default
         let put v = Unix.putenv name (S.to_string v)
 
         let _ = 
@@ -117,10 +129,10 @@ module BoolSer =
     end
 
 
-module MakeStr(P : PARAMS with type elt = string) = Make(StrSer)(P)
-module MakeInt(P : PARAMS with type elt = int) = Make(IntSer)(P)
-module MakeFlt(P : PARAMS with type elt = float) = Make(FltSer)(P)
-module MakeBool(P : PARAMS with type elt = bool) = Make(BoolSer)(P)
+module MakeStr(P : STR_PARAMS) = Make(StrSer)(struct type elt = string include P end)
+module MakeInt(P : INT_PARAMS) = Make(IntSer)(struct type elt = int include P end)
+module MakeFlt(P : FLT_PARAMS) = Make(FltSer)(struct type elt = float include P end)
+module MakeBool(P : BOOL_PARAMS) = Make(BoolSer)(struct type elt = bool include P end)
 module Set(P : BOOL_PARAMS) =
     struct
         include MakeBool(
@@ -154,19 +166,11 @@ module MakeFile(P : FILE_PARAMS) = Make(StrSer)(
         let switch = P.switch
     end)
 
-module LogFile = MakeFile(
-    struct
-        let name = "LOG_FILE"
-        let descr = "Name of the log file"
-        let default = "file.log"
-        let switch = "--log-file"
-    end)
-
 module CfgFile = MakeFile(
     struct
-        let name = "CONFIG_FILE"
+        let name = "CONFIGFILE"
         let descr = "Name of the configuration file"
-        let default = "file.cfg"
+        let default = (Filename.basename Sys.argv.(0))^".cfg"
         let switch = "--cfg-file"
     end)
 

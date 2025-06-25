@@ -1,0 +1,128 @@
+open Unix
+open Printf
+open Stdlib
+
+open Tools
+open CfgEnv
+open CfgLog
+
+module Command = MakeStr(
+    struct
+        type elt = string
+        let name = "COMMAND"
+        let default = "/usr/bin/sox"
+        let switch = "--command"
+        let descr = "Conversion command to use"
+    end)
+module DurCommand = MakeStr(
+    struct
+        type elt = string
+        let name = "DURCOMMAND"
+        let default = "/usr/bin/soxi -D"
+        let switch = "--dur-command"
+        let descr = "Return the duration of a sound file in seconds"
+    end)
+module PlayCommand = MakeStr(
+    struct
+        type elt = string
+        let name = "PLAYCOMMAND"
+        let default = "/usr/bin/play"
+        let switch = "--play-command"
+        let descr = "Command to play a sound file"
+    end)
+module PercFile = MakeFile( 
+    struct
+        type elt = file
+        let name = "PERCFILE"
+        let default = "perc-5s.wav"
+        let switch = "--perc-file"
+        let descr = "File containing percolation sound."
+    end)
+module OutFile = MakeFile(
+    struct
+        type elt = file
+        let name = "OUTFILE"
+        let default = "out.wav"
+        let switch = "--out-file"
+        let descr = "Output filename"
+    end)
+module Seconds = MakeInt(
+    struct
+        type elt = int
+        let name = "SECONDS"
+        let default = 20
+        let switch = "--seconds"
+        let descr = "Seconds of percolation."
+    end) 
+module Iterator = MakeInt(
+    struct
+        type elt = int
+        let name = "ITERATOR"
+        let default = 5
+        let switch = "--iterator"
+        let descr = "seconds per each percolator file" 
+    end)
+module LogLevel = CfgLog.LevelEnv(
+    struct
+        let name = "LOGLEVEL"
+        let default = Debug
+        let switch = "--log-level"
+        let descr = "Min log level"
+    end)
+module LogFile = MakeFile(
+    struct
+        let name = "LOGFILE"
+        let default = (Filename.basename Sys.argv.(0))^".log"
+        let switch = "--log-file"
+        let descr = "Log file name"
+    end)
+module PlayResult = Set(
+    struct
+        let name = "PLAYRESULT"
+        let default = false
+        let switch = "--play-result"
+        let descr = "Play the output file"
+    end)
+
+module Log = CfgLog.Make(
+    struct
+        let mod_name = "PercCfg"
+        let level = Debug
+        let targets = [Channel stderr]
+    end)
+
+let file_duration durcommand fname = 
+    let cmd = sprintf "%s %s" durcommand fname in
+    Log.debug "File duration command [%s]" cmd;
+    let get fin = 
+        match input_line fin with
+        | None ->
+            Log.error "Command [%s] did not return a response" cmd;
+            0
+        | Some line ->
+            Log.info "Command [%s] => [%s]" cmd line;
+            int_of_float (float_of_string line)
+    in
+    Tools.with_in_process get cmd
+
+let play_file playcmd outf = 
+    let cmd = sprintf "%s %s" playcmd outf in
+    Log.debug "Play command [%s]" cmd;
+    let rsp = Sys.command cmd in
+    Log.info "Command [%s] => [%d]" cmd rsp;
+    rsp
+
+let build_file total seconds command percfile outfile = 
+    let rec aux count cmd = 
+        if count <= 0 then
+            cmd^" "^outfile
+        else
+            aux (count - seconds) (cmd^" "^percfile)
+    in
+    let cmd = aux total command in
+    Log.debug "Command [%s]" cmd;
+    let rsp = Sys.command cmd in
+    Log.info "Command [%s] => [%d]" cmd rsp;
+    rsp
+
+
