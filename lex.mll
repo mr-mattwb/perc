@@ -24,13 +24,20 @@ and valpart = parse
     | [' ' '\t']* ['#' '\r' '\n'] _* eof        { "" }
     | ([^ '#' '\r' '\n']* as v)                 { v }
 
-and commalist = parse
-    | ([^ ',']|"\\,")*      { 
-            let item1 = Lexing.lexeme lexbuf in
-            let item2 = commalist lexbuf in
+and commalist spc = parse
+    | (([^ ',']|"\\,")* as token)    { 
+            let item1 = token in
+            let item2 = commalist false lexbuf in
             item1 :: item2
         }
-    | ','                   { commalist lexbuf }
+    | ','      { 
+            if spc then "" :: (commalist true lexbuf)
+            else commalist true lexbuf 
+        }
+    | eof      { 
+            if spc then "" :: []
+            else []
+        }
 
 {
 open Unix
@@ -48,6 +55,12 @@ let rec load_channel fin =
         load_channel fin
 
 let load_file fname = Tools.with_in_file load_channel fname
+
+let comma_list line = 
+    List.map (fun fld -> String.trim fld) 
+        (commalist false (Lexing.from_string line))
+
+
 }
 
 

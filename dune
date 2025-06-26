@@ -1,4 +1,3 @@
-(executable
-    (modules tools lex ser env log)
- (name perc))
-
+(library
+ (modules tools)
+ (name cfg))
