@@ -76,7 +76,7 @@ module PlayResult = Set(
         let descr = "Play the output file"
     end)
 
-module Log = Log.MakeSub(
+module PLog = Log.MakeSub(
     struct
         let mod_name = "PercCfg"
         let level = Debug
@@ -85,23 +85,23 @@ module Log = Log.MakeSub(
 
 let file_duration durcommand fname = 
     let cmd = sprintf "%s %s" durcommand fname in
-    Log.debug "File duration command [%s]" cmd;
+    PLog.debug "File duration command [%s]" cmd;
     let get fin = 
         match input_line fin with
         | None ->
-            Log.error "Command [%s] did not return a response" cmd;
+            PLog.error "Command [%s] did not return a response" cmd;
             0
         | Some line ->
-            Log.info "Command [%s] => [%s]" cmd line;
+            PLog.info "Command [%s] => [%s]" cmd line;
             int_of_float (float_of_string line)
     in
     Tools.with_in_process get cmd
 
 let play_file playcmd outf = 
     let cmd = sprintf "%s %s" playcmd outf in
-    Log.debug "Play command [%s]" cmd;
+    PLog.debug "Play command [%s]" cmd;
     let rsp = Sys.command cmd in
-    Log.info "Command [%s] => [%d]" cmd rsp;
+    PLog.info "Command [%s] => [%d]" cmd rsp;
     rsp
 
 let build_file total seconds command percfile outfile = 
@@ -112,9 +112,9 @@ let build_file total seconds command percfile outfile =
             aux (count - seconds) (cmd^" "^percfile)
     in
     let cmd = aux total command in
-    Log.debug "Command [%s]" cmd;
+    PLog.debug "Command [%s]" cmd;
     let rsp = Sys.command cmd in
-    Log.info "Command [%s] => [%d]" cmd rsp;
+    PLog.info "Command [%s] => [%d]" cmd rsp;
     rsp
 
 

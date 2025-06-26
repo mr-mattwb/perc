@@ -18,10 +18,14 @@ type level =
     | Error
     | Fatal
 
-module type PARAMS = 
+module type CHAN_PARAMS = 
     sig
         val mod_name : mod_name
         val level : level
+    end
+module type PARAMS = 
+    sig
+        include CHAN_PARAMS
         val targets : out list
     end
 
@@ -64,4 +68,7 @@ val buffer_printf : Buffer.t -> mod_name -> level -> ('a, unit, string, unit) fo
 
 module Make(P : PARAMS) : ELT
 module MakeSub(P : PARAMS) : ELT
+module Stdout(P : CHAN_PARAMS) : ELT
+module Stderr(P : CHAN_PARAMS) : ELT
+
 

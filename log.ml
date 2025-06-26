@@ -18,10 +18,14 @@ type level =
     | Error
     | Fatal
 
-module type PARAMS = 
+module type CHAN_PARAMS =
     sig
         val mod_name : mod_name
         val level : level
+    end
+module type PARAMS = 
+    sig
+        include CHAN_PARAMS
         val targets : out list
     end
 
@@ -178,5 +182,17 @@ module MakeSub(P : PARAMS) =
                 let mod_name = Tools.basename^":"^P.mod_name
             end)
     end
+
+module Stdout(P : CHAN_PARAMS) = Make(
+    struct
+        include P
+        let targets = [Channel stdout]
+    end)
+module Stderr(P : CHAN_PARAMS) = Make(
+    struct
+        include P
+        let targets = [Channel stderr]
+    end)
+
 
 
