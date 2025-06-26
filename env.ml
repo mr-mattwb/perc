@@ -9,6 +9,7 @@ module type ELT =
         type elt
         val name : string
         val descr : string
+        val switch : string
         val arg : Arg.key * Arg.spec * Arg.doc
         val get : unit -> elt
         val put : elt -> unit
@@ -86,6 +87,7 @@ module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt =
         type elt = P.elt
         let name = P.name
         let descr = P.descr
+        let switch = P.switch
         let arg = 
             (P.switch, Arg.String (fun v -> Unix.putenv name v), 
                 sprintf "[%s][%s] %s" P.name (S.to_string P.default) P.descr)

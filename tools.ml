@@ -4,6 +4,9 @@ open Stdlib
 
 type file = string
 
+let name = Sys.argv.(0)
+let basename = Filename.basename name   
+
 let input_line fin = 
     try Some (Stdlib.input_line fin)
     with End_of_file -> None

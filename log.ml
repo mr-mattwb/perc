@@ -3,7 +3,6 @@ open Printf
 open Stdlib
 
 open Tools
-open Lex
 open Env
 
 type mod_name = string
@@ -171,5 +170,13 @@ module Make(P : PARAMS) =
             | _ -> write_fatal e fmt
     end
 
+module MakeSub(P : PARAMS) = 
+    struct
+        include Make(
+            struct
+                include P
+                let mod_name = Tools.basename^":"^P.mod_name
+            end)
+    end
 
 

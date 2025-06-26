@@ -3,7 +3,6 @@ open Printf
 open Stdlib
 
 open Tools
-open Lex
 open Env
 
 type mod_name = string
@@ -64,5 +63,5 @@ val file_printf : file -> mod_name -> level -> ('a, unit, string, unit) format4 
 val buffer_printf : Buffer.t -> mod_name -> level -> ('a, unit, string, unit) format4 -> 'a
 
 module Make(P : PARAMS) : ELT
-
+module MakeSub(P : PARAMS) : ELT
 

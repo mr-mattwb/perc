@@ -6,12 +6,12 @@ open Tools
 open Env
 open Log
 
-module Command = MakeStr(
+module BuildCommand = MakeStr(
     struct
         type elt = string
-        let name = "COMMAND"
+        let name = "BUILDCOMMAND"
         let default = "/usr/bin/sox"
-        let switch = "--command"
+        let switch = "--build-command"
         let descr = "Conversion command to use"
     end)
 module DurCommand = MakeStr(
@@ -54,14 +54,6 @@ module Seconds = MakeInt(
         let switch = "--seconds"
         let descr = "Seconds of percolation."
     end) 
-module Iterator = MakeInt(
-    struct
-        type elt = int
-        let name = "ITERATOR"
-        let default = 5
-        let switch = "--iterator"
-        let descr = "seconds per each percolator file" 
-    end)
 module LogLevel = Log.LevelEnv(
     struct
         let name = "LOGLEVEL"
@@ -84,7 +76,7 @@ module PlayResult = Set(
         let descr = "Play the output file"
     end)
 
-module Log = Log.Make(
+module Log = Log.MakeSub(
     struct
         let mod_name = "PercCfg"
         let level = Debug

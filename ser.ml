@@ -36,3 +36,7 @@ module Bool =
         let to_string = string_of_bool
     end
 
+module List(E : ELT) =
+    struct
+        type elt = E.elt list
+    end

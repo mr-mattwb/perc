@@ -9,35 +9,34 @@ open Arg
 
 let rec main () = 
     Env.config ();
-    let module CLog = Log.Make(
+    let module CLog = Log.MakeSub(
         struct
-            let mod_name = Filename.basename Sys.argv.(0) 
+            let mod_name = "main()"
             let level = LogLevel.get()
             let targets = [Channel stderr]
         end)
     in
-    CLog.debug "%s [%s]" Command.name (Command.get());
+    CLog.debug "%s [%s] [%s]" BuildCommand.name BuildCommand.switch (BuildCommand.get());
     CLog.debug "%s [%s]" DurCommand.name (DurCommand.get());
     CLog.debug "%s [%s]" PlayCommand.name (PlayCommand.get());
     CLog.warn "%s [%s]" PercFile.name (PercFile.get());
     CLog.error "%s [%s]" OutFile.name (OutFile.get());
     CLog.warn "%s [%d]" Seconds.name (Seconds.get());
-    CLog.info "%s [%d]" Iterator.name (Iterator.get());
     CLog.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
     CLog.debug "%s [%s]" LogFile.name (LogFile.get());
     CLog.debug "%s [%b]" PlayResult.name (PlayResult.get());
     run ()
 and run () = 
-    let module RLog = Log.Make(
+    let module RLog = Log.MakeSub(
         struct
-            let mod_name = (Filename.basename Sys.argv.(0))^":run"
+            let mod_name = "run()"
             let level = Debug
             let targets = [Channel stderr]
         end)
     in
     let length = file_duration (DurCommand.get()) (PercFile.get()) in
     RLog.debug "Percolate file size [%d]" length;
-    let rsp = build_file (Seconds.get()) length (Command.get()) (PercFile.get()) (OutFile.get()) in
+    let rsp = build_file (Seconds.get()) length (BuildCommand.get()) (PercFile.get()) (OutFile.get()) in
     RLog.debug "Build_file [%s] => [%d]" (OutFile.get()) rsp;
     let rsp = 
         if (PlayResult.get()) then

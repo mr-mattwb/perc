@@ -6,13 +6,12 @@ open Tools
 open Log
 open Env
 
-module Command : ELT with type elt = string
+module BuildCommand : ELT with type elt = string
 module DurCommand : ELT with type elt = string
 module PlayCommand : ELT with type elt = string
 module PercFile : FILE_ELT
 module OutFile : FILE_ELT
 module Seconds : ELT with type elt = int
-module Iterator : ELT with type elt = int
 module LogLevel : ELT with type elt = level
 module LogFile : FILE_ELT
 module PlayResult : ELT with type elt = bool

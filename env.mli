@@ -9,6 +9,7 @@ module type ELT =
         type elt
         val name : string
         val descr : string
+        val switch : string
         val arg : Arg.key * Arg.spec * Arg.doc
         val get : unit -> elt
         val put : elt -> unit

@@ -8,7 +8,7 @@ let ws = [' ' '\n' '\r' '\t']
 
 rule keyvaluepair = parse
     | '#' _* eof            { ("", "") }
-    | [^ ' ' '=' '#']*([' ']*[^ ' ' '=' '#'])*  {
+    | ([^ ' ' '=' '#']*[' ']*[^ ' ' '=' '#'])*  {
             let key = Lexing.lexeme lexbuf in
             (key, equalpart lexbuf) 
                             }
@@ -24,6 +24,13 @@ and valpart = parse
     | [' ' '\t']* ['#' '\r' '\n'] _* eof        { "" }
     | ([^ '#' '\r' '\n']* as v)                 { v }
 
+and commalist = parse
+    | ([^ ',']|"\\,")*      { 
+            let item1 = Lexing.lexeme lexbuf in
+            let item2 = commalist lexbuf in
+            item1 :: item2
+        }
+    | ','                   { commalist lexbuf }
 
 {
 open Unix
