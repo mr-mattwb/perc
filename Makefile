@@ -8,6 +8,8 @@ CMO=$(subst ml,cmo,$(ML))
 MLI=tools.mli ser.mli env.mli log.mli
 CFGCMA=cfg.cma
 
+all:  cfg.cma perc
+
 perc:  cfg.cma percCfg.cmo perc.ml
 	$(UCC) $+ -o $@
 
