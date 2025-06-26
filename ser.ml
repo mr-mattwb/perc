@@ -40,6 +40,22 @@ module Bool =
 module List(E : ELT) =
     struct
         type elt = E.elt list
+        let of_string s = List.map (fun e -> E.of_string e) (Lex.comma_list s)
+        let to_string s = 
+            let buf = Buffer.create 1024 in
+            let rec aux = function 
+               | [] -> 
+                    Buffer.contents buf
+               | y :: ys -> 
+                    Buffer.add_char buf ','; 
+                    Buffer.add_string buf (E.to_string y);
+                    aux ys
+            in
+            match s with
+            | [] -> ""
+            | x :: [] -> (E.to_string x)
+            | x :: xs -> Buffer.add_string buf (E.to_string x); aux xs
+
     end
 
 
