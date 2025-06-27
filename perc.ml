@@ -11,7 +11,7 @@ let rec main () =
     Env.config ();
     let module CLog = Log.MakeSub(
         struct
-            let mod_name = "main()"
+            let mod_name = "main"
             let level = LogLevel.get()
             let targets = [Channel stderr]
         end)
@@ -29,7 +29,7 @@ let rec main () =
 and run () = 
     let module RLog = Log.MakeSub(
         struct
-            let mod_name = "run()"
+            let mod_name = "run"
             let level = Debug
             let targets = [Channel stderr]
         end)

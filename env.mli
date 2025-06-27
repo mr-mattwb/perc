@@ -70,14 +70,14 @@ val arg_default : unit -> unit
 
 module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt
 
-module MakeStr(P : STR_PARAMS) : ELT with type elt = string
-module MakeInt(P : INT_PARAMS) : ELT with type elt = int
-module MakeFlt(P : FLT_PARAMS) : ELT with type elt = float
-module MakeBool(P : BOOL_PARAMS) : ELT with type elt = bool
+module Str(P : STR_PARAMS) : ELT with type elt = string
+module Int(P : INT_PARAMS) : ELT with type elt = int
+module Flt(P : FLT_PARAMS) : ELT with type elt = float
+module Bool(P : BOOL_PARAMS) : ELT with type elt = bool
 module Set(P : BOOL_PARAMS) : ELT with type elt = bool
 module Clear(P : BOOL_PARAMS) : ELT with type elt = bool
 
-module MakeFile(P : FILE_PARAMS) : FILE_ELT
+module File(P : FILE_PARAMS) : FILE_ELT
 module CfgFile : FILE_ELT
 
 val config : unit -> unit

@@ -1,23 +1,51 @@
 
-(defvar *infile* "perc-5s.wav")
-(defvar *outfile* "out-~as.wav")
-(defvar *iterator* 5)
-(defvar *iterations* 1)
-(defvar *trim-param* "trim 0 ~a")
-(defvar *command* "/usr/bin/sox")
-(defvar *cmd-out* *standard-output*)
 
-(defun add-infile (cmd nxt)
-    (if (> nxt 0) 
-        (add-infile (cons *infile* cmd) (- nxt 1))
-        cmd))
+(defclass EnvParam ()
+    ((default :initarg :default)
+     (name :type string :initarg :name)
+     (descr :type string :initarg :descr)
+     (switch :type string :initarg :switch)))
 
-(defmacro create-args (secs outfile) 
-    `(reverse (cons ,outfile (add-infile '() (/ ,secs *iterator*)))))
+(defclass Env (EnvParam)
+    ())
 
-(defmacro run-cmd (cmd secs outf)
-    `(sb-ext:run-program ,cmd (create-args ,secs ,outf) :output *cmd-out*))
+(defmethod get-env ((env Env))
+    (let ((gval (uiop:getenv (slot-value env 'name))))
+        (if (null gval)
+            (slot-value env 'default)
+            gval)))
 
+(defvar buildCommand (make-instance 'Env
+    :name "BUILDCOMMAND"
+    :default "/usr/bin/sox"
+    :switch "--build-command"
+    :descr "Conversion command"))
+(defvar durCommand (make-instance 'Env
+    :name "DURCOMMAND"
+    :default "/usr/bin/soxi -D"
+    :switch "--dur-command"
+    :descr "Duration of the sound file in seconds"))
+(defvar playCommand (make-instance 'Env
+    :name "PLAYCOMMAND"
+    :default "/usr/bin/play"
+    :switch "--play-command"
+    :descr "Play the sound file"))
+(defvar percFile (make-instance 'Env
+    :name "PERCFILE"
+    :default "perc-5s.wav"
+    :switch "--perc-file"
+    :descr "Percolation file"))
+(defvar outFile (make-instance 'Env
+    :name "OUTFILE"
+    :default "out.wav"
+    :switch "--out-file"
+    :descr "Output filename"))
+(defvar seconds (make-instance 'Env
+    :name "SECONDS"
+    :default 30
+    :switch "--seconds"
+    :descr "Second of percolation to play"))
 
-
+(defmethod file_duration (durcmd fname)
+    
 

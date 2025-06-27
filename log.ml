@@ -18,10 +18,14 @@ type level =
     | Error
     | Fatal
 
-module type PARAMS = 
+module type CHAN_PARAMS =
     sig
         val mod_name : mod_name
         val level : level
+    end
+module type PARAMS = 
+    sig
+        include CHAN_PARAMS
         val targets : out list
     end
 
@@ -179,4 +183,49 @@ module MakeSub(P : PARAMS) =
             end)
     end
 
+module Stdout(P : CHAN_PARAMS) = Make(
+    struct
+        include P
+        let targets = [Channel stdout]
+    end)
+module Stderr(P : CHAN_PARAMS) = Make(
+    struct
+        include P
+        let targets = [Channel stderr]
+    end)
+
+let logModName = "LOGMODNAME"
+let logModSubName = "LOGMODSUBNAME"
+let logLevel = "LOGLEVEL"
+let logTarget = "LOGTARGET"
+module Enviro = Make(
+    struct
+        (* Environments 
+            LOGMODSUBNAME
+            LOGMODNAME
+            LOGLEVEL
+            LOGTARGET
+        *)
+        let mod_name = 
+            let mname = 
+                match Tools.getenv logModName with
+                | None -> Tools.basename
+                | Some n -> n
+            in
+            match Tools.getenv logModSubName with
+            | None -> mname
+            | Some sn -> mname^":"^sn
+
+        let level = 
+            match Tools.getenv logLevel with
+            | None -> Warn
+            | Some v -> LevelSer.of_string v
+        let targets =
+            match Tools.getenv logTarget with
+            | None -> []
+            | Some "STDOUT" -> [Channel stdout]
+            | Some "STDERR" -> [Channel stderr]
+            | Some "FILE" -> [File (Tools.basename^".log")]
+            | Some fname -> [File fname]
+    end)
 
