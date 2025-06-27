@@ -210,7 +210,7 @@ module Enviro = Make(
             | Some n -> n
         let level = 
             match Tools.getenv logLevel with
-            | None -> Debug
+            | None -> Warn
             | Some v -> LevelSer.of_string v
         let targets =
             match Tools.getenv logTarget with
