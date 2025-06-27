@@ -2,7 +2,7 @@ open Unix
 open Printf
 open Stdlib
 
-open CfgEnv
+open Env
 
 module Command = MakeStr(
     struct
@@ -34,7 +34,7 @@ module OutFile = MakeFile(
         let switch = "--out-file"
         let name = "OUTFILE"
     end)
-module Seconds = CfgEnv.MakeInt(
+module Seconds = Env.MakeInt(
     struct
         type elt = int
         let default = 60
@@ -42,7 +42,7 @@ module Seconds = CfgEnv.MakeInt(
         let switch = "--seconds"
         let name = "SECONDS"
     end)
-module Iterator = CfgEnv.MakeInt(
+module Iterator = Env.MakeInt(
     struct
         type elt = int
         let default = 60
@@ -53,7 +53,7 @@ module Iterator = CfgEnv.MakeInt(
 ;;
 
 let run () = 
-    CfgEnv.config();
+    Env.config();
     printf "%s [%s]\n%s [%s]\n%s [%s]\n%s [%s]\n%s [%d]\n%s [%d]\n%!" 
         Command.name (Command.get())
         Play.name (Play.get())

@@ -6,7 +6,7 @@ open Tools
 open Env
 open Log
 
-module BuildCommand = MakeStr(
+module BuildCommand = Str(
     struct
         type elt = string
         let name = "BUILDCOMMAND"
@@ -14,7 +14,7 @@ module BuildCommand = MakeStr(
         let switch = "--build-command"
         let descr = "Conversion command to use"
     end)
-module DurCommand = MakeStr(
+module DurCommand = Str(
     struct
         type elt = string
         let name = "DURCOMMAND"
@@ -22,7 +22,7 @@ module DurCommand = MakeStr(
         let switch = "--dur-command"
         let descr = "Return the duration of a sound file in seconds"
     end)
-module PlayCommand = MakeStr(
+module PlayCommand = Str(
     struct
         type elt = string
         let name = "PLAYCOMMAND"
@@ -30,7 +30,7 @@ module PlayCommand = MakeStr(
         let switch = "--play-command"
         let descr = "Command to play a sound file"
     end)
-module PercFile = MakeFile( 
+module PercFile = File( 
     struct
         type elt = file
         let name = "PERCFILE"
@@ -38,7 +38,7 @@ module PercFile = MakeFile(
         let switch = "--perc-file"
         let descr = "File containing percolation sound."
     end)
-module OutFile = MakeFile(
+module OutFile = File(
     struct
         type elt = file
         let name = "OUTFILE"
@@ -46,7 +46,7 @@ module OutFile = MakeFile(
         let switch = "--out-file"
         let descr = "Output filename"
     end)
-module Seconds = MakeInt(
+module Seconds = Int(
     struct
         type elt = int
         let name = "SECONDS"
@@ -61,7 +61,7 @@ module LogLevel = Log.LevelEnv(
         let switch = "--log-level"
         let descr = "Min log level"
     end)
-module LogFile = MakeFile(
+module LogFile = File(
     struct
         let name = "LOGFILE"
         let default = (Filename.basename Sys.argv.(0))^".log"

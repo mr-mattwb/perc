@@ -99,13 +99,13 @@ module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt =
     end
 
 
-module MakeStr(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
-module MakeInt(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
-module MakeFlt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
-module MakeBool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P end)
+module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
+module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
+module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
+module Bool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P end)
 module Set(P : BOOL_PARAMS) =
     struct
-        include MakeBool(
+        include Bool(
             struct
                 type elt = bool
                 include P
@@ -115,7 +115,7 @@ module Set(P : BOOL_PARAMS) =
     end
 module Clear(P : BOOL_PARAMS) =
     struct
-        include MakeBool(
+        include Bool(
             struct
                 type elt = bool
                 include P
@@ -124,7 +124,7 @@ module Clear(P : BOOL_PARAMS) =
         let () = add_program_arg name arg
     end
 
-module MakeFile(P : FILE_PARAMS) = Make(Ser.Str)(
+module File(P : FILE_PARAMS) = Make(Ser.Str)(
     struct
         type elt = file
         let name = P.name
@@ -133,7 +133,7 @@ module MakeFile(P : FILE_PARAMS) = Make(Ser.Str)(
         let switch = P.switch
     end)
 
-module CfgFile = MakeFile(
+module CfgFile = File(
     struct
         let name = "CONFIGFILE"
         let descr = "Name of the configuration file"
