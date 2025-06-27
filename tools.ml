@@ -51,4 +51,7 @@ let append_file fname contents =
     with_append_file write fname
 
     
+let getenv e = try Some (Unix.getenv e) with Not_found -> None
+
+
 

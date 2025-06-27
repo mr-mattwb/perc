@@ -71,4 +71,10 @@ module MakeSub(P : PARAMS) : ELT
 module Stdout(P : CHAN_PARAMS) : ELT
 module Stderr(P : CHAN_PARAMS) : ELT
 
+val logModName : string (* LOGMODNAME : log name or basename if not found *)
+val logLevel : string  (* LOGLEVEL : log level or Debug if not specified *)
+val logTarget : string (* LOGTARGET : STDERR,STDOUT, or FILE or nothing if not specified *)
+module Enviro : ELT
+
+
 

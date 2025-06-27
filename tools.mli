@@ -18,3 +18,6 @@ val buffer_file : file -> Buffer.t
 val get_file : file -> string
 val put_file : file -> string -> unit
 val append_file : file -> string -> unit
+
+val getenv : string -> string option
+

@@ -194,5 +194,30 @@ module Stderr(P : CHAN_PARAMS) = Make(
         let targets = [Channel stderr]
     end)
 
-
+let logModName = "LOGMODNAME"
+let logLevel = "LOGLEVEL"
+let logTarget = "LOGTARGET"
+module Enviro = Make(
+    struct
+        (* Environments 
+            LOGMODNAME
+            LOGLEVEL
+            LOGTARGET
+        *)
+        let mod_name = 
+            match Tools.getenv logModName with
+            | None -> Tools.basename
+            | Some n -> n
+        let level = 
+            match Tools.getenv logLevel with
+            | None -> Debug
+            | Some v -> LevelSer.of_string v
+        let targets =
+            match Tools.getenv logTarget with
+            | None -> []
+            | Some "STDOUT" -> [Channel stdout]
+            | Some "STDERR" -> [Channel stderr]
+            | Some "FILE" -> [File (Tools.basename^".log")]
+            | Some fname -> [File fname]
+    end)
 
