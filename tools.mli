@@ -29,4 +29,6 @@ val fold_file : file -> (string -> 'a -> 'a) -> 'a -> 'a
 val map_file : file -> (string -> 'a) -> 'a list
 val iter_file : file -> (string -> unit) -> unit
 
+val get_file_as_list : file -> string list
+
 

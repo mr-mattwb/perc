@@ -71,7 +71,7 @@ let map_file fname fn =
     List.rev (fold_file fname (fun line acc -> (fn line) :: acc) [])
 let iter_file fname fn = fold_file fname (fun line () -> fn line) ()
 
-    
+let get_file_as_list fname = map_file fname (fun x -> x)    
 
 
 
