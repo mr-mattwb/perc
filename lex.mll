@@ -21,6 +21,7 @@ and equalpart = parse
     | [' ']*         { equalpart lexbuf }
     | '=' [' ']*     { valpart lexbuf }
 and valpart = parse
+    | '"' ([^'"']* as qu) '"'                   { qu }
     | [' ' '\t']* ['#' '\r' '\n'] _* eof        { "" }
     | ([^ '#' '\r' '\n']* as v)                 { v }
 
