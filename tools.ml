@@ -50,8 +50,28 @@ let append_file fname contents =
     in
     with_append_file write fname
 
-    
 let getenv e = try Some (Unix.getenv e) with Not_found -> None
+
+let rec fold_channel fin fn init =
+    let rec aux acc = 
+        match input_line fin with
+        | None -> acc
+        | Some line -> 
+            aux (fn line acc)
+    in
+    aux init
+let map_channel fin fn =
+    List.rev (fold_channel fin (fun line acc -> (fn line) :: acc) [])
+let iter_channel fin fn = 
+    fold_channel fin (fun line () -> fn line) ()
+
+let fold_file fname fn init = 
+    with_in_file (fun fin -> fold_channel fin fn init) fname 
+let map_file fname fn =
+    List.rev (fold_file fname (fun line acc -> (fn line) :: acc) [])
+let iter_file fname fn = fold_file fname (fun line () -> fn line) ()
+
+    
 
 
 

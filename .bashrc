@@ -8,5 +8,6 @@ alias perco='ocamlc -I +unix cfg.cma percCfg.ml perc.ml -o perc'
 alias occlean='rm *.cm? lex.ml a.out perc'
 
 export LOGMODNAME=perc
+export LOGMODSUBNAME=main
 export LOGLEVEL=Debug
 export LOGTARGET=STDERR

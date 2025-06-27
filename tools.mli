@@ -21,3 +21,12 @@ val append_file : file -> string -> unit
 
 val getenv : string -> string option
 
+val fold_channel : in_channel -> (string -> 'a -> 'a) -> 'a -> 'a
+val map_channel : in_channel -> (string -> 'a) -> 'a list
+val iter_channel : in_channel -> (string -> unit) -> unit
+
+val fold_file : file -> (string -> 'a -> 'a) -> 'a -> 'a
+val map_file : file -> (string -> 'a) -> 'a list
+val iter_file : file -> (string -> unit) -> unit
+
+

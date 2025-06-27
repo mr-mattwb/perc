@@ -195,19 +195,27 @@ module Stderr(P : CHAN_PARAMS) = Make(
     end)
 
 let logModName = "LOGMODNAME"
+let logModSubName = "LOGMODSUBNAME"
 let logLevel = "LOGLEVEL"
 let logTarget = "LOGTARGET"
 module Enviro = Make(
     struct
         (* Environments 
+            LOGMODSUBNAME
             LOGMODNAME
             LOGLEVEL
             LOGTARGET
         *)
         let mod_name = 
-            match Tools.getenv logModName with
-            | None -> Tools.basename
-            | Some n -> n
+            let mname = 
+                match Tools.getenv logModName with
+                | None -> Tools.basename
+                | Some n -> n
+            in
+            match Tools.getenv logModSubName with
+            | None -> mname
+            | Some sn -> mname^":"^sn
+
         let level = 
             match Tools.getenv logLevel with
             | None -> Warn
