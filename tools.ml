@@ -3,6 +3,7 @@ open Printf
 open Stdlib
 
 type file = string
+type seconds = int
 
 let name = Sys.argv.(0)
 let basename = Filename.basename name   
@@ -24,6 +25,7 @@ let use (openf : 'a -> 'b) (closef : 'b -> unit) (usef : 'b -> 'c) (argf : 'a) :
 let with_in_file fn fname = use open_in close_in fn fname 
 let with_in_process use_in cmd = 
     use open_process_in close_in use_in cmd
+
 
 
 

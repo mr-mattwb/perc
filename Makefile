@@ -20,6 +20,7 @@ lex.cmo:  lex.ml
 	$(OCC) -c lex.ml
 
 env.cmo:  lex.cmo 
+ser.cmo:  lex.cmo
 
 %.cmo:  %.ml
 	$(OCC) -c $<i

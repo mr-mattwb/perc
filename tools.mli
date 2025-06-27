@@ -1,5 +1,6 @@
 
 type file = string
+type seconds = int
 
 val name : string
 val basename : string
