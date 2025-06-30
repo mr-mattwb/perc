@@ -31,4 +31,6 @@ val iter_file : file -> (string -> unit) -> unit
 
 val get_file_as_list : file -> string list
 
+val with_temp_file : string -> string -> (file -> 'a) -> 'a
+
 

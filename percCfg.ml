@@ -128,6 +128,7 @@ let build_file total seconds command percfile outfile =
 let percolator_file () = 
     let tfile = Filename.temp_file "" (FileExt.get()) in
     Tools.put_file tfile Perc_5s_wav.percolate;
+    PLog.info "Percolator temp file [%s]" tfile;
     tfile
 
 

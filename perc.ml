@@ -34,18 +34,19 @@ and run () =
             let targets = [Channel stderr]
         end)
     in
-    let percFile = percolator_file () in
-    let length = file_duration (DurCommand.get()) percFile in
-    RLog.debug "Percolate file size [%s] [%d]" percFile length;
-    let rsp = build_file (Seconds.get()) length (BuildCommand.get()) percFile (OutFile.get()) in
-    RLog.debug "Build_file [%s] => [%d]" (OutFile.get()) rsp;
-    let rsp = 
-        if (Play.get()) then
-            play_file (PlayCommand.get()) (OutFile.get())
-        else
-            0
-    in
-    RLog.debug "Played file [%d]" rsp
+    Tools.with_temp_file "" (FileExt.get()) (fun percFile ->
+        Tools.put_file percFile Perc_5s_wav.percolate;
+        let length = file_duration (DurCommand.get()) percFile in
+        RLog.debug "Percolate file size [%s] [%d]" percFile length;
+        let rsp = build_file (Seconds.get()) length (BuildCommand.get()) percFile (OutFile.get()) in
+        RLog.debug "Build_file [%s] => [%d]" (OutFile.get()) rsp;
+        let rsp = 
+            if (Play.get()) then
+                play_file (PlayCommand.get()) (OutFile.get())
+            else
+                0
+        in
+        RLog.debug "Played file [%d]" rsp)
 ;;
 
 if not !Sys.interactive then

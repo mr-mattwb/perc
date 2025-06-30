@@ -73,5 +73,14 @@ let iter_file fname fn = fold_file fname (fun line () -> fn line) ()
 
 let get_file_as_list fname = map_file fname (fun x -> x)    
 
+let with_temp_file pfx sfx fn =
+    let fname = Filename.temp_file pfx sfx in
+    try
+        let rsp = fn fname in 
+        (* Sys.remove fname; *)
+        rsp
+    with e ->
+        (try Sys.remove fname with _ -> ());
+        raise e
 
 
