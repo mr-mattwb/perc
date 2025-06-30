@@ -91,8 +91,8 @@ module PLog = Log.MakeSub(
         let targets = [Channel stderr]
     end)
 
-let file_duration durcommand fname = 
-    let cmd = sprintf "%s %s" durcommand fname in
+let file_duration fname = 
+    let cmd = sprintf "%s %s" (DurCommand.get()) fname in
     PLog.debug "File duration command [%s]" cmd;
     let get fin = 
         match input_line fin with
@@ -105,31 +105,31 @@ let file_duration durcommand fname =
     in
     Tools.with_in_process get cmd
 
-let play_file playcmd outf = 
-    let cmd = sprintf "%s %s" playcmd outf in
+let play_file () = 
+    let cmd = sprintf "%s %s" (PlayCommand.get()) (OutFile.get()) in
     PLog.debug "Play command [%s]" cmd;
     let rsp = Sys.command cmd in
     PLog.info "Command [%s] => [%d]" cmd rsp;
     rsp
 
-let build_file total seconds command percfile outfile = 
+let build_file seconds percfile = 
     let rec aux count cmd = 
         if count <= 0 then
-            cmd^" "^outfile
+            cmd^" "^(OutFile.get())
         else
             aux (count - seconds) (cmd^" "^percfile)
     in
-    let cmd = aux total command in
+    let cmd = aux (Seconds.get()) (BuildCommand.get()) in
     PLog.debug "Command [%s]" cmd;
     let rsp = Sys.command cmd in
     PLog.info "Command [%s] => [%d]" cmd rsp;
     rsp
 
-let percolator_file () = 
-    let tfile = Filename.temp_file "" (FileExt.get()) in
-    Tools.put_file tfile Perc_5s_wav.percolate;
-    PLog.info "Percolator temp file [%s]" tfile;
-    tfile
+let percolator_file fn = 
+    Tools.with_temp_file "" (FileExt.get()) (fun percFile ->
+        Tools.put_file percFile Perc_5s_wav.percolate;
+        PLog.info "Percolator temp file [%s]" percFile;
+        fn percFile)
 
 
 

@@ -17,8 +17,8 @@ module LogFile : FILE_ELT
 module Play : ELT with type elt = bool
 module FileExt : ELT with type elt = string
 
-val file_duration : string -> string -> int
-val play_file : string -> string -> int
-val build_file : int -> int -> string -> file -> file -> int 
-val percolator_file : unit -> file
+val file_duration : string -> int
+val play_file : unit -> int
+val build_file : int -> file -> int 
+val percolator_file : (file -> 'a) -> 'a
 

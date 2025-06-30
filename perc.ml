@@ -35,14 +35,13 @@ and run () =
         end)
     in
     Tools.with_temp_file "" (FileExt.get()) (fun percFile ->
-        Tools.put_file percFile Perc_5s_wav.percolate;
-        let length = file_duration (DurCommand.get()) percFile in
+        let length = file_duration percFile in
         RLog.debug "Percolate file size [%s] [%d]" percFile length;
-        let rsp = build_file (Seconds.get()) length (BuildCommand.get()) percFile (OutFile.get()) in
+        let rsp = build_file length percFile in
         RLog.debug "Build_file [%s] => [%d]" (OutFile.get()) rsp;
         let rsp = 
             if (Play.get()) then
-                play_file (PlayCommand.get()) (OutFile.get())
+                play_file ()
             else
                 0
         in
