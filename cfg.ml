@@ -4,7 +4,7 @@ open Stdlib
 
 open Env
 
-module Command = MakeStr(
+module Command = Str(
     struct
         type elt = string
         let default = "/usr/bin/sox"
@@ -12,7 +12,7 @@ module Command = MakeStr(
         let switch = "--command"
         let name = "COMMAND"
     end)
-module Play = MakeStr(
+module Play = Str(
     struct
         type elt = string
         let default = "/usr/bin/play"
@@ -20,21 +20,21 @@ module Play = MakeStr(
         let switch = "--play"
         let name = "PLAY"
     end)
-module PercFile = MakeFile(
+module PercFile = File(
     struct
         let default = "percolate.ulaw"
         let descr = "Sound file that plays percolate music"
         let switch = "--perc-file"
         let name = "PERCFILE"
     end)
-module OutFile = MakeFile(
+module OutFile = File(
     struct
         let default = "output.ulaw"
         let descr = "Output sound file"
         let switch = "--out-file"
         let name = "OUTFILE"
     end)
-module Seconds = Env.MakeInt(
+module Seconds = Int(
     struct
         type elt = int
         let default = 60
@@ -42,7 +42,7 @@ module Seconds = Env.MakeInt(
         let switch = "--seconds"
         let name = "SECONDS"
     end)
-module Iterator = Env.MakeInt(
+module Iterator = Int(
     struct
         type elt = int
         let default = 60

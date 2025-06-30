@@ -24,7 +24,7 @@ let rec main () =
     CLog.warn "%s [%d]" Seconds.name (Seconds.get());
     CLog.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
     CLog.debug "%s [%s]" LogFile.name (LogFile.get());
-    CLog.debug "%s [%b]" PlayResult.name (PlayResult.get());
+    CLog.debug "%s [%b]" Play.name (Play.get());
     run ()
 and run () = 
     let module RLog = Log.MakeSub(
@@ -39,7 +39,7 @@ and run () =
     let rsp = build_file (Seconds.get()) length (BuildCommand.get()) (PercFile.get()) (OutFile.get()) in
     RLog.debug "Build_file [%s] => [%d]" (OutFile.get()) rsp;
     let rsp = 
-        if (PlayResult.get()) then
+        if (Play.get()) then
             play_file (PlayCommand.get()) (OutFile.get())
         else
             0

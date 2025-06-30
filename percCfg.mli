@@ -14,7 +14,7 @@ module OutFile : FILE_ELT
 module Seconds : ELT with type elt = int
 module LogLevel : ELT with type elt = level
 module LogFile : FILE_ELT
-module PlayResult : ELT with type elt = bool
+module Play : ELT with type elt = bool
 
 val file_duration : string -> string -> int
 val play_file : string -> string -> int

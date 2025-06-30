@@ -68,11 +68,11 @@ module LogFile = File(
         let switch = "--log-file"
         let descr = "Log file name"
     end)
-module PlayResult = Set(
+module Play = Set(
     struct
-        let name = "PLAYRESULT"
+        let name = "PLAY"
         let default = false
-        let switch = "--play-result"
+        let switch = "--play"
         let descr = "Play the output file"
     end)
 
