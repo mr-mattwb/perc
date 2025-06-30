@@ -76,6 +76,14 @@ module Play = Set(
         let descr = "Play the output file"
     end)
 
+module FileExt = Str(
+    struct
+        let name = "FILEEXTENSION"
+        let default = ".wav"
+        let switch = "--file-extension"
+        let descr = "File extension to use for any output files"
+    end)
+
 module PLog = Log.MakeSub(
     struct
         let mod_name = "PercCfg"
@@ -116,5 +124,11 @@ let build_file total seconds command percfile outfile =
     let rsp = Sys.command cmd in
     PLog.info "Command [%s] => [%d]" cmd rsp;
     rsp
+
+let percolator_file () = 
+    let tfile = Filename.temp_file "wav" (FileExt.get()) in
+    Tools.put_file tfile Perc_5s_wav.percolate;
+    tfile
+
 
 

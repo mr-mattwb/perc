@@ -4,18 +4,22 @@ UCC=ocamlc -I +unix
 OCC=ocamlc -I +unix unix.cma 
 MODS=tools lex ser  env log
 ML=tools.ml lex.ml ser.ml env.ml log.ml
+PERCML=perc_5s_wav.ml percCfg.ml
 CMO=$(subst ml,cmo,$(ML))
 MLI=tools.mli ser.mli env.mli log.mli
 CFGCMA=cfg.cma
 
 all:  cfg.cma perc cfg
 
-perc:  cfg.cma percCfg.cmo perc.ml
+perc:  cfg.cma $(subst ml,cmo,$(PERCML)) perc.ml
 	$(UCC) $+ -o $@
 
 cfg:  cfg.cma cfg.ml
 	$(UCC) $+ -o $@
 
+%.cmo:  %.ml
+	$(UCC) -c $<i
+	$(UCC) -c $<
 
 lex.ml:  lex.mll
 	$(OLEX) lex.mll

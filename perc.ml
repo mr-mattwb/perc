@@ -34,9 +34,10 @@ and run () =
             let targets = [Channel stderr]
         end)
     in
-    let length = file_duration (DurCommand.get()) (PercFile.get()) in
-    RLog.debug "Percolate file size [%d]" length;
-    let rsp = build_file (Seconds.get()) length (BuildCommand.get()) (PercFile.get()) (OutFile.get()) in
+    let percFile = percolator_file () in
+    let length = file_duration (DurCommand.get()) percFile in
+    RLog.debug "Percolate file size [%s] [%d]" percFile length;
+    let rsp = build_file (Seconds.get()) length (BuildCommand.get()) percFile (OutFile.get()) in
     RLog.debug "Build_file [%s] => [%d]" (OutFile.get()) rsp;
     let rsp = 
         if (Play.get()) then
