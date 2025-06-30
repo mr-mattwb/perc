@@ -40,6 +40,17 @@ and commalist spc = parse
             else []
         }
 
+and commas spc = parse
+    | '"' (([^ '"']|"\\\"")* as quoted) '"' { quoted :: (commas false lexbuf) }
+    | (([^',' '"']|"\\,")* as fld)          { fld :: (commas false lexbuf) }
+    | [' ' '\t']* ',' [' ' '\t']*           { 
+        if spc then "" :: commas true lexbuf 
+        else commas true lexbuf }
+    | eof                                   { 
+        if spc then "" :: [] 
+        else [] }
+
+
 {
 open Unix
 open Stdlib
@@ -59,7 +70,7 @@ let load_file fname = Tools.with_in_file load_channel fname
 
 let comma_list line = 
     List.map (fun fld -> String.trim fld) 
-        (commalist false (Lexing.from_string line))
+        (commas false (Lexing.from_string line))
 
 
 }

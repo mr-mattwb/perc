@@ -126,7 +126,7 @@ let build_file total seconds command percfile outfile =
     rsp
 
 let percolator_file () = 
-    let tfile = Filename.temp_file "wav" (FileExt.get()) in
+    let tfile = Filename.temp_file "" (FileExt.get()) in
     Tools.put_file tfile Perc_5s_wav.percolate;
     tfile
 
