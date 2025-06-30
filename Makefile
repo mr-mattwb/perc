@@ -5,13 +5,19 @@ OCC=ocamlc -I +unix unix.cma
 MODS=tools lex ser  env log
 ML=tools.ml lex.ml ser.ml env.ml log.ml
 PERCML=perc_5s_wav.ml percCfg.ml
+PERCCMO=$(subst ml,cmo,$(PERCML))
 CMO=$(subst ml,cmo,$(ML))
 MLI=tools.mli ser.mli env.mli log.mli
 CFGCMA=cfg.cma
 
 all:  cfg.cma perc cfg
 
-perc:  cfg.cma $(subst ml,cmo,$(PERCML)) perc.ml
+depend: dep
+dep:  *.ml *.mli
+	ocamldep *.ml > .depend.ml
+	ocamldep *.mli > .depend.mli
+
+perc:  cfg.cma $(PERCCMO) perc.ml
 	$(UCC) $+ -o $@
 
 cfg:  cfg.cma cfg.ml
@@ -37,10 +43,15 @@ ser.cmo:  lex.cmo
 cfg.cma:  $(CMO)
 	$(OCC) -o $@ -a $(CMO)
 
-%.cmi:  %.mli
-	$(OCC) -c $<
+#%.cmi:  %.mli
+#	$(OCC) -c $<
 
 clean:
 	rm *.cm[ioa]
 	rm lex.ml
+	rm .depend.ml
+	rm .depend.mli
 
+
+include .depend.mli
+include .depend.ml
