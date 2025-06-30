@@ -53,5 +53,3 @@ clean:
 	rm .depend.mli
 
 
-include .depend.mli
-include .depend.ml
