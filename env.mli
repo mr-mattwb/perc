@@ -85,6 +85,7 @@ module type NONE =
         type o
         val none : o
     end
+module MakeOption(S : ELT)(N : NONE with type o = S.elt) : ELT with type elt = S.elt option
 
 val config : unit -> unit
 

@@ -125,7 +125,7 @@ let build_file seconds percfile =
     PLog.info "Command [%s] => [%d]" cmd rsp;
     rsp
 
-let percolator_file fn = 
+let with_percolator_file fn = 
     Tools.with_temp_file "" (FileExt.get()) (fun percFile ->
         Tools.put_file percFile Perc_5s_wav.percolate;
         PLog.info "Percolator temp file [%s]" percFile;

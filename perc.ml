@@ -34,7 +34,7 @@ and run () =
             let targets = [Channel stderr]
         end)
     in
-    Tools.with_temp_file "" (FileExt.get()) (fun percFile ->
+    PercCfg.with_percolator_file (fun percFile ->
         let length = file_duration percFile in
         RLog.debug "Percolate file size [%s] [%d]" percFile length;
         let rsp = build_file length percFile in

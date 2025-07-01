@@ -20,5 +20,5 @@ module FileExt : ELT with type elt = string
 val file_duration : string -> int
 val play_file : unit -> int
 val build_file : int -> file -> int 
-val percolator_file : (file -> 'a) -> 'a
+val with_percolator_file : (file -> 'a) -> 'a
 
