@@ -30,14 +30,6 @@ module PlayCommand = Str(
         let switch = "--play-command"
         let descr = "Command to play a sound file"
     end)
-module PercFile = File( 
-    struct
-        type elt = file
-        let name = "PERCFILE"
-        let default = "perc-5s.wav"
-        let switch = "--perc-file"
-        let descr = "File containing percolation sound."
-    end)
 module OutFile = File(
     struct
         type elt = file
@@ -84,7 +76,7 @@ module FileExt = Str(
         let descr = "File extension to use for any output files"
     end)
 
-module PLog = Log.MakeSub(
+module PLog = Log.Make(
     struct
         let mod_name = "PercCfg"
         let level = Debug

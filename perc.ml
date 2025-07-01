@@ -9,7 +9,7 @@ open Arg
 
 let rec main () = 
     Env.config ();
-    let module CLog = Log.MakeSub(
+    let module CLog = Log.Make(
         struct
             let mod_name = "main"
             let level = LogLevel.get()
@@ -19,7 +19,6 @@ let rec main () =
     CLog.debug "%s [%s] [%s]" BuildCommand.name BuildCommand.switch (BuildCommand.get());
     CLog.debug "%s [%s]" DurCommand.name (DurCommand.get());
     CLog.debug "%s [%s]" PlayCommand.name (PlayCommand.get());
-    CLog.warn "%s [%s]" PercFile.name (PercFile.get());
     CLog.error "%s [%s]" OutFile.name (OutFile.get());
     CLog.warn "%s [%d]" Seconds.name (Seconds.get());
     CLog.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
@@ -27,7 +26,7 @@ let rec main () =
     CLog.debug "%s [%b]" Play.name (Play.get());
     run ()
 and run () = 
-    let module RLog = Log.MakeSub(
+    let module RLog = Log.Make(
         struct
             let mod_name = "run"
             let level = Debug
