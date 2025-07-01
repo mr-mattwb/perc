@@ -4,18 +4,6 @@ open Stdlib
 
 open Tools
 
-module type ELT =
-    sig
-        type elt
-        val name : string
-        val descr : string
-        val switch : string
-        val arg : Arg.key * Arg.spec * Arg.doc
-        val get : unit -> elt
-        val put : elt -> unit
-    end
-module type FILE_ELT = ELT with type elt = file
-
 module type STR_PARAMS = 
     sig
         val default : string
@@ -54,6 +42,18 @@ module type PARAMS =
     end 
 module type FILE_PARAMS = STR_PARAMS
 
+module type ELT =
+    sig
+        include PARAMS
+        val of_string : string -> elt
+        val to_string : elt -> string
+        val arg : Arg.key * Arg.spec * Arg.doc
+        val get : unit -> elt
+        val put : elt -> unit
+    end
+module type FILE_ELT = ELT with type elt = file
+
+
 type unixflag = string
 let gSkipArgs = "SKIP_ARGS"
 let gSkipArgsIfInteractive = "SKIP_ARGS_IF_INTERACTIVE"
@@ -84,9 +84,10 @@ let add_program_arg name arg =
 
 module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
-        type elt = P.elt
+        include S
         let name = P.name
         let descr = P.descr
+        let default = P.default
         let switch = P.switch
         let arg = 
             (P.switch, Arg.String (fun v -> Unix.putenv name v), 
@@ -141,6 +142,59 @@ module CfgFile = File(
         let switch = "--cfg-file"
     end)
 
+module Option(S : ELT) = 
+    struct
+        type elt = S.elt option
+        let of_string = function
+            | "" -> None
+            | str -> Some (S.of_string str)
+        let to_string = function
+            | None -> ""
+            | Some str -> S.to_string str
+        let name = S.name
+        let default = Some S.default
+        let switch = S.switch
+        let descr = S.descr
+        let arg = S.arg
+        let get () =
+            match S.to_string (S.get ()) with
+            | "" -> None
+            | str -> Some (S.get())
+        let put v = 
+            match v with
+            | None -> S.put (S.of_string "")
+            | Some v -> S.put v
+    end
+
+module type NONE = 
+    sig
+        type o 
+        val none : o 
+    end
+module MakeOption(S : ELT)(N : NONE with type o = S.elt) = 
+    struct
+        type elt = S.elt option
+        let snone = S.to_string N.none
+        let of_string str = 
+            match str with
+            | s when s = snone -> None
+            | s -> Some (S.of_string s)
+        let to_string = function
+            | None -> snone
+            | Some msg -> S.to_string msg
+        let name = S.name
+        let default  = Some S.default
+        let switch = S.switch
+        let descr = S.descr
+        let arg = S.arg
+        let get () = 
+            match S.get () with
+            | n when n = N.none -> None
+            | n -> Some n
+        let put = function
+            | None -> S.put N.none
+            | Some s -> S.put s
+    end
 
 let try_load_config_file () = 
     try

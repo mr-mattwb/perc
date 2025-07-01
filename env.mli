@@ -4,19 +4,6 @@ open Stdlib
 
 open Tools
 
-module type ELT =
-    sig
-        type elt
-        val name : string
-        val descr : string
-        val switch : string
-        val arg : Arg.key * Arg.spec * Arg.doc
-        val get : unit -> elt
-        val put : elt -> unit
-    end
-module type FILE_ELT = ELT with type elt = file
-
-
 module type STR_PARAMS = 
     sig
         val default : string
@@ -55,6 +42,17 @@ module type PARAMS =
     end 
 module type FILE_PARAMS = STR_PARAMS
 
+module type ELT =
+    sig
+        include PARAMS
+        val of_string : string -> elt
+        val to_string : elt -> string
+        val arg : Arg.key * Arg.spec * Arg.doc
+        val get : unit -> elt
+        val put : elt -> unit
+    end
+module type FILE_ELT = ELT with type elt = file
+
 type unixflag
 val gSkipArgs : unixflag
 val gSkipArgsIfInteractive : unixflag
@@ -79,6 +77,14 @@ module Clear(P : BOOL_PARAMS) : ELT with type elt = bool
 
 module File(P : FILE_PARAMS) : FILE_ELT
 module CfgFile : FILE_ELT
+
+module Option(S : ELT) : ELT with type elt = S.elt option
+
+module type NONE = 
+    sig
+        type o
+        val none : o
+    end
 
 val config : unit -> unit
 

@@ -194,9 +194,27 @@ module Stderr(P : CHAN_PARAMS) = Make(
         let targets = [Channel stderr]
     end)
 
-let logModName = "LOGMODNAME"
-let logModSubName = "LOGMODSUBNAME"
-let logLevel = "LOGLEVEL"
+module LogModName = Env.Str(
+    struct
+        let name = "LOGMODNAME"
+        let default = Tools.basename
+        let switch = "--log-mod-name"
+        let descr = "Log Mod Name"
+    end)
+module LogModSubName = Env.Str(
+    struct
+        let name = "LOGMODSUBNAME"
+        let default = ""
+        let switch = "--log-mod-sub-name"
+        let descr = "Log module Sub name"
+    end)
+module LogLevel = LevelEnv(
+    struct
+        let name = "LOGLEVEL"
+        let default = Warn
+        let switch = "--log-level"
+        let descr = "Logging level"
+    end)
 let logTarget = "LOGTARGET"
 module Enviro = Make(
     struct
@@ -207,19 +225,11 @@ module Enviro = Make(
             LOGTARGET
         *)
         let mod_name = 
-            let mname = 
-                match Tools.getenv logModName with
-                | None -> Tools.basename
-                | Some n -> n
-            in
-            match Tools.getenv logModSubName with
-            | None -> mname
-            | Some sn -> mname^":"^sn
-
-        let level = 
-            match Tools.getenv logLevel with
-            | None -> Warn
-            | Some v -> LevelSer.of_string v
+            let mname = LogModName.get() in
+            match LogModSubName.get() with
+            | "" -> mname
+            | sn -> mname^":"^sn
+        let level = LogLevel.get()
         let targets =
             match Tools.getenv logTarget with
             | None -> []
