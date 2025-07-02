@@ -1,9 +1,9 @@
 
 OLEX=ocamllex
-UCC=ocamlc -I +unix
-OCC=ocamlc -I +unix unix.cma 
-OCO=ocamlopt -I +unix unix.cmxa
-UCO=ocamlopt -I +unix
+UCC=ocamlc -I +unix -I +str
+OCC=ocamlc -I +unix -I +str unix.cma str.cma 
+OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
+UCO=ocamlopt -I +unix -I +str
 MODS=tools lex ser  env log
 ML=tools.ml lex.ml ser.ml env.ml log.ml
 PERCML=perc_5s_wav.ml percCfg.ml

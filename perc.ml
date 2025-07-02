@@ -22,7 +22,6 @@ let rec main () =
     CLog.error "%s [%s]" OutFile.name (OutFile.get());
     CLog.warn "%s [%d]" Seconds.name (Seconds.get());
     CLog.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
-    CLog.debug "%s [%s]" LogFile.name (LogFile.get());
     CLog.debug "%s [%b]" Play.name (Play.get());
     run ()
 and run () = 

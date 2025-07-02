@@ -53,13 +53,6 @@ module LogLevel = Log.LevelEnv(
         let switch = "--log-level"
         let descr = "Min log level"
     end)
-module LogFile = File(
-    struct
-        let name = "LOGFILE"
-        let default = (Filename.basename Sys.argv.(0))^".log"
-        let switch = "--log-file"
-        let descr = "Log file name"
-    end)
 module Play = Set(
     struct
         let name = "PLAY"

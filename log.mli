@@ -54,6 +54,16 @@ module type LEVEL_ENV =
 module LevelSer : LEVEL_SER
 module LevelEnv(LP : LEVEL_ENV) : Env.ELT with type elt = level
 
+module OutSer : Ser.ELT with type elt = out
+module type OUT_ENV =
+    sig
+        val name : string
+        val default : out
+        val switch : string
+        val descr : string
+    end
+module OutEnv(S : OUT_ENV) : Env.ELT with type elt = out
+
 val msg_string: mod_name -> level -> string -> string
 val msg_output : out_channel -> mod_name -> level -> string -> unit
 val msg_out : out_channel -> mod_name -> string -> unit
@@ -76,7 +86,7 @@ module LogModName : Env.ELT with type elt = string
 module LogModSubName : Env.ELT with type elt = string
 (* LOGLEVEL : log level or Debug if not specified *)
 module LogLevel : Env.ELT with type elt = level
-val logTarget : string
+module LogTarget : Env.ELT with type elt = out
 module Enviro : ELT
 
 

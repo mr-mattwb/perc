@@ -12,7 +12,6 @@ module PlayCommand : ELT with type elt = string
 module OutFile : FILE_ELT
 module Seconds : ELT with type elt = int
 module LogLevel : ELT with type elt = level
-module LogFile : FILE_ELT
 module Play : ELT with type elt = bool
 module FileExt : ELT with type elt = string
 

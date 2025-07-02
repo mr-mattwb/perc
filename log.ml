@@ -1,6 +1,7 @@
 open Unix
 open Printf
 open Stdlib
+module Rxp = Str
 
 open Tools
 open Env
@@ -86,6 +87,35 @@ module LevelEnv(LP : LEVEL_ENV) = Env.Make(LevelSer)(
     struct
         type elt = level
         include LP
+    end)
+
+module OutSer = 
+    struct
+        type elt = out
+        let to_string = function
+            | Channel c when c = stdout -> "CHAN:STDOUT"
+            | Channel c when c = stderr -> "CHAN:STDERR"
+            | Channel c -> raise (Failure "Cannot convert channel to string")
+            | File f -> "FILE:"^f
+        let of_string s =
+            match Rxp.split (Rxp.regexp ":") s with
+            | [ "CHAN"; "STDOUT"] -> Channel stdout
+            | [ "CHAN"; "STDERR"] -> Channel stderr
+            | [ "FILE"; fname   ] -> File fname
+            | _ -> raise (Failure "Cannot convert output from string")
+    end
+
+module type OUT_ENV =
+    sig
+        val name : string
+        val default : out
+        val switch : string
+        val descr : string
+    end
+module OutEnv(S : OUT_ENV) = Env.Make(OutSer)(
+    struct
+        type elt = out
+        include S
     end)
 
 let msg_string modn lvl msg =
@@ -215,7 +245,13 @@ module LogLevel = LevelEnv(
         let switch = "--log-level"
         let descr = "Logging level"
     end)
-let logTarget = "LOGTARGET"
+module LogTarget = OutEnv(
+    struct
+        let name = "LOGTARGET"
+        let default = Channel stderr
+        let switch = "--log-target"
+        let descr = "Log target"
+    end)
 module Enviro = Make(
     struct
         (* Environments 
@@ -230,12 +266,6 @@ module Enviro = Make(
             | "" -> mname
             | sn -> mname^":"^sn
         let level = LogLevel.get()
-        let targets =
-            match Tools.getenv logTarget with
-            | None -> []
-            | Some "STDOUT" -> [Channel stdout]
-            | Some "STDERR" -> [Channel stderr]
-            | Some "FILE" -> [File (Tools.basename^".log")]
-            | Some fname -> [File fname]
+        let targets =[LogTarget.get()]
     end)
 
