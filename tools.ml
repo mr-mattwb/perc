@@ -92,13 +92,12 @@ let spawn fn arg =
         match Unix.fork () with
         | 0 ->  
             ignore(fn arg); 
-            printf "Exiting 0\n%!"; 
             exit 0
         | pid -> 
-            printf "Exiting [%d]\n%!" pid; 
             exit 0
     in
     match Unix.fork () with
-    | 0 -> printf "0 process [%d]\n%!" (getpid()); forkagain ()
-    | pid -> printf "pid[%d] process [%d]\n%!" pid (getpid()); Unix.waitpid [] (-1)
+    | 0 -> forkagain ()
+    | pid -> Unix.waitpid [] (-1)
+
 
