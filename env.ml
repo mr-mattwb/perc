@@ -51,8 +51,11 @@ module type ELT =
         val get : unit -> elt
         val put : elt -> unit
     end
+module type STR_ELT = ELT with type elt = string
+module type INT_ELT = ELT with type elt = int
+module type FLT_ELT = ELT with type elt = float
+module type BOOL_ELT = ELT with type elt = bool
 module type FILE_ELT = ELT with type elt = file
-
 
 type unixflag = string
 let gSkipArgs = "SKIP_ARGS"

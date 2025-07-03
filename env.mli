@@ -51,6 +51,10 @@ module type ELT =
         val get : unit -> elt
         val put : elt -> unit
     end
+module type STR_ELT = ELT with type elt = string
+module type INT_ELT = ELT with type elt = int
+module type FLT_ELT = ELT with type elt = float
+module type BOOL_ELT = ELT with type elt = bool
 module type FILE_ELT = ELT with type elt = file
 
 type unixflag
@@ -68,12 +72,12 @@ val arg_default : unit -> unit
 
 module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt
 
-module Str(P : STR_PARAMS) : ELT with type elt = string
-module Int(P : INT_PARAMS) : ELT with type elt = int
-module Flt(P : FLT_PARAMS) : ELT with type elt = float
-module Bool(P : BOOL_PARAMS) : ELT with type elt = bool
-module Set(P : BOOL_PARAMS) : ELT with type elt = bool
-module Clear(P : BOOL_PARAMS) : ELT with type elt = bool
+module Str(P : STR_PARAMS) : STR_ELT
+module Int(P : INT_PARAMS) : INT_ELT
+module Flt(P : FLT_PARAMS) : FLT_ELT
+module Bool(P : BOOL_PARAMS) : BOOL_ELT
+module Set(P : BOOL_PARAMS) : BOOL_ELT
+module Clear(P : BOOL_PARAMS) : BOOL_ELT
 
 module File(P : FILE_PARAMS) : FILE_ELT
 module CfgFile : FILE_ELT
