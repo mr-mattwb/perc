@@ -1,6 +1,7 @@
 open Unix
 open Printf
 open Stdlib
+module Rex = Str
 
 type file = string
 type seconds = int
@@ -100,4 +101,12 @@ let spawn fn arg =
     | 0 -> forkagain ()
     | pid -> Unix.waitpid [] (-1)
 
-
+let tolerint_of_string str = 
+    let rex = Str.regexp {|^\([0-9]*\).*$|} in
+    match Str.replace_first rex {|\1|} str with
+    | "" -> 0
+    | num -> 
+        try int_of_string num 
+        with _ -> raise (Failure (sprintf "tolerint_of_string [%s]" num))
+        
+        

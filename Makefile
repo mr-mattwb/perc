@@ -6,7 +6,7 @@ OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
 UCO=ocamlopt -I +unix -I +str
 MODS=tools lex ser  env log
 ML=tools.ml lex.ml ser.ml env.ml log.ml
-PERCML=perc_5s_wav.ml percCfg.ml
+PERCML=perc5sWav.ml percCfg.ml
 PERCCMO=$(subst ml,cmo,$(PERCML))
 PERCCMX=$(subst ml,cmx,$(PERCML))
 CMO=$(subst ml,cmo,$(ML))
@@ -14,7 +14,7 @@ CMX=$(subst ml,cmx,$(ML))
 MLI=tools.mli ser.mli env.mli log.mli
 CFGCMA=cfg.cma
 
-all:  cfg.cma cfg.cmxa perc cfg
+all:  cfg.cma cfg.cmxa perc cfg perc-x cfg-x
 
 depend: dep
 dep:  *.ml *.mli
@@ -62,7 +62,7 @@ cfg.cmxa:  $(CMX)
 #	$(OCC) -c $<
 
 clean:
-	rm *.cm[ioax] *.cmxa *.o lex.ml
+	rm *.cm[ioax] *.cmxa *.o lex.ml *.a perc perc-x cfg cfg-x
 	rm .depend.ml
 	rm .depend.mli
 
