@@ -67,4 +67,5 @@ clean:
 	rm .depend.ml
 	rm .depend.mli
 
-
+#include .depend.ml
+#include .depend.mli
