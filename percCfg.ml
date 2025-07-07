@@ -46,13 +46,6 @@ module Seconds = Int(
         let switch = "--seconds"
         let descr = "Seconds of percolation."
     end) 
-module LogLevel = Log.LevelEnv(
-    struct
-        let name = "LOGLEVEL"
-        let default = Debug
-        let switch = "--log-level"
-        let descr = "Min log level"
-    end)
 module Play = Set(
     struct
         let name = "PLAY"
@@ -69,13 +62,17 @@ module FileExt = Str(
         let descr = "File extension to use for any output files"
     end)
 
-module PLog = Log.Make(
+module LogLevel = Log.Level
+module LogTargets = Log.Targets
+module LogName(N : Log.NAME) = Log.Named(
     struct
-        let mod_name = "PercCfg"
-        let level = Debug
-        let targets = [Channel stderr]
+        let mod_name = 
+            match N.mod_name with
+            | "" -> "PercCfg"
+            | n -> "PercCfg:"^n
     end)
 
+module PLog = LogName(struct let mod_name = "" end)
 let file_duration fname = 
     let cmd = sprintf "%s %s" (DurCommand.get()) fname in
     PLog.debug "File duration command [%s]" cmd;

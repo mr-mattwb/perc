@@ -10,6 +10,7 @@ PERCML=perc5sWav.ml percCfg.ml
 PERCCMO=$(subst ml,cmo,$(PERCML))
 PERCCMX=$(subst ml,cmx,$(PERCML))
 CMO=$(subst ml,cmo,$(ML))
+CMI=$(subst ml,cmi,$(ML))
 CMX=$(subst ml,cmx,$(ML))
 MLI=tools.mli ser.mli env.mli log.mli
 CFGCMA=cfg.cma
@@ -52,7 +53,7 @@ lex.cmx:  lex.ml
 	$(OCC) -c $<
 	$(OCO) -c $<
 
-cfg.cma:  $(CMO)
+cfg.cma:  $(CMO) $(CMI)
 	$(OCC) -o $@ -a $(CMO)
 
 cfg.cmxa:  $(CMX)

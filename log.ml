@@ -7,10 +7,6 @@ open Tools
 open Env
 
 type mod_name = string
-type out = 
-    | Channel of out_channel
-    | File of Tools.file
-
 type level =
     | Off
     | Debug
@@ -18,16 +14,17 @@ type level =
     | Warn
     | Error
     | Fatal
+type out = 
+    | Channel of out_channel
+    | File of Tools.file
 
-module type CHAN_PARAMS =
-    sig
-        val mod_name : mod_name
-        val level : level
-    end
+
+
 module type PARAMS = 
     sig
-        include CHAN_PARAMS
-        val targets : out list
+        val mod_name : mod_name
+        val level : unit -> level
+        val targets : unit -> out list
     end
 
 module type ELT = 
@@ -39,30 +36,26 @@ module type ELT =
         val throw : exn -> ('a, unit, string, unit) format4 -> 'a
     end
 
-let use ofn cfn ufn arg = 
-    let hnd = ofn arg in
-    try
-        let rc = ufn hnd in
-        cfn hnd;
-        rc
-    with e ->
-        (try cfn hnd with _ -> ());
-        raise e
-
-let rec app_output_file (fname : Tools.file) fn = 
-    use open_out_app close_out fn fname
-and open_out_app (fname : file) = 
-    open_out_gen [Open_wronly; Open_append; Open_creat] 0o666 fname
-let with_append (fname : file) fn = app_output_file fname fn
-
 module type LEVEL_SER = Ser.ELT with type elt = level
-module type LEVEL_ENV = 
+module type LEVEL_PARAMS = 
     sig
         val name : string
         val default : level
         val switch : string
         val descr : string
     end 
+module type LEVEL_ENV = Env.ELT with type elt = level
+
+module type OUT_SER = Ser.ELT with type elt = out list
+module type OUT_PARAMS =
+    sig
+        val name : string
+        val default : out list
+        val switch : string
+        val descr : string
+    end
+module type OUT_ENV = Env.ELT with type elt = out list
+
 module LevelSer = 
     struct
         type elt = level
@@ -83,13 +76,13 @@ module LevelSer =
             | "FATAL" -> Fatal
             | lvl -> raise (Failure ("level_of_string:"^lvl))
     end
-module LevelEnv(LP : LEVEL_ENV) = Env.Make(LevelSer)(
+module LevelEnv(LP : LEVEL_PARAMS) = Env.Make(LevelSer)(
     struct
         type elt = level
         include LP
     end)
 
-module OutSer = 
+module OutSerItem = 
     struct
         type elt = out
         let to_string = function
@@ -104,18 +97,11 @@ module OutSer =
             | [ "FILE"; fname   ] -> File fname
             | _ -> raise (Failure "Cannot convert output from string")
     end
-
-module type OUT_ENV =
-    sig
-        val name : string
-        val default : out
-        val switch : string
-        val descr : string
-    end
-module OutEnv(S : OUT_ENV) = Env.Make(OutSer)(
+module OutSer = Ser.List(OutSerItem)
+module OutEnv(P : OUT_PARAMS) = Env.Make(OutSer)(
     struct
-        type elt = out
-        include S
+        type elt = out list
+        include P
     end)
 
 let msg_string modn lvl msg =
@@ -149,7 +135,7 @@ let eprintf modn lvl fmt =
 
 let file_printf fname modn lvl fmt = 
     let aux2 msg ch = msg_output ch modn lvl msg in
-    let aux msg = app_output_file fname (aux2 msg) in
+    let aux msg = Tools.with_append_file (aux2 msg) fname in
     ksprintf aux fmt
 
 let buffer_printf buf modn lvl fmt = 
@@ -165,41 +151,41 @@ module Make(P : PARAMS) =
             ksprintf aux fmt
 
         let write (lvl : level) (msg : string) = function
-            | File f -> with_append f (fun ch -> msg_output ch P.mod_name lvl msg)
+            | File f -> with_append_file (fun ch -> msg_output ch P.mod_name lvl msg) f
             | Channel ch -> msg_output ch P.mod_name lvl msg
             
         let write_targets lvl fmt = 
-            let aux msg = List.iter (write lvl msg) P.targets in
+            let aux msg = List.iter (write lvl msg) (P.targets()) in
             ksprintf aux fmt
 
         let write_fatal e fmt = 
             let aux msg = 
-                List.iter (write Fatal msg) P.targets;
+                List.iter (write Fatal msg) (P.targets());
                 raise e
             in
             ksprintf aux fmt
 
         let debug (fmt : ('a, unit, string, unit) format4) =
-            match P.level with
+            match (P.level()) with
             | Debug -> write_targets Debug fmt
             | _ -> ignore fmt
         let info (fmt : ('a, unit, string, unit) format4) =
-            match P.level with
+            match (P.level()) with
             | Debug
             | Info -> write_targets Info fmt
             | _ -> ignore fmt
         let warn (fmt : ('a, unit, string, unit) format4) = 
-            match P.level with
+            match (P.level()) with
             | Debug
             | Info
             | Warn -> write_targets Warn fmt
             | _ -> ignore fmt
         let error (fmt : ('a, unit, string, unit) format4) = 
-            match P.level with
+            match (P.level()) with
             | Debug | Info | Warn | Error -> write_targets Error fmt
             | _ -> ignore fmt
         let throw e (fmt : ('a, unit, string, unit) format4) = 
-            match P.level with
+            match (P.level()) with
             | Off -> ignore fmt
             | _ -> write_fatal e fmt
     end
@@ -213,59 +199,75 @@ module MakeSub(P : PARAMS) =
             end)
     end
 
-module Stdout(P : CHAN_PARAMS) = Make(
+module Stdout(P : PARAMS) = Make(
     struct
         include P
-        let targets = [Channel stdout]
+        let targets () = (Channel stdout) :: (P.targets())
     end)
-module Stderr(P : CHAN_PARAMS) = Make(
+module Stderr(P : PARAMS) = Make(
     struct
         include P
-        let targets = [Channel stderr]
+        let targets () = (Channel stderr) :: (P.targets())
     end)
 
-module LogModName = Env.Str(
+module ModName = Env.Hide(Env.Str(
     struct
-        let name = "LOGMODNAME"
+        let name = "LOG_MODNAME"
         let default = Tools.basename
         let switch = "--log-mod-name"
         let descr = "Log Mod Name"
-    end)
-module LogModSubName = Env.Str(
+    end))
+module ModSubName = Env.Hide(Env.Str(
     struct
-        let name = "LOGMODSUBNAME"
+        let name = "LOG_MODSUBNAME"
         let default = ""
         let switch = "--log-mod-sub-name"
         let descr = "Log module Sub name"
-    end)
-module LogLevel = LevelEnv(
+    end))
+
+module Level = LevelEnv(
     struct
-        let name = "LOGLEVEL"
+        let name = "LOG_LEVEL"
         let default = Warn
         let switch = "--log-level"
         let descr = "Logging level"
     end)
-module LogTarget = OutEnv(
+module Targets = OutEnv(
     struct
-        let name = "LOGTARGET"
-        let default = Channel stderr
-        let switch = "--log-target"
-        let descr = "Log target"
+        type elt = out list
+        let name = "LOG_TARGETS"
+        let default = [Channel stderr]
+        let switch = "--log-targets"
+        let descr = "Log targets"
     end)
+
 module Enviro = Make(
     struct
         (* Environments 
-            LOGMODSUBNAME
-            LOGMODNAME
-            LOGLEVEL
-            LOGTARGET
+            LOG_MODSUBNAME
+            LOG_MODNAME
+            LOG_LEVEL
+            LOG_TARGET
         *)
         let mod_name = 
-            let mname = LogModName.get() in
-            match LogModSubName.get() with
+            let mname = ModName.get() in
+            match ModSubName.get() with
             | "" -> mname
             | sn -> mname^":"^sn
-        let level = LogLevel.get()
-        let targets =[LogTarget.get()]
+        let level () = Level.get()
+        let targets () = Targets.get()
     end)
+
+module type NAME =
+    sig
+        val mod_name : mod_name
+    end
+
+module Named(N : NAME) = Make(
+    struct
+        let mod_name = N.mod_name
+        let level () = Level.get()
+        let targets () = Targets.get()
+    end)
+
 

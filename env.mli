@@ -91,5 +91,8 @@ module type NONE =
     end
 module MakeOption(S : ELT)(N : NONE with type o = S.elt) : ELT with type elt = S.elt option
 
+module Hide(E : ELT) : ELT with type elt = E.elt
+
+val try_load_config_file : unit -> unit
 val config : unit -> unit
 

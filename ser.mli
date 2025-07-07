@@ -16,3 +16,6 @@ module Int : ELT with type elt = int
 module Flt : ELT with type elt = float
 module Bool : ELT with type elt = bool
 
+module List(E : ELT) : ELT with type elt = E.elt list
+
+

@@ -199,6 +199,13 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) =
             | Some s -> S.put s
     end
 
+module Hide(E : ELT) = 
+    struct
+        include E
+        let () = gProgramArgs := StrMap.remove E.name !gProgramArgs 
+
+    end
+
 let try_load_config_file () = 
     try
         let fname = CfgFile.get() in
