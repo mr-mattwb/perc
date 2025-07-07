@@ -49,8 +49,9 @@ let use ofn cfn ufn arg =
         (try cfn hnd with _ -> ());
         raise e
 
-let rec app_output_file (fname : Tools.file) fn = 
+let rec app_output_file (fname : Tools.file) fn =  
     use open_out_app close_out fn fname
+
 and open_out_app (fname : file) = 
     open_out_gen [Open_wronly; Open_append; Open_creat] 0o666 fname
 let with_append (fname : file) fn = app_output_file fname fn

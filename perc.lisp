@@ -46,6 +46,8 @@
     :switch "--seconds"
     :descr "Second of percolation to play"))
 
-(defmethod file_duration (durcmd fname)
-    
+(defmethod file-duration (wavfile)
+    (let* ((cmd (concatenate 'string (get-env durCommand) " " (get-env percFile)))
+           (rsp (uiop:run-program cmd :output :string)))
+        (parse-integer rsp :junk-allowed t)))
 

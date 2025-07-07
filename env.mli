@@ -59,7 +59,6 @@ module type FILE_ELT = ELT with type elt = file
 
 type unixflag
 val gSkipArgs : unixflag
-val gSkipArgsIfInteractive : unixflag
 
 type arg = Arg.key * Arg.spec * Arg.doc
 module StrMap : Map.S with type key = string

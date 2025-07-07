@@ -1,6 +1,7 @@
 open Unix
 open Printf
 open Stdlib
+module Rex = Str
 
 type file = string
 type seconds = int
@@ -101,3 +102,8 @@ let spawn fn arg =
     | pid -> Unix.waitpid [] (-1)
 
 
+let tolerint_of_string s =
+    let digs = Rex.regexp {|^\([0-9]*\).*$|} in
+    match Rex.replace_first digs {|\1|} s with
+    | "" -> 0
+    | num -> Stdlib.int_of_string num

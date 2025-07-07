@@ -6,14 +6,14 @@ open Tools
 open Log
 open Env
 
-module BuildCommand : ELT with type elt = string
-module DurCommand : ELT with type elt = string
-module PlayCommand : ELT with type elt = string
+module BuildCommand : STR_ELT
+module DurCommand : STR_ELT 
+module PlayCommand : STR_ELT
 module OutFile : FILE_ELT
-module Seconds : ELT with type elt = int
+module Seconds : INT_ELT
 module LogLevel : ELT with type elt = level
-module Play : ELT with type elt = bool
-module FileExt : ELT with type elt = string
+module Play : BOOL_ELT
+module FileExt : STR_ELT
 
 val file_duration : string -> int
 val play_file : unit -> int
