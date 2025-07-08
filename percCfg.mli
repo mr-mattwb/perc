@@ -6,6 +6,8 @@ open Tools
 open Log
 open Env
 
+type return_code = int
+
 module BuildCommand : STR_ELT
 module DurCommand : STR_ELT
 module PlayCommand : STR_ELT
@@ -18,8 +20,13 @@ module LogLevel : Log.LEVEL_ENV
 module LogTargets : Log.OUT_ENV
 module LogName(N : Log.NAME) : Log.ELT
 
-val file_duration : string -> int
-val play_file : unit -> int
-val build_file : int -> file -> int 
-val with_percolator_file : (file -> 'a) -> 'a
+module type ELT = 
+    sig
+        val file_duration : file -> return_code
+        val play_file : unit -> return_code
+        val build_file : seconds ->  file -> return_code
+        val with_percolator_file : (file -> 'a) -> 'a
+    end
+
+include ELT
 

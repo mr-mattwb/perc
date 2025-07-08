@@ -17,11 +17,6 @@ CFGCMA=cfg.cma
 
 all:  cfg.cma cfg.cmxa perc cfg perc-x cfg-x
 
-depend: dep
-dep:  *.ml *.mli
-	ocamldep *.ml > .depend.ml
-	ocamldep *.mli > .depend.mli
-
 perc:  cfg.cma $(PERCCMO) perc.ml
 	$(UCC) $+ -o $@
 
@@ -67,5 +62,9 @@ clean:
 	rm .depend.ml
 	rm .depend.mli
 
-#include .depend.ml
-#include .depend.mli
+depend: dep
+dep:  *.ml *.mli
+	ocamldep *.ml > .depend.ml
+	ocamldep *.mli > .depend.mli
+
+# Dependencies

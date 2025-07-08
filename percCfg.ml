@@ -6,6 +6,8 @@ open Tools
 open Env
 open Log
 
+type return_code = int
+
 module BuildCommand = Str(
     struct
         type elt = string
@@ -72,26 +74,34 @@ module LogName(N : Log.NAME) = Log.Named(
             | n -> "PercCfg:"^n
     end)
 
+module type ELT = 
+    sig
+        val file_duration : file -> return_code
+        val play_file : unit -> return_code
+        val build_file : seconds ->  file -> return_code
+        val with_percolator_file : (file -> 'a) -> 'a
+    end
+
 module PLog = LogName(struct let mod_name = "" end)
 let file_duration fname = 
     let cmd = sprintf "%s %s" (DurCommand.get()) fname in
-    PLog.debug "File duration command [%s]" cmd;
+    PLog.debug "Duration [%s]" cmd;
     let get fin = 
         match input_line fin with
         | None ->
             PLog.error "Command [%s] did not return a response" cmd;
             0
         | Some line ->
-            PLog.info "Command [%s] => [%s]" cmd line;
+            PLog.info "Duration [%s] => [%s]" cmd line;
             int_of_float (float_of_string line)
     in
     Tools.with_in_process get cmd
 
 let play_file () = 
     let cmd = sprintf "%s %s" (PlayCommand.get()) (OutFile.get()) in
-    PLog.debug "Play command [%s]" cmd;
+    PLog.debug "Play [%s]" cmd;
     let rsp = Sys.command cmd in
-    PLog.info "Command [%s] => [%d]" cmd rsp;
+    PLog.info "Play [%s] => [%d]" cmd rsp;
     rsp
 
 let build_file seconds percfile = 
@@ -102,9 +112,9 @@ let build_file seconds percfile =
             aux (count - seconds) (cmd^" "^percfile)
     in
     let cmd = aux (Seconds.get()) (BuildCommand.get()) in
-    PLog.debug "Command [%s]" cmd;
+    PLog.debug "Build [%s]" cmd;
     let rsp = Sys.command cmd in
-    PLog.info "Command [%s] => [%d]" cmd rsp;
+    PLog.info "Build [%s] => [%d]" cmd rsp;
     rsp
 
 let with_percolator_file fn = 

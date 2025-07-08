@@ -2,8 +2,8 @@
 type file = string
 type seconds = int
 
-val name : string
-val basename : string
+val name : file
+val basename : file
 
 val input_line : in_channel -> string option
 
