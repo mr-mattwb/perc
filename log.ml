@@ -4,7 +4,6 @@ open Stdlib
 module Rxp = Str
 
 open Tools
-open Env
 
 type mod_name = string
 type level =
@@ -269,5 +268,13 @@ module Named(N : NAME) = Make(
         let level () = Level.get()
         let targets () = Targets.get()
     end)
+module SubNamed(N : NAME)(SN : NAME) = Named(
+    struct
+        let mod_name = 
+            match SN.mod_name with
+            | "" -> N.mod_name
+            | sn -> N.mod_name^":"^sn
+    end)
+
 
 

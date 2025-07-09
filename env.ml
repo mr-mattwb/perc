@@ -59,7 +59,6 @@ module type FILE_ELT = ELT with type elt = file
 
 type unixflag = string
 let gSkipArgs = "SKIP_ARGS"
-let gSkipArgsIfInteractive = "SKIP_ARGS_IF_INTERACTIVE"
 
 type arg = Arg.key * Arg.spec * Arg.doc
 module StrMap = Map.Make(String)
@@ -80,10 +79,6 @@ let arg_default () = parse_args "Invalid argument"
 let unix_get_flag f = try bool_of_string (Unix.getenv f) with _ -> false
 let add_program_arg name arg =
     if not (unix_get_flag gSkipArgs) then gProgramArgs := StrMap.add name arg !gProgramArgs;
-    if not (unix_get_flag gSkipArgsIfInteractive) then
-        if not !Sys.interactive then 
-            gProgramArgs := StrMap.add name arg !gProgramArgs
-        
 
 module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
@@ -102,6 +97,7 @@ module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt =
         let () = add_program_arg name arg
     end
 
+module List(S : Ser.ELT)(P : PARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
 
 module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
 module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)

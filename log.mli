@@ -96,5 +96,5 @@ module type NAME =
 (* Use the mod_name paraameter *)
 (* Set the level and targets with Level and Targets modules *)
 module Named(N : NAME) : ELT
-
+module SubNamed(N : NAME)(SN : NAME) : ELT
 

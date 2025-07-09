@@ -59,7 +59,6 @@ module type FILE_ELT = ELT with type elt = file
 
 type unixflag
 val gSkipArgs : unixflag
-val gSkipArgsIfInteractive : unixflag
 
 type arg = Arg.key * Arg.spec * Arg.doc
 module StrMap : Map.S with type key = string
@@ -71,6 +70,8 @@ val parse_args : string -> unit
 val arg_default : unit -> unit
 
 module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt
+
+module List(S : Ser.ELT)(P : PARAMS with type elt = S.elt list) : ELT with type elt = P.elt
 
 module Str(P : STR_PARAMS) : STR_ELT
 module Int(P : INT_PARAMS) : INT_ELT
