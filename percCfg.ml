@@ -93,7 +93,7 @@ let file_duration fname =
             0
         | Some line ->
             PLog.info "Duration [%s] => [%s]" cmd line;
-            int_of_float (float_of_string line)
+            Tools.tolerint_of_string line
     in
     Tools.with_in_process get cmd
 

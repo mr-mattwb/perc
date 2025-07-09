@@ -5,10 +5,19 @@ open Stdlib
 }
 
 let ws = [' ' '\n' '\r' '\t']
+let keyitem = [^ ' ' '=' '#']
+let spcs = [' ']
+let comment = '#' _* eof
+let equal = '=' spcs*
+
+let wspc = [' ' '\t']
+let not_term = [^ '#' ' ' '\r' '\n']
+
+let quoted = '"' ([^'"']* as qu) '"'
 
 rule keyvaluepair = parse
-    | '#' _* eof            { ("", "") }
-    | ([^ ' ' '=' '#']*[' ']*[^ ' ' '=' '#'])*  {
+    | comment            { ("", "") }
+    | (keyitem* spcs* keyitem)*  {
             let key = Lexing.lexeme lexbuf in
             (key, equalpart lexbuf) 
                             }
@@ -17,13 +26,13 @@ rule keyvaluepair = parse
                             }
 
 and equalpart = parse
-    | '#' _* eof     { "" }
-    | [' ']*         { equalpart lexbuf }
-    | '=' [' ']*     { valpart lexbuf }
+    | comment                                   { "" }
+    | spcs*                                     { equalpart lexbuf }
+    | equal spcs*                               { valpart lexbuf }
+    
 and valpart = parse
-    | '"' ([^'"']* as qu) '"'                   { qu }
-    | [' ' '\t']* ['#' '\r' '\n'] _* eof        { "" }
-    | ([^ '#' '\r' '\n']* as v)                 { v }
+    | quoted                                    { qu }
+    | (not_term* as v)                          { v }
 
 and commalist spc = parse
     | (([^ ',']|"\\,")* as token)    { 
@@ -56,8 +65,10 @@ and commas spc = parse
 open Unix
 open Stdlib
 
+let parse line = keyvaluepair (Lexing.from_string line)
+
 let rec load_line line = 
-    let k, v = keyvaluepair (Lexing.from_string line) in
+    let k, v = parse line in
     Unix.putenv k v 
 
 let rec load_channel fin = 
