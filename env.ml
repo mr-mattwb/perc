@@ -99,6 +99,12 @@ module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt =
 
 module List(S : Ser.ELT)(P : PARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
 
+module Hide(E : ELT) = 
+    struct
+        include E
+        let () = gProgramArgs := StrMap.remove E.name !gProgramArgs 
+    end
+
 module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
 module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
 module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
@@ -133,13 +139,13 @@ module File(P : FILE_PARAMS) = Make(Ser.Str)(
         let switch = P.switch
     end)
 
-module CfgFile = File(
+module CfgFile = Hide(File(
     struct
         let name = "CONFIGFILE"
         let descr = "Name of the configuration file"
         let default = (Filename.basename Sys.argv.(0))^".cfg"
         let switch = "--cfg-file"
-    end)
+    end))
 
 module Option(S : ELT) = 
     struct
@@ -193,13 +199,6 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) =
         let put = function
             | None -> S.put N.none
             | Some s -> S.put s
-    end
-
-module Hide(E : ELT) = 
-    struct
-        include E
-        let () = gProgramArgs := StrMap.remove E.name !gProgramArgs 
-
     end
 
 let try_load_config_file () = 
