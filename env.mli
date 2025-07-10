@@ -69,6 +69,7 @@ module type CMD_ELT =
     sig
         include ELT with type elt = cmd
         val run : unit -> return_code
+        val run_args : cmd -> return_code
     end
 
 type unixflag
