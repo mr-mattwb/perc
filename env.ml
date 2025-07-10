@@ -130,14 +130,28 @@ module Clear(P : BOOL_PARAMS) =
         let () = add_program_arg name arg
     end
 
-module File(P : FILE_PARAMS) = Make(Ser.Str)(
+module File(P : FILE_PARAMS) = 
     struct
-        type elt = file
-        let name = P.name
-        let descr = P.descr
-        let default = P.default
-        let switch = P.switch
-    end)
+        module F = Make(Ser.Str)(
+            struct
+                type elt = file
+                let name = P.name
+                let descr = P.descr
+                let default = P.default
+                let switch = P.switch
+            end)
+        include F
+        let exists () = Sys.file_exists (F.get())
+        let file () = 
+            if exists() then Some (get())
+            else None
+        let base () = Filename.basename (get())
+        let dir () = Filename.dirname (get())
+        let is_dir () = 
+            match file() with
+            | None -> false
+            | Some f -> (stat f).st_kind = S_DIR
+    end
 
 module CfgFile = Hide(File(
     struct
@@ -152,6 +166,7 @@ module Option(S : ELT) =
         type elt = S.elt option
         let of_string = function
             | "" -> None
+
             | str -> Some (S.of_string str)
         let to_string = function
             | None -> ""
