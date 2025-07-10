@@ -15,6 +15,7 @@ val with_in_file : (in_channel -> 'a) -> file -> 'a
 val with_out_file : (out_channel -> 'a) -> file -> 'a
 val with_append_file : (out_channel -> 'a) -> file -> 'a
 val with_in_process : (in_channel -> 'a) -> string -> 'a
+val fmt_in_process : (in_channel -> 'a) -> ('b, unit, cmd, 'a) format4 -> 'b
 
 val file_size : file -> int
 val buffer_file : file -> Buffer.t

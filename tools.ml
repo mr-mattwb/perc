@@ -33,6 +33,9 @@ let with_append_file fn fname =
     use opener close_out fn fname 
 let with_in_process use_in cmd = 
     use open_process_in close_in use_in cmd
+let fmt_in_process use_in fmt =
+    let aux cmd = with_in_process use_in cmd in
+    ksprintf aux fmt
 
 let file_size fname = (Unix.stat fname).st_size
 let buffer_file fname = 
