@@ -41,6 +41,7 @@ module type PARAMS =
         val switch : string
     end 
 module type FILE_PARAMS = STR_PARAMS
+module type CMD_PARAMS = STR_PARAMS
 
 module type ELT =
     sig
@@ -55,7 +56,20 @@ module type STR_ELT = ELT with type elt = string
 module type INT_ELT = ELT with type elt = int
 module type FLT_ELT = ELT with type elt = float
 module type BOOL_ELT = ELT with type elt = bool
-module type FILE_ELT = ELT with type elt = file
+module type FILE_ELT = 
+    sig
+        include ELT with type elt = file
+        val exists : unit -> bool
+        val file : unit -> file option
+        val base : unit -> file
+        val dir : unit -> dir
+        val is_dir : unit -> bool
+    end
+module type CMD_ELT = 
+    sig
+        include ELT with type elt = cmd
+        val run : unit -> return_code
+    end
 
 type unixflag = string
 let gSkipArgs = "SKIP_ARGS"
@@ -151,6 +165,12 @@ module File(P : FILE_PARAMS) =
             match file() with
             | None -> false
             | Some f -> (stat f).st_kind = S_DIR
+    end
+
+module Cmd(P : CMD_PARAMS) =
+    struct
+        include Str(P)
+        let run () = Sys.command (get())
     end
 
 module CfgFile = Hide(File(

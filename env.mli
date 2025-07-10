@@ -41,6 +41,7 @@ module type PARAMS =
         val switch : string
     end 
 module type FILE_PARAMS = STR_PARAMS
+module type CMD_PARAMS = STR_PARAMS 
 
 module type ELT =
     sig
@@ -55,7 +56,20 @@ module type STR_ELT = ELT with type elt = string
 module type INT_ELT = ELT with type elt = int
 module type FLT_ELT = ELT with type elt = float
 module type BOOL_ELT = ELT with type elt = bool
-module type FILE_ELT = ELT with type elt = file
+module type FILE_ELT = 
+    sig
+        include ELT with type elt = file
+        val exists : unit -> bool
+        val file : unit -> file option
+        val base : unit -> file
+        val dir : unit -> dir
+        val is_dir : unit -> bool
+    end
+module type CMD_ELT = 
+    sig
+        include ELT with type elt = cmd
+        val run : unit -> return_code
+    end
 
 type unixflag
 val gSkipArgs : unixflag
@@ -81,7 +95,9 @@ module Set(P : BOOL_PARAMS) : BOOL_ELT
 module Clear(P : BOOL_PARAMS) : BOOL_ELT
 
 module File(P : FILE_PARAMS) : FILE_ELT
-module CfgFile : FILE_ELT
+module Cmd(P : CMD_PARAMS) : CMD_ELT
+
+module CfgFile : STR_ELT
 
 module Option(S : ELT) : ELT with type elt = S.elt option
 

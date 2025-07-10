@@ -1,6 +1,9 @@
 
 type file = string
+type dir = string
+type cmd = string
 type seconds = int
+type return_code = int
 
 val name : file
 val basename : file

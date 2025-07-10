@@ -8,7 +8,7 @@ open Log
 
 type return_code = int
 
-module BuildCommand = Str(
+module BuildCommand = Cmd(
     struct
         type elt = string
         let name = "BUILDCOMMAND"
@@ -16,7 +16,7 @@ module BuildCommand = Str(
         let switch = "--build-command"
         let descr = "Conversion command to use"
     end)
-module DurCommand = Str(
+module DurCommand = Cmd(
     struct
         type elt = string
         let name = "DURCOMMAND"
@@ -24,7 +24,7 @@ module DurCommand = Str(
         let switch = "--dur-command"
         let descr = "Return the duration of a sound file in seconds"
     end)
-module PlayCommand = Str(
+module PlayCommand = Cmd(
     struct
         type elt = string
         let name = "PLAYCOMMAND"

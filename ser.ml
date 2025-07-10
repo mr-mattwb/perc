@@ -36,7 +36,6 @@ module Bool =
         let to_string = string_of_bool
     end
 
-
 module List(E : ELT) =
     struct
         type elt = E.elt list
@@ -58,4 +57,30 @@ module List(E : ELT) =
 
     end
 
+module Option(E : ELT) =
+    struct
+        type elt = E.elt option
+        let of_string str = 
+            match str with
+            | "" -> None
+            | ss -> Some ss
+        let to_string = function
+            | None -> ""
+            | Some ss -> ss
+    end
+
+module type OPTION = 
+    sig
+        val none : string
+    end
+module MakeOption(E : ELT)(O : OPTION) = 
+    struct
+        type elt = E.elt option
+        let of_string = function
+            | s when s=O.none -> None
+            | s -> Some (E.of_string s)
+        let to_string = function
+            | None -> O.none
+            | Some s -> E.to_string s
+    end
 
