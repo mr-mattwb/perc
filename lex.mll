@@ -2,6 +2,8 @@
 open Unix
 open Printf
 open Stdlib
+
+open Parser
 }
 
 let ws = [' ' '\n' '\r' '\t']
@@ -59,6 +61,16 @@ and commas spc = parse
     | eof                                   { 
         if spc then "" :: [] 
         else [] }
+
+and onerule = parse
+    | wspc                                      { onerule lexbuf }
+    | [^ '=' '#']+[^' ' '\t' '=' '#'] as tkn    { 
+            TOKEN(tkn) 
+        }
+    | '#' _* eof                            { onerule lexbuf }
+    | [' ' '\t']* '=' [' ' '\t']*           { EQ }
+    | eof                                   { EOF }
+
 
 
 {

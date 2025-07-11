@@ -1,11 +1,12 @@
 
 OLEX=ocamllex
+OYACC=ocamlyacc
 UCC=ocamlc -I +unix -I +str
 OCC=ocamlc -I +unix -I +str unix.cma str.cma 
 OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
 UCO=ocamlopt -I +unix -I +str
-MODS=tools lex ser  env log
-ML=tools.ml lex.ml ser.ml env.ml log.ml
+MODS=tools parser lex ser  env log
+ML=tools.ml parser.ml lex.ml ser.ml env.ml log.ml
 PERCML=perc5sWav.ml percCfg.ml
 PERCCMO=$(subst ml,cmo,$(PERCML))
 PERCCMX=$(subst ml,cmx,$(PERCML))
@@ -31,6 +32,9 @@ cfg-x:  cfg.cmxa cfg.ml
 
 lex.ml:  lex.mll
 	$(OLEX) lex.mll
+
+parser.ml:  parser.mly
+	$(OYACC) parser.mly
 
 lex.cmo:  lex.ml
 	$(OCC) -c lex.ml
