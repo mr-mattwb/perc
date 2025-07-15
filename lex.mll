@@ -2,6 +2,12 @@
 open Unix
 open Printf
 open Stdlib
+
+type items = 
+    | EQ
+    | LHS of string
+    | EOF
+    | RHS of string
 }
 
 let ws = [' ' '\n' '\r' '\t']
@@ -32,7 +38,7 @@ and equalpart = parse
     
 and valpart = parse
     | quoted                                    { qu }
-    | (not_term* as v)                          { v }
+    | ((not_term|[' ' '\t']*not_term)* as v)    { v }
 
 and commalist spc = parse
     | (([^ ',']|"\\,")* as token)    { 
@@ -60,12 +66,13 @@ and commas spc = parse
         if spc then "" :: [] 
         else [] }
 
-
 {
 open Unix
 open Stdlib
 
-let parse line = keyvaluepair (Lexing.from_string line)
+let parse line = 
+    let k, v = keyvaluepair (Lexing.from_string line) in
+    k, v
 
 let rec load_line line = 
     let k, v = parse line in

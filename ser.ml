@@ -32,7 +32,12 @@ module Flt =
 module Bool = 
     struct
         type elt = bool
-        let of_string = bool_of_string
+        let of_string str =
+            try bool_of_string str
+            with _ ->
+                match str.[0] with
+                | 'Y' | 'y' | 't' | 'T' | '1' -> true
+                | _ -> false
         let to_string = string_of_bool
     end
 

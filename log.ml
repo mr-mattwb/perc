@@ -159,6 +159,7 @@ module Make(P : PARAMS) =
 
         let write_fatal e fmt = 
             let aux msg = 
+                List.iter (write Fatal (Printexc.to_string e)) (P.targets()); 
                 List.iter (write Fatal msg) (P.targets());
                 raise e
             in

@@ -10,7 +10,6 @@ type return_code = int
 
 module BuildCommand = Cmd(
     struct
-        type elt = string
         let name = "BUILDCOMMAND"
         let default = "/usr/bin/sox"
         let switch = "--build-command"
@@ -18,7 +17,6 @@ module BuildCommand = Cmd(
     end)
 module DurCommand = Cmd(
     struct
-        type elt = string
         let name = "DURCOMMAND"
         let default = "/usr/bin/soxi -D"
         let switch = "--dur-command"
@@ -26,7 +24,6 @@ module DurCommand = Cmd(
     end)
 module PlayCommand = Cmd(
     struct
-        type elt = string
         let name = "PLAYCOMMAND"
         let default = "/usr/bin/play"
         let switch = "--play-command"
@@ -34,7 +31,6 @@ module PlayCommand = Cmd(
     end)
 module OutFile = File(
     struct
-        type elt = file
         let name = "OUTFILE"
         let default = "out.wav"
         let switch = "--out-file"
@@ -42,7 +38,6 @@ module OutFile = File(
     end)
 module Seconds = Int(
     struct
-        type elt = int
         let name = "SECONDS"
         let default = 20
         let switch = "--seconds"
