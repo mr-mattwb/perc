@@ -74,6 +74,7 @@ module type CMD_ELT =
 
 type unixflag = string
 let gSkipArgs = "SKIP_ARGS"
+let gAllowOverride = "ALLOW_OVERRIDE"
 
 type arg = Arg.key * Arg.spec * Arg.doc
 module StrMap = Map.Make(String)
@@ -93,7 +94,14 @@ let arg_default () = parse_args "Invalid argument"
 
 let unix_get_flag f = try bool_of_string (Unix.getenv f) with _ -> false
 let add_program_arg name arg =
-    if not (unix_get_flag gSkipArgs) then gProgramArgs := StrMap.add name arg !gProgramArgs;
+    if not (unix_get_flag gSkipArgs) then 
+        match StrMap.find_opt name !gProgramArgs with
+        | None -> 
+            gProgramArgs := StrMap.add name arg !gProgramArgs
+        | Some arg when unix_get_flag gAllowOverride -> 
+            gProgramArgs := StrMap.add name arg (StrMap.remove name !gProgramArgs)
+        | Some _ ->
+            raise (Failure (sprintf "Switch[%s] already exists" name))
 
 module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
@@ -109,7 +117,7 @@ module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt =
             try S.of_string (Unix.getenv name) 
             with e -> P.default
         let put v = Unix.putenv name (S.to_string v)
-        let () = add_program_arg name arg
+        let () = add_program_arg switch arg
     end
 
 module List(S : Ser.ELT)(P : PARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
@@ -132,7 +140,7 @@ module Set(P : BOOL_PARAMS) =
                 include P
             end)
         let arg = (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name P.default P.descr)
-        let () = add_program_arg name arg
+        let () = add_program_arg switch arg
     end
 module Clear(P : BOOL_PARAMS) =
     struct
@@ -142,7 +150,7 @@ module Clear(P : BOOL_PARAMS) =
                 include P
             end)
         let arg = (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name P.default P.descr)
-        let () = add_program_arg name arg
+        let () = add_program_arg switch arg
     end
 
 module File(P : FILE_PARAMS) = 

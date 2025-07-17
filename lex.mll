@@ -2,12 +2,6 @@
 open Unix
 open Printf
 open Stdlib
-
-type items = 
-    | EQ
-    | LHS of string
-    | EOF
-    | RHS of string
 }
 
 let ws = [' ' '\n' '\r' '\t']
