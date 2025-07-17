@@ -59,6 +59,14 @@ module FileExt = Str(
         let descr = "File extension to use for any output files"
     end)
 
+module PercFile = Option(File(
+    struct
+        let name = "PERCFILE"
+        let default = ""
+        let switch = "--perc-file"
+        let descr = "Percolator file"
+    end))
+
 module LogLevel = Log.Level
 module LogTargets = Log.Targets
 module LogName(N : Log.NAME) = Log.Named(
@@ -112,11 +120,19 @@ let build_file seconds percfile =
     PLog.info "Build [%s] => [%d]" cmd rsp;
     rsp
 
-let with_percolator_file fn = 
+let with_contents contents fn = 
     Tools.with_temp_file "" (FileExt.get()) (fun percFile ->
-        Tools.put_file percFile Perc5sWav.percolate;
+        Tools.put_file percFile contents;
         PLog.info "Percolator temp file [%s]" percFile;
         fn percFile)
+
+let with_percolator_file fn =
+    let contents = 
+        match PercFile.get() with
+        | None -> Perc5sWav.percolate
+        | Some fname -> Tools.get_file fname
+    in with_contents contents fn
+    
 
 
 

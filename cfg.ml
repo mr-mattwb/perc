@@ -23,7 +23,7 @@ module PlayCommand = Cmd(
         let name = "PLAYCOMMAND"
         let default = "/usr/bin/play"
         let descr = "Command to get play a sound file"
-        let switch = "--play"
+        let switch = "--play-cmd"
     end)
 module OutFile = File(
     struct
