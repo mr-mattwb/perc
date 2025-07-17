@@ -1,1 +1,18 @@
-hello
+
+
+CONFIGFILE:  Environment variable.  NO switch.  The configuration file.
+SKIP_ARGS:  Enviro var.  If true, then do not fill in the switches.
+ALLOW_OVERRIDE:  Enviro var.  If true, then if the same switch appears twice, the second time it appears, will overwrite the first.
+
+--build-command BUILDCOMMAND:  Command to create accumulated percolation file.
+--dur-command DURCOMMAND:  Command to get the duration of a sound file.
+--play-command PLAYCOMMAND:  Command to play a sound file.
+--out-file OUTFILE:  Output file.  File name for the accumulated percolation file.
+--seconds SECONDS:  Specified length of the accumulated percolation file.
+--play PLAY:  If true, then play the accumulated percolation file once it's built.
+--file-ext  FILEEXTENSION:  File extension to use for the accumulated percolation file.
+--log-level LOG_LEVEL:  Max level of logging to allow.  Ex.  LOG_LEVEL=INFO => DEBUG log entries will not be displayed
+--log-targets  LOG_TARGETS:  Indicates where logs get printed.  Ex:  LOG_TARGETS=CHAN:STDERR,FILE:file.log => Log entries display on the STDERR channel and in the file named file.log.
+--log-mod-name LOG_MODNAME:  Module name to use for the log.  Ex:  LOG_MODNAME=mod => log entries will have 'mod' in each log entry
+--log-mod-sub-name LOG_MODSUBNAME:  Name to append to the log name.  Ex: LOG_MODNAME=mod, LOG_MODSUBNAME=sub => 'mod:sub' will be in each log entry.
+
