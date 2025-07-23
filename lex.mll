@@ -60,6 +60,21 @@ and commas spc = parse
         if spc then "" :: [] 
         else [] }
 
+and cfree = parse
+    | eof                               { `Eof }
+    | [' ' '\t']+                       { cfree lexbuf }
+    | (['0'-'9']+ as num)               { 
+        let op = cfree lexbuf in
+        let nxt = cfree lexbuf in
+        `Expr (num, op, nxt)
+        }
+    | '+'                               { `Add }
+    | '-'                               { `Sub }
+    | "mul"                             { `Mul }
+    | "div"                             { `Div }
+
+
+
 {
 open Unix
 open Stdlib

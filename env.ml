@@ -64,6 +64,8 @@ module type FILE_ELT =
         val base : unit -> file
         val dir : unit -> dir
         val is_dir : unit -> bool
+        val touch : unit -> unit
+        val mkdir : perms -> unit
     end
 module type CMD_ELT = 
     sig
@@ -174,6 +176,13 @@ module File(P : FILE_PARAMS) =
             match file() with
             | None -> false
             | Some f -> (stat f).st_kind = S_DIR
+        let touch () = 
+            let fname = get() in
+            if Sys.file_exists fname && (stat fname).st_kind = S_DIR then
+                Unix.closedir (Unix.opendir fname)
+            else
+                Tools.with_out_file flush fname
+        let mkdir perms = Unix.mkdir (get()) perms
     end
 
 module Cmd(P : CMD_PARAMS) =
@@ -201,7 +210,10 @@ module Option(S : ELT) =
             | None -> ""
             | Some str -> S.to_string str
         let name = S.name
-        let default = Some S.default
+        let default = 
+            match S.to_string S.default with
+            | "" -> None
+            | _ -> Some S.default
         let switch = S.switch
         let descr = S.descr
         let arg = S.arg

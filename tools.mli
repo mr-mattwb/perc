@@ -4,6 +4,7 @@ type dir = string
 type cmd = string
 type seconds = int
 type return_code = int
+type perms = int
 
 val name : file
 val basename : file

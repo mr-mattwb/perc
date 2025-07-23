@@ -8,6 +8,7 @@ type dir = string
 type cmd = string
 type seconds = int
 type return_code = int
+type perms = int
 
 let name = Sys.argv.(0)
 let basename = Filename.basename name   

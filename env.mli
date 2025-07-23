@@ -64,6 +64,8 @@ module type FILE_ELT =
         val base : unit -> file
         val dir : unit -> dir
         val is_dir : unit -> bool
+        val touch : unit -> unit
+        val mkdir : perms -> unit
     end
 module type CMD_ELT = 
     sig

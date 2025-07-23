@@ -17,8 +17,6 @@ type out =
     | Channel of out_channel
     | File of Tools.file
 
-
-
 module type PARAMS = 
     sig
         val mod_name : mod_name
