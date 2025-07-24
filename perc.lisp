@@ -6,6 +6,7 @@
 
 (defvar license '(sam judy joe jack sally))
 
-(defmacro purchase (n) 
-    `(defmacro owner () (cons ,n `,`license)))
-
+(defun purchase (n) 
+    (defmacro owner ()
+        (let ((olds (owner)))
+            `(cons ',n ',olds))))
