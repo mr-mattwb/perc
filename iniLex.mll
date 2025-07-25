@@ -2,31 +2,31 @@
 open Unix
 open Printf
 open Stdlib
+
+open IniBase
+open IniParse
 }
-let wsp = [' ' '\t' '\n' '\r']
+let wsp = [' ' '\t' '\r']
+let notCtxEqNl = [^ '[' '=' '\n' ' ' '\t' '\r']
 let openCtx = '['
 let closeCtx = ']'
 let comment = ';' 
+let equal = '='
+let eoln = '\n'
 let notEq = [^ '=' ';' ]
-let notWsp = [^ ';' ' ' '\t' '\n' '\r']
-let notEqWsp = [^ ';' '=' ' ' '\t' '\n' '\r']
-let notWspSemi = [^ ';' ' ' '\t' '\n' '\r']
-let notEof = [^ ';' ]
+let notWsp = [^ ';' ' ' '\t' '\r']
+let notEqWsp = [^ ';' '=' ' ' '\t' '\r']
+let notWspSemi = [^ ';' ' ' '\t' '\r' '\n']
+let notEof = [^ ';' '\n' ]
 
 rule ini = parse
-    wsp*                                    { ini lexbuf }
-|   openCtx ([^ ']']+ as ctx) closeCtx      { `Context ctx }
-|   (notEq+ notEqWsp as key) wsp*           { equal key lexbuf }
-|   comment _* eof                          { `Pair ("", "") }
+    wsp*                                        { ini lexbuf }
+|   comment _* eoln                             { ini lexbuf }
+|   wsp* eoln                                   { ini lexbuf }
+|   eof                                         { EOF }
+|   (notCtxEqNl notEq+ notEqWsp as key) wsp*    { KEY key }
+|   equal (notEof* notWspSemi as r)             { RESULT r }
+|   openCtx ([^ ']']+ as ctx) closeCtx          { CONTEXT ctx }
 
-and equal key = parse
-| eof                                       { `Pair (key, "") }
-| comment _* eof                            { `Pair (key, "") }
-| wsp+                                      { equal key lexbuf }
-| '=' wsp*                                  { rest key lexbuf }
 
-and rest key = parse
-| notEof* notWspSemi  as r                  { `Pair (key, r)  }
-| eof                                       { `Pair (key, "") }
-| comment _* eof                            { `Pair (key, "") }
 

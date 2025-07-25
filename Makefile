@@ -1,11 +1,12 @@
 
 OLEX=ocamllex
+OPRS=ocamlyacc
 UCC=ocamlc -I +unix -I +str
 OCC=ocamlc -I +unix -I +str unix.cma str.cma 
 OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
 UCO=ocamlopt -I +unix -I +str
-MODS=tools lex ser  env log
-ML=tools.ml lex.ml ser.ml env.ml log.ml
+MODS=tools lex iniBase iniLex ser env log
+ML=tools.ml lex.ml iniBase.ml iniParse.ml iniLex.ml ser.ml env.ml log.ml
 PERCML=perc5sWav.ml percCfg.ml
 PERCCMO=$(subst ml,cmo,$(PERCML))
 PERCCMX=$(subst ml,cmx,$(PERCML))
@@ -38,6 +39,18 @@ lex.cmo:  lex.ml
 lex.cmx:  lex.ml
 	$(OCO) -c lex.ml
 
+iniLex.ml:  iniParse.ml iniParse.mli  iniLex.mll
+	$(OLEX) iniLex.mll
+
+iniLex.cmo:  iniParse.cmo iniLex.ml
+	$(OCC) -c iniLex.ml
+
+iniLex.cmx:  iniParse.cmx iniLex.ml
+	$(OCO) -c iniLex.ml
+
+iniParse.ml:  iniParse.mly
+	$(OPRS)  $<
+
 %.cmo:  %.ml
 	$(OCC) -c $<i
 	$(OCC) -c $<
@@ -58,7 +71,7 @@ cfg.cmxa:  $(CMX)
 #	$(OCC) -c $<
 
 clean:
-	rm *.cm[ioax] *.cmxa *.o lex.ml *.a perc perc-x cfg cfg-x
+	rm *.cm[ioax] *.cmxa *.o lex.ml iniLex.ml *.a perc perc-x cfg cfg-x
 	rm .depend.ml
 	rm .depend.mli
 
