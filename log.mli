@@ -40,8 +40,8 @@ module type LEVEL_PARAMS =
     sig
         val name : string
         val default : level
-        val switch : string
-        val descr : string
+        val switches : string list
+        val desc : string
     end 
 module type LEVEL_ENV = Env.ELT with type elt = level
 
@@ -50,8 +50,8 @@ module type OUT_PARAMS =
     sig
         val name : string
         val default : out list
-        val switch : string
-        val descr : string
+        val switches : string list
+        val desc : string
     end
 module type OUT_ENV = Env.ELT with type elt = out list
 

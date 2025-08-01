@@ -8,37 +8,37 @@ module type STR_PARAMS =
     sig
         val default : string
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end 
 module type INT_PARAMS = 
     sig
         val default : int
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end
 module type FLT_PARAMS = 
     sig
         val default : float
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end
 module type BOOL_PARAMS = 
     sig
         val default : bool
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end
 module type PARAMS = 
     sig
         type elt
         val default : elt
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end 
 module type FILE_PARAMS = STR_PARAMS
 module type CMD_PARAMS = STR_PARAMS
@@ -48,7 +48,7 @@ module type ELT =
         include PARAMS
         val of_string : string -> elt
         val to_string : elt -> string
-        val arg : Arg.key * Arg.spec * Arg.doc
+        val args : (Arg.key * Arg.spec * Arg.doc) list
         val get : unit -> elt
         val put : elt -> unit
     end
@@ -79,12 +79,12 @@ let gSkipArgs = "SKIP_ARGS"
 let gAllowOverride = "ALLOW_OVERRIDE"
 
 type arg = Arg.key * Arg.spec * Arg.doc
-module StrMap = Map.Make(String)
+module SwMap = Map.Make(String)
 
-let gProgramArgs = ref StrMap.empty
+let gProgramArgs = ref SwMap.empty
 let gHelp = ref false
 let args anons msg = 
-    let elts = List.map (fun (sw, arg) -> arg) (StrMap.bindings !gProgramArgs) in
+    let elts = List.map (fun (sw, arg) -> arg) (SwMap.bindings !gProgramArgs) in
     Arg.parse elts anons msg
 let parse_args msg = 
     let invalid_arg v = 
@@ -95,39 +95,45 @@ let parse_args msg =
 let arg_default () = parse_args "Invalid argument"
 
 let unix_get_flag f = try bool_of_string (Unix.getenv f) with _ -> false
-let add_program_arg name switch arg =
+let add_program_arg ?(override=false) name args =
     if not (unix_get_flag gSkipArgs) then 
-        match StrMap.find_opt name !gProgramArgs with
-        | None -> 
-            gProgramArgs := StrMap.add switch arg !gProgramArgs
-        | Some arg when unix_get_flag gAllowOverride -> 
-            gProgramArgs := StrMap.add switch arg (StrMap.remove name !gProgramArgs)
-        | Some _ ->
-            raise (Failure (sprintf "Name[%s] Switch[%s] already exists" name switch))
+        List.iter (fun (sw, spec, desc) ->
+            match SwMap.find_opt sw !gProgramArgs with
+            | None -> 
+                gProgramArgs := SwMap.add sw (sw, spec, desc) !gProgramArgs
+            | Some arg when unix_get_flag gAllowOverride || override -> 
+                gProgramArgs := SwMap.add sw (sw, spec, desc) (SwMap.remove sw !gProgramArgs)
+            | Some _ ->
+                raise (Failure (sprintf "Name[%s] Switch[%s] already exists" name sw)))
+            args
 
 module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
         include S
         let name = P.name
-        let descr = P.descr
+        let desc = P.desc
         let default = P.default
-        let switch = P.switch
-        let arg = 
-            (P.switch, Arg.String (fun v -> Unix.putenv name v), 
-                sprintf "[%s][%s] %s" P.name (S.to_string P.default) P.descr)
+        let switches = P.switches
+        let args = 
+            List.map (fun switch -> 
+                (switch, Arg.String (fun v -> Unix.putenv name v), 
+                    sprintf "[%s][%s] %s" P.name (S.to_string P.default) P.desc))
+                switches
         let get () = 
             try S.of_string (Unix.getenv name) 
             with e -> P.default
         let put v = Unix.putenv name (S.to_string v)
-        let () = add_program_arg name switch arg
+        let () = add_program_arg name args
     end
 
+module OList = List
 module List(S : Ser.ELT)(P : PARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
 
 module Hide(E : ELT) = 
     struct
         include E
-        let () = gProgramArgs := StrMap.remove E.name !gProgramArgs 
+        let () = 
+            OList.iter (fun switch -> gProgramArgs := SwMap.remove switch !gProgramArgs ) E.switches
     end
 
 module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
@@ -141,8 +147,11 @@ module Set(P : BOOL_PARAMS) =
                 type elt = bool
                 include P
             end)
-        let arg = (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name P.default P.descr)
-        let () = add_program_arg name switch arg
+        let args = 
+            OList.map (fun switch ->
+                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name P.default P.desc))
+                switches
+        let () = add_program_arg ~override:true name args
     end
 module Clear(P : BOOL_PARAMS) =
     struct
@@ -151,8 +160,11 @@ module Clear(P : BOOL_PARAMS) =
                 type elt = bool
                 include P
             end)
-        let arg = (P.switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name P.default P.descr)
-        let () = add_program_arg name switch arg
+        let args = 
+            OList.map (fun switch -> 
+                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name P.default P.desc))
+                switches
+        let () = add_program_arg ~override:true name args
     end
 
 module File(P : FILE_PARAMS) = 
@@ -161,9 +173,9 @@ module File(P : FILE_PARAMS) =
             struct
                 type elt = file
                 let name = P.name
-                let descr = P.descr
+                let desc = P.desc
                 let default = P.default
-                let switch = P.switch
+                let switches = P.switches
             end)
         include F
         let exists () = Sys.file_exists (F.get())
@@ -195,9 +207,9 @@ module Cmd(P : CMD_PARAMS) =
 module CfgFile = Hide(File(
     struct
         let name = "CONFIGFILE"
-        let descr = "Name of the configuration file"
+        let desc = "Name of the configuration file"
         let default = (Filename.basename Sys.argv.(0))^".cfg"
-        let switch = "--cfg-file"
+        let switches = ["--cfg-file"]
     end))
 
 module Option(S : ELT) = 
@@ -214,9 +226,9 @@ module Option(S : ELT) =
             match S.to_string S.default with
             | "" -> None
             | _ -> Some S.default
-        let switch = S.switch
-        let descr = S.descr
-        let arg = S.arg
+        let switches = S.switches
+        let desc = S.desc
+        let args = S.args
         let get () =
             match S.to_string (S.get ()) with
             | "" -> None
@@ -245,9 +257,9 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) =
             | Some msg -> S.to_string msg
         let name = S.name
         let default  = Some S.default
-        let switch = S.switch
-        let descr = S.descr
-        let arg = S.arg
+        let switches = S.switches
+        let desc = S.desc
+        let args = S.args
         let get () = 
             match S.get () with
             | n when n = N.none -> None

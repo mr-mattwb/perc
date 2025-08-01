@@ -12,59 +12,66 @@ module BuildCommand = Cmd(
     struct
         let name = "BUILDCOMMAND"
         let default = "/usr/bin/sox"
-        let switch = "--build-command"
-        let descr = "Conversion command to use"
+        let switches = ["--build-command"]
+        let desc = "Conversion command to use"
+    end)
+module NothingFlag = Set(
+    struct
+        let name = "NOTHING"
+        let default = true
+        let switches = ["-n"; "--nothing"]
+        let desc = "I think Set is 'setting' the flag twice"
     end)
 module DurCommand = Cmd(
     struct
         let name = "DURCOMMAND"
         let default = "/usr/bin/soxi -D"
-        let switch = "--dur-command"
-        let descr = "Return the duration of a sound file in seconds"
+        let switches = ["--dur-command"]
+        let desc = "Return the duration of a sound file in seconds"
     end)
 module PlayCommand = Cmd(
     struct
         let name = "PLAYCOMMAND"
         let default = "/usr/bin/play"
-        let switch = "--play-command"
-        let descr = "Command to play a sound file"
+        let switches = ["--play-command"]
+        let desc = "Command to play a sound file"
     end)
 module OutFile = File(
     struct
         let name = "OUTFILE"
         let default = "out.wav"
-        let switch = "--out-file"
-        let descr = "Output filename"
+        let switches = ["--out-file"]
+        let desc = "Output filename"
     end)
 module Seconds = Int(
     struct
         let name = "SECONDS"
         let default = 20
-        let switch = "--seconds"
-        let descr = "Seconds of percolation."
+        let switches = ["--seconds"]
+        let desc = "Seconds of percolation."
     end) 
 module Play = Set(
     struct
         let name = "PLAY"
         let default = false
-        let switch = "--play"
-        let descr = "Play the output file"
+        let switches = ["--play"]
+        let desc = "Play the output file"
     end)
 
 module FileExt = Str(
     struct
         let name = "FILEEXTENSION"
         let default = ".wav"
-        let switch = "--file-extension"
-        let descr = "File extension to use for any output files"
+        let switches = ["--file-extension"]
+        let desc = "File extension to use for any output files"
     end)
 
 module PercFile = Option(File(
     struct
         let name = "PERCFILE"
         let default = ""
-        let switch = "--perc-file"
-        let descr = "Percolator file"
+        let switches = ["--perc-file"]
+        let desc = "Percolator file"
     end))
 
 module LogLevel = Log.Level

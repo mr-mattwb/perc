@@ -8,37 +8,37 @@ module type STR_PARAMS =
     sig
         val default : string
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end 
 module type INT_PARAMS = 
     sig
         val default : int
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end
 module type FLT_PARAMS = 
     sig
         val default : float
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end
 module type BOOL_PARAMS = 
     sig
         val default : bool
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end
 module type PARAMS = 
     sig
         type elt
         val default : elt
         val name : string
-        val descr : string
-        val switch : string
+        val desc : string
+        val switches : string list
     end 
 module type FILE_PARAMS = STR_PARAMS
 module type CMD_PARAMS = STR_PARAMS 
@@ -48,7 +48,7 @@ module type ELT =
         include PARAMS
         val of_string : string -> elt
         val to_string : elt -> string
-        val arg : Arg.key * Arg.spec * Arg.doc
+        val args : (Arg.key * Arg.spec * Arg.doc) list
         val get : unit -> elt
         val put : elt -> unit
     end
@@ -78,9 +78,9 @@ type unixflag
 val gSkipArgs : unixflag
 
 type arg = Arg.key * Arg.spec * Arg.doc
-module StrMap : Map.S with type key = string
+module SwMap : Map.S with type key = string
 
-val gProgramArgs : arg StrMap.t ref
+val gProgramArgs : arg SwMap.t ref
 val gHelp : bool ref
 val args : (string -> unit) -> string -> unit
 val parse_args : string -> unit

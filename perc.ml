@@ -10,7 +10,7 @@ open Arg
 let rec main () = 
     Env.config ();
     let module CLog = LogName(struct let mod_name = "main" end) in
-    CLog.debug "%s [%s] [%s]" BuildCommand.name BuildCommand.switch (BuildCommand.get());
+    CLog.debug "%s [%s]" BuildCommand.name (BuildCommand.get());
     CLog.debug "%s [%s]" DurCommand.name (DurCommand.get());
     CLog.debug "%s [%s]" PlayCommand.name (PlayCommand.get());
     CLog.debug "%s [%s]" OutFile.name (OutFile.get());

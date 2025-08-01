@@ -38,8 +38,8 @@ module type LEVEL_PARAMS =
     sig
         val name : string
         val default : level
-        val switch : string
-        val descr : string
+        val switches : string list
+        val desc : string
     end 
 module type LEVEL_ENV = Env.ELT with type elt = level
 
@@ -48,8 +48,8 @@ module type OUT_PARAMS =
     sig
         val name : string
         val default : out list
-        val switch : string
-        val descr : string
+        val switches : string list
+        val desc : string
     end
 module type OUT_ENV = Env.ELT with type elt = out list
 
@@ -212,31 +212,31 @@ module ModName = Env.Hide(Env.Str(
     struct
         let name = "LOG_MODNAME"
         let default = Tools.basename
-        let switch = "--log-mod-name"
-        let descr = "Log Mod Name"
+        let switches = ["--log-mod-name"]
+        let desc = "Log Mod Name"
     end))
 module ModSubName = Env.Hide(Env.Str(
     struct
         let name = "LOG_MODSUBNAME"
         let default = ""
-        let switch = "--log-mod-sub-name"
-        let descr = "Log module Sub name"
+        let switches = ["--log-mod-sub-name"]
+        let desc = "Log module Sub name"
     end))
 
 module Level = LevelEnv(
     struct
         let name = "LOG_LEVEL"
         let default = Warn
-        let switch = "--log-level"
-        let descr = "Logging level"
+        let switches = ["--log-level"]
+        let desc = "Logging level"
     end)
 module Targets = OutEnv(
     struct
         type elt = out list
         let name = "LOG_TARGETS"
         let default = [Channel stderr]
-        let switch = "--log-targets"
-        let descr = "Log targets"
+        let switches = ["--log-targets"]
+        let desc = "Log targets"
     end)
 
 module Enviro = Make(
