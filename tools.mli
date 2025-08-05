@@ -41,3 +41,4 @@ val with_temp_file : string -> string -> (file -> 'a) -> 'a
 val spawn : ('a -> 'b) -> 'a -> int * Unix.process_status
 
 val tolerint_of_string : string -> int
+val ceil_of_string : string -> int

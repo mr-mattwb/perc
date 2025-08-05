@@ -14,8 +14,8 @@ module type ELT =
 module Str =
     struct
         type elt = string
-        let of_string v = v
-        let to_string v = v
+        let of_string v = String.trim v
+        let to_string v = String.trim v
     end
 module Int = 
     struct

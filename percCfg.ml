@@ -10,57 +10,50 @@ type return_code = int
 
 module BuildCommand = Cmd(
     struct
-        let name = "BUILDCOMMAND"
+        let name = "commands.build"
         let default = "/usr/bin/sox"
-        let switches = ["--build-command"]
+        let switches = ["-b"; "--build-command"]
         let desc = "Conversion command to use"
-    end)
-module NothingFlag = Set(
-    struct
-        let name = "NOTHING"
-        let default = true
-        let switches = ["-n"; "--nothing"]
-        let desc = "I think Set is 'setting' the flag twice"
     end)
 module DurCommand = Cmd(
     struct
-        let name = "DURCOMMAND"
+        let name = "commands.duration"
         let default = "/usr/bin/soxi -D"
-        let switches = ["--dur-command"]
+        let switches = ["-d"; "--dur-command"]
         let desc = "Return the duration of a sound file in seconds"
     end)
 module PlayCommand = Cmd(
     struct
-        let name = "PLAYCOMMAND"
+        let name = "commands.play"
         let default = "/usr/bin/play"
-        let switches = ["--play-command"]
+        let switches = ["-P"; "--play-command"]
         let desc = "Command to play a sound file"
     end)
 module OutFile = File(
     struct
-        let name = "OUTFILE"
+        let name = "percolate.outfile"
         let default = "out.wav"
-        let switches = ["--out-file"]
+        let switches = ["-o"; "--out-file"]
         let desc = "Output filename"
     end)
 module Seconds = Int(
     struct
-        let name = "SECONDS"
+        let name = "percolate.seconds"
         let default = 20
-        let switches = ["--seconds"]
+        let switches = ["-s"; "--seconds"]
         let desc = "Seconds of percolation."
     end) 
 module Play = Set(
     struct
-        let name = "PLAY"
+        let name = "percolate.play"
         let default = false
-        let switches = ["--play"]
+        let switches = ["-p"; "--play"]
         let desc = "Play the output file"
     end)
 
 module FileExt = Str(
     struct
-        let name = "FILEEXTENSION"
+        let name = "percolate.extension"
         let default = ".wav"
         let switches = ["--file-extension"]
         let desc = "File extension to use for any output files"
@@ -68,7 +61,7 @@ module FileExt = Str(
 
 module PercFile = Option(File(
     struct
-        let name = "PERCFILE"
+        let name = "percolate.soundfile"
         let default = ""
         let switches = ["--perc-file"]
         let desc = "Percolator file"
@@ -103,7 +96,7 @@ let file_duration fname =
             0
         | Some line ->
             PLog.info "Duration [%s] => [%s]" cmd line;
-            Tools.tolerint_of_string line
+            Tools.ceil_of_string line
     in
     Tools.with_in_process get cmd
 
@@ -116,10 +109,9 @@ let play_file () =
 
 let build_file seconds percfile = 
     let rec aux count cmd = 
-        if count <= 0 then
-            cmd^" "^(OutFile.get())
-        else
-            aux (count - seconds) (cmd^" "^percfile)
+        match count with
+        | c when c <= 0 -> cmd^" "^(OutFile.get())
+        | _ -> aux (count - seconds) (cmd^" "^percfile)
     in
     let cmd = aux (Seconds.get()) (BuildCommand.get()) in
     PLog.debug "Build [%s]" cmd;

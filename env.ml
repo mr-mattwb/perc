@@ -272,10 +272,9 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) =
 let try_load_config_file () = 
     try
         let fname = CfgFile.get() in
-        Lex.load_file fname
+        IniBase.with_file_env (IniParse.main IniLex.ini) fname
     with e ->
         eprintf "try_load_config_file [%s]\n%!" (Printexc.to_string e)
-
 
 let config () =
     try_load_config_file ();

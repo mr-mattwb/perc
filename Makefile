@@ -5,15 +5,15 @@ UCC=ocamlc -I +unix -I +str
 OCC=ocamlc -I +unix -I +str unix.cma str.cma 
 OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
 UCO=ocamlopt -I +unix -I +str
-MODS=tools lex iniBase iniLex ser env senv log
-ML=tools.ml lex.ml iniBase.ml iniParse.ml iniLex.ml ser.ml env.ml senv.ml log.ml
+MODS=tools lex iniBase iniLex ser env log
+ML=tools.ml lex.ml iniBase.ml iniParse.ml iniLex.ml ser.ml env.ml log.ml
 PERCML=perc5sWav.ml percCfg.ml
 PERCCMO=$(subst ml,cmo,$(PERCML))
 PERCCMX=$(subst ml,cmx,$(PERCML))
 CMO=$(subst ml,cmo,$(ML))
 CMI=$(subst ml,cmi,$(ML))
 CMX=$(subst ml,cmx,$(ML))
-MLI=tools.mli ser.mli env.mli senv.mli log.mli
+MLI=tools.mli ser.mli env.mli log.mli
 CFGCMA=cfg.cma
 
 all:  cfg.cma cfg.cmxa perc cfg perc-x cfg-x

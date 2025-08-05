@@ -38,6 +38,10 @@ let rec load_env ?ctx main lex =
         Unix.putenv k' v; 
         load_env ~ctx:c main lex
 
+let with_file_env parse fname =
+    let load fin = load_env parse (Lexing.from_channel fin) in
+    Tools.with_in_file load fname
+
 let load_ctx main lex = 
     let rec aux acc ctx pairs  = function
         | Eof -> acc

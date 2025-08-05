@@ -2,7 +2,7 @@ open Unix
 open Printf
 open Stdlib
 
-open Senv
+open Env
 
 module BuildCommand = Cmd(
     struct
@@ -63,7 +63,7 @@ module FileExt = Str(
 
 
 let run () = 
-    Senv.config();
+    Env.config();
     printf "%s [%s]\n%s [%s]\n%s [%s]\n" BuildCommand.name (BuildCommand.get()) DurCommand.name (DurCommand.get())
         PlayCommand.name (PlayCommand.get());
     printf "%s [%s]\n%s [%s]\n" OutFile.name (OutFile.get()) PercFile.name (PercFile.get());

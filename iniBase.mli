@@ -2,6 +2,8 @@ open Unix
 open Printf
 open Stdlib
 
+open Tools
+
 type context = string
 type key = string
 type pair = key * string
@@ -19,6 +21,7 @@ type t =
 val putenv : ?ctx:string -> string -> string -> unit
 val parse : (Lexing.lexbuf -> t) -> Lexing.lexbuf -> t
 val load_env : ?ctx:string -> (Lexing.lexbuf -> t) -> Lexing.lexbuf -> unit
+val with_file_env : (Lexing.lexbuf -> t) -> file -> unit
 val load_ctx : (Lexing.lexbuf -> t) -> Lexing.lexbuf -> elt list
 
 val to_buffer : Buffer.t -> elt list -> unit

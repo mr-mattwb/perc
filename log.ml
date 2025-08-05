@@ -64,7 +64,7 @@ module LevelSer =
             | Error -> "ERROR"
             | Fatal -> "FATAL"
         let of_string v =
-            match String.uppercase_ascii v with
+            match String.uppercase_ascii (String.trim v) with
             | "OFF" -> Off
             | "DEBUG" -> Debug
             | "INFO" -> Info
@@ -88,7 +88,7 @@ module OutSerItem =
             | Channel c -> raise (Failure "Cannot convert channel to string")
             | File f -> "FILE:"^f
         let of_string s =
-            match Rxp.split (Rxp.regexp ":") s with
+            match Rxp.split (Rxp.regexp ":") (String.trim s) with
             | [ "CHAN"; "STDOUT"] -> Channel stdout
             | [ "CHAN"; "STDERR"] -> Channel stderr
             | [ "FILE"; fname   ] -> File fname
@@ -210,14 +210,14 @@ module Stderr(P : PARAMS) = Make(
 
 module ModName = Env.Hide(Env.Str(
     struct
-        let name = "LOG_MODNAME"
+        let name = "logging.modname"
         let default = Tools.basename
         let switches = ["--log-mod-name"]
         let desc = "Log Mod Name"
     end))
 module ModSubName = Env.Hide(Env.Str(
     struct
-        let name = "LOG_MODSUBNAME"
+        let name = "logging.modsubname"
         let default = ""
         let switches = ["--log-mod-sub-name"]
         let desc = "Log module Sub name"
@@ -225,7 +225,7 @@ module ModSubName = Env.Hide(Env.Str(
 
 module Level = LevelEnv(
     struct
-        let name = "LOG_LEVEL"
+        let name = "logging.level"
         let default = Warn
         let switches = ["--log-level"]
         let desc = "Logging level"
@@ -233,7 +233,7 @@ module Level = LevelEnv(
 module Targets = OutEnv(
     struct
         type elt = out list
-        let name = "LOG_TARGETS"
+        let name = "logging.targets"
         let default = [Channel stderr]
         let switches = ["--log-targets"]
         let desc = "Log targets"

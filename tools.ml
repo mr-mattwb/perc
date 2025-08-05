@@ -113,7 +113,11 @@ let tolerint_of_string str =
     match Str.replace_first rex {|\1|} str with
     | "" -> 0
     | num -> 
-        try int_of_string num 
+        try int_of_string num
         with _ -> raise (Failure (sprintf "tolerint_of_string [%s]" num))
+
+let ceil_of_string str =
+    int_of_float (Float.ceil (float_of_string str))
+
 
 
