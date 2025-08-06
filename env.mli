@@ -32,6 +32,12 @@ module type BOOL_PARAMS =
         val desc : string
         val switches : string list
     end
+module type FLAG_PARAMS = 
+    sig
+        val name : string
+        val switches : string list
+        val desc : string
+    end
 module type PARAMS = 
     sig
         type elt
@@ -94,8 +100,8 @@ module Str(P : STR_PARAMS) : STR_ELT
 module Int(P : INT_PARAMS) : INT_ELT
 module Flt(P : FLT_PARAMS) : FLT_ELT
 module Bool(P : BOOL_PARAMS) : BOOL_ELT
-module Set(P : BOOL_PARAMS) : BOOL_ELT
-module Clear(P : BOOL_PARAMS) : BOOL_ELT
+module Set(P : FLAG_PARAMS) : BOOL_ELT
+module Clear(P : FLAG_PARAMS) : BOOL_ELT
 
 module File(P : FILE_PARAMS) : FILE_ELT
 module Cmd(P : CMD_PARAMS) : CMD_ELT
@@ -116,3 +122,4 @@ module Hide(E : ELT) : ELT with type elt = E.elt
 val try_load_config_file : unit -> unit
 val config : unit -> unit
 
+module Verbose : BOOL_ELT 

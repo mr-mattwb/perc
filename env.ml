@@ -32,6 +32,12 @@ module type BOOL_PARAMS =
         val desc : string
         val switches : string list
     end
+module type FLAG_PARAMS = 
+    sig
+        val name : string
+        val switches : string list
+        val desc : string
+    end
 module type PARAMS = 
     sig
         type elt
@@ -140,29 +146,31 @@ module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P en
 module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
 module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
 module Bool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P end)
-module Set(P : BOOL_PARAMS) =
+module Set(P : FLAG_PARAMS) =
     struct
         include Bool(
             struct
                 type elt = bool
                 include P
+                let default = false
             end)
         let args = 
             OList.map (fun switch ->
-                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name P.default P.desc))
+                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name default P.desc))
                 switches
         let () = add_program_arg ~override:true name args
     end
-module Clear(P : BOOL_PARAMS) =
+module Clear(P : FLAG_PARAMS) =
     struct
         include Bool(
             struct
                 type elt = bool
                 include P
+                let default = true
             end)
         let args = 
             OList.map (fun switch -> 
-                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name P.default P.desc))
+                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name default P.desc))
                 switches
         let () = add_program_arg ~override:true name args
     end
@@ -281,6 +289,12 @@ let config () =
     arg_default()
 
     
-
+module Verbose = Set(
+    struct
+        let name = "VERBOSE"
+        let default = false
+        let switches = [ "-v"; "--verbose"; "-verbose" ]
+        let desc = "At a minimum, turn on DEBUG logging."
+    end)
 
 

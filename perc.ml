@@ -9,6 +9,7 @@ open Arg
 
 let rec main () = 
     Env.config ();
+    Verbose.configure ();
     let module CLog = LogName(struct let mod_name = "main" end) in
     CLog.debug "%s [%s]" BuildCommand.name (BuildCommand.get());
     CLog.debug "%s [%s]" DurCommand.name (DurCommand.get());
@@ -17,6 +18,7 @@ let rec main () =
     CLog.debug "%s [%d]" Seconds.name (Seconds.get());
     CLog.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
     CLog.debug "%s [%b]" Play.name (Play.get());
+    CLog.debug "%s [%b]" Verbose.name (Verbose.get());
     run ()
 and run () = 
     let module RLog = LogName(struct let mod_name = "run" end) in

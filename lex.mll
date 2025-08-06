@@ -73,6 +73,20 @@ and cfree = parse
     | "mul"                             { `Mul }
     | "div"                             { `Div }
 
+and semicolon_list flg = parse
+    | ';'                               { 
+        if flg then
+            "" :: (semicolon_list true lexbuf)
+        else 
+            semicolon_list true lexbuf 
+        }
+    | eof                               { 
+        if flg then
+            "" :: [] 
+        else
+            [] 
+        }
+    | ([^ ';']* as item)                { item :: (semicolon_list false lexbuf) }
 
 
 {

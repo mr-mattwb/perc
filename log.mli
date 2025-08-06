@@ -53,14 +53,18 @@ module type OUT_PARAMS =
         val switches : string list
         val desc : string
     end
-module type OUT_ENV = Env.ELT with type elt = out list
+module type OUT_ENV = 
+    sig
+        include Env.ELT with type elt = out list
+        val add : out -> out list
+    end
 
 module LevelSer : LEVEL_SER
 module LevelEnv(LP : LEVEL_ENV) : Env.ELT with type elt = level
 
 module OutSerItem : Ser.ELT with type elt = out
 module OutSer : Ser.ELT with type elt = out list
-module OutEnv(P : OUT_PARAMS) : Env.ELT with type elt = out list
+module OutEnv(P : OUT_PARAMS) : OUT_ENV
 
 val msg_string: mod_name -> level -> string -> string
 val msg_output : out_channel -> mod_name -> level -> string -> unit
@@ -85,7 +89,7 @@ module ModSubName : Env.ELT with type elt = string
 
 (* LOGLEVEL : log level or Debug if not specified *)
 module Level : Env.ELT with type elt = level
-module Targets : Env.ELT with type elt = out list
+module Targets : OUT_ENV
 module Enviro : ELT
 
 module type NAME = 

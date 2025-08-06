@@ -12,7 +12,7 @@ module BuildCommand = Cmd(
     struct
         let name = "commands.build"
         let default = "/usr/bin/sox"
-        let switches = ["-b"; "--build-command"]
+        let switches = ["-b"; "--build-command"; "--build-cmd"; "-build-cmd" ]
         let desc = "Conversion command to use"
     end)
 module DurCommand = Cmd(
@@ -76,6 +76,17 @@ module LogName(N : Log.NAME) = Log.Named(
             | "" -> "PercCfg"
             | n -> "PercCfg:"^n
     end)
+module Verbose = 
+    struct
+        include Env.Verbose
+        let set_verbose () = 
+            LogLevel.put Debug;
+            ignore (LogTargets.add (Channel stderr))
+        let clear_verbose () = ()
+        let configure () =
+            if get() then set_verbose()
+            else clear_verbose()
+    end
 
 module type ELT = 
     sig

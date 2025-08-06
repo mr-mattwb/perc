@@ -19,6 +19,11 @@ module FileExt : STR_ELT
 module LogLevel : Log.LEVEL_ENV
 module LogTargets : Log.OUT_ENV
 module LogName(N : Log.NAME) : Log.ELT
+module Verbose : 
+    sig
+        include Env.BOOL_ELT
+        val configure : unit -> unit
+    end
 
 module type ELT = 
     sig

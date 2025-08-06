@@ -51,7 +51,11 @@ module type OUT_PARAMS =
         val switches : string list
         val desc : string
     end
-module type OUT_ENV = Env.ELT with type elt = out list
+module type OUT_ENV = 
+    sig
+        include Env.ELT with type elt = out list
+        val add : out -> out list
+    end
 
 module LevelSer = 
     struct
@@ -95,11 +99,15 @@ module OutSerItem =
             | _ -> raise (Failure "Cannot convert output from string")
     end
 module OutSer = Ser.List(OutSerItem)
-module OutEnv(P : OUT_PARAMS) = Env.Make(OutSer)(
+module OutEnv(P : OUT_PARAMS) = 
     struct
-        type elt = out list
-        include P
-    end)
+        include Env.Make(OutSer)(
+            struct
+                type elt = out list
+                include P
+            end)
+        let add x = put (x :: (get ())); get()
+    end
 
 let msg_string modn lvl msg =
     let tm = Unix.localtime (Unix.time()) in
