@@ -57,6 +57,7 @@ module type OUT_ENV =
     sig
         include Env.ELT with type elt = out list
         val add : out -> out list
+        val remove : out -> out list
     end
 
 module LevelSer : LEVEL_SER

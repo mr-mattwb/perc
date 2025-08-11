@@ -12,21 +12,21 @@ module BuildCommand = Cmd(
     struct
         let name = "commands.build"
         let default = "/usr/bin/sox"
-        let switches = ["-b"; "--build-command"; "--build-cmd"; "-build-cmd" ]
+        let switches = ["-b"; "--build-cmd" ]
         let desc = "Conversion command to use"
     end)
 module DurCommand = Cmd(
     struct
         let name = "commands.duration"
         let default = "/usr/bin/soxi -D"
-        let switches = ["-d"; "--dur-command"]
+        let switches = ["-d"; "--dur-cmd"]
         let desc = "Return the duration of a sound file in seconds"
     end)
 module PlayCommand = Cmd(
     struct
         let name = "commands.play"
         let default = "/usr/bin/play"
-        let switches = ["-P"; "--play-command"]
+        let switches = ["-P"; "--play-cmd"]
         let desc = "Command to play a sound file"
     end)
 module OutFile = File(
@@ -63,7 +63,7 @@ module PercFile = Option(File(
     struct
         let name = "percolate.soundfile"
         let default = ""
-        let switches = ["--perc-file"]
+        let switches = ["--sound-file"]
         let desc = "Percolator file"
     end))
 
@@ -82,7 +82,9 @@ module Verbose =
         let set_verbose () = 
             LogLevel.put Debug;
             ignore (LogTargets.add (Channel stderr))
-        let clear_verbose () = ()
+        let clear_verbose () =
+            LogLevel.put Warn;
+            ignore (LogTargets.remove (Channel stderr))
         let configure () =
             if get() then set_verbose()
             else clear_verbose()

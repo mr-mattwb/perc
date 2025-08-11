@@ -83,7 +83,7 @@ cfg.cmxa:  $(CMX)
 #	$(OCC) -c $<
 
 clean:
-	rm *.cm[ioax] *.cmxa *.o lex.ml iniLex.ml iniParse.ml iniParse.mli *.a perc perc-x cfg cfg-x
+	rm *.cm[ioax] *.cmxa *.o lex.ml iniLex.ml iniParse.ml iniParse.mli propLex.ml propParse.ml propParse.mli *.a perc perc-x cfg cfg-x
 	rm .depend.ml
 	rm .depend.mli
 
