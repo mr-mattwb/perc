@@ -55,6 +55,7 @@ module type OUT_ENV =
     sig
         include Env.ELT with type elt = out list
         val add : out -> out list
+        val remove : out -> out list
     end
 
 module LevelSer = 
@@ -106,7 +107,13 @@ module OutEnv(P : OUT_PARAMS) =
                 type elt = out list
                 include P
             end)
-        let add x = put (x :: (get ())); get()
+        let add x = 
+            let ls = get () in
+            if not (List.exists (fun f -> x = f) ls) then put (x :: ls);
+            get()
+        let remove x = 
+            put (List.filter (fun f -> f <> x) (get())); 
+            get()
     end
 
 let msg_string modn lvl msg =

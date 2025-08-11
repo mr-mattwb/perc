@@ -4,6 +4,10 @@ open Stdlib
 
 open Tools
 
+type cfg = 
+    | Properties
+    | Ini
+
 module type STR_PARAMS = 
     sig
         val default : string
@@ -78,6 +82,7 @@ module type CMD_ELT =
         include ELT with type elt = cmd
         val run : unit -> return_code
         val run_args : cmd -> return_code
+        val with_in : (in_channel -> 'a) -> string -> 'a
     end
 
 type unixflag

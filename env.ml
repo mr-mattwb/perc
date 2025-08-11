@@ -4,6 +4,10 @@ open Stdlib
 
 open Tools
 
+type cfg = 
+    | Properties
+    | Ini
+
 module type STR_PARAMS = 
     sig
         val default : string
@@ -78,11 +82,14 @@ module type CMD_ELT =
         include ELT with type elt = cmd
         val run : unit -> return_code
         val run_args : cmd -> return_code
+        val with_in : (in_channel -> 'a) -> string -> 'a 
     end
 
 type unixflag = string
+
 let gSkipArgs = "SKIP_ARGS"
 let gAllowOverride = "ALLOW_OVERRIDE"
+let gCfgType = "CONFIG_TYPE"
 
 type arg = Arg.key * Arg.spec * Arg.doc
 module SwMap = Map.Make(String)
@@ -112,6 +119,15 @@ let add_program_arg ?(override=false) name args =
             | Some _ ->
                 raise (Failure (sprintf "Name[%s] Switch[%s] already exists" name sw)))
             args
+
+let getConfigType name = 
+    match String.uppercase_ascii (Unix.getenv gCfgType) with
+    | "INI" -> Ini
+    | "PROPERTIES" -> Properties
+    | unknown ->
+        eprintf "%s:  Unknown Configuration type [%s].  Default to INI\n%!" Sys.argv.(0) unknown;
+        Ini
+
 
 module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
@@ -210,6 +226,7 @@ module Cmd(P : CMD_PARAMS) =
         include Str(P)
         let run () = Sys.command (get())
         let run_args args = Sys.command ((get())^" "^args)
+        let with_in fn args = Tools.with_in_process fn ((get())^args)
     end
 
 module CfgFile = Hide(File(
@@ -280,7 +297,10 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) =
 let try_load_config_file () = 
     try
         let fname = CfgFile.get() in
-        IniBase.with_file_env (IniParse.main IniLex.ini) fname
+        eprintf "Using config file [%s]\n%!" fname;
+        match getConfigType () with
+        | Ini -> IniBase.with_file_env (IniParse.main IniLex.ini) fname
+        | Properties -> Lex.load_file fname 
     with e ->
         eprintf "try_load_config_file [%s]\n%!" (Printexc.to_string e)
 
@@ -291,9 +311,9 @@ let config () =
     
 module Verbose = Set(
     struct
-        let name = "VERBOSE"
+        let name = "verbose"
         let default = false
-        let switches = [ "-v"; "--verbose"; "-verbose" ]
+        let switches = [ "-v"; "--verbose" ]
         let desc = "At a minimum, turn on DEBUG logging."
     end)
 
