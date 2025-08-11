@@ -3,7 +3,7 @@ open Unix
 open Printf
 open Stdlib
 
-open IniBase
+open PropBase
 open IniParse
 }
 let wsp = [' ' '\t' '\r']
@@ -28,7 +28,7 @@ rule ini = parse
 |   eof                                             { EOF }
 |   (keyStart keyContents+ keyEnd as key)             { KEY key }
 |   equal wspcs* (resStart resCont* resEnd* as r)   { RESULT r }
-|   openCtx ([^ ']']+ as ctx) closeCtx              { CONTEXT ctx }
+|   openCtx ([^ ']']* as ctx) closeCtx              { CONTEXT ctx }
 
 
 

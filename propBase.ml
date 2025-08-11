@@ -36,7 +36,6 @@ let rec load_env ?ctx main lex =
             | None -> "", k
             | Some c -> c, c^"."^k
         in
-        eprintf "putenv k[%s] v[%s]\n%!" k' v;
         Unix.putenv k' v; 
         load_env ~ctx:c main lex
 

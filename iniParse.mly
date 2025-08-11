@@ -9,11 +9,11 @@ open Stdlib
 %token <string * string> PAIR
 %token EOLN EOF
 %start main
-%type <IniBase.t> main
+%type <PropBase.t> main
 %%
 main:
-    | CONTEXT               { IniBase.Context $1 }
-    | KEY RESULT            { IniBase.Pair ($1, $2) }
-    | EOF                   { IniBase.Eof }
+    | CONTEXT               { PropBase.Context $1 }
+    | KEY RESULT            { PropBase.Pair ($1, $2) }
+    | EOF                   { PropBase.Eof }
 ;
 %%

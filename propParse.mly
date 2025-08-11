@@ -7,12 +7,12 @@ open Stdlib
 %token <string> IDENT
 %token EOF
 %start main
-%type <IniBase.t> main
+%type <PropBase.t> main
 %%
 main:
-    | KEY IDENT             { IniBase.Pair ($1, $2) }
-    | KEY EOF               { IniBase.Pair ($1, "") }
-    | EOF                   { IniBase.Eof }
+    | KEY IDENT             { PropBase.Pair ($1, $2) }
+    | KEY EOF               { PropBase.Pair ($1, "") }
+    | EOF                   { PropBase.Eof }
 ;
 %%
 
