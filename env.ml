@@ -62,6 +62,11 @@ module type ELT =
         val get : unit -> elt
         val put : elt -> unit
     end
+module type MULTI_ELT =
+    sig
+        include ELT
+        val add : elt -> unit
+    end
 module type STR_ELT = ELT with type elt = string
 module type INT_ELT = ELT with type elt = int
 module type FLT_ELT = ELT with type elt = float
@@ -316,4 +321,31 @@ module Verbose = Set(
         let desc = "At a minimum, turn on DEBUG logging."
     end)
 
+module MultiValue(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = S.elt list =
+    struct
+        let name = P.name
+        let switches = P.switches
+        let desc = P.desc
+        let default = []
+        module LS = List(S)(
+            struct
+                type elt = S.elt list
+                let name = P.name
+                let switches = P.switches
+                let desc = P.desc
+                let default = []
+            end)
+        let of_string = LS.of_string
+        let to_string = LS.to_string
+        type elt = LS.elt
+        let get () = LS.of_string (Unix.getenv name)
+        let put v = Unix.putenv name (LS.to_string v)
+
+        let add item = put ((S.of_string item) :: (get()))
+
+        let do_switch sw = 
+            (sw, Arg.String (fun item -> add item), 
+                sprintf "[%s][%s] %s" name (to_string default) desc)
+        let args = OList.map do_switch P.switches
+    end
 

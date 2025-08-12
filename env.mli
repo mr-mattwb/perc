@@ -128,3 +128,5 @@ val try_load_config_file : unit -> unit
 val config : unit -> unit
 
 module Verbose : BOOL_ELT 
+
+module MultiValue(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = S.elt list
