@@ -31,7 +31,11 @@ rule main = parse
 | equal extracmnt                                       { main lexbuf }
 | eof                                                   { EOF }
 | (keyStart (keyMid* keyEnd)*) as key                   { KEY key }
-| equal ((identStart (identMid* identEnd)*) as ident)   { IDENT ident }
+| equal                                                 { ident lexbuf }
+
+and ident = parse
+| '"' (([^ '"']|"\\\"")* as ident) '"'                  { IDENT ident }
+| ((identStart (identMid* identEnd)*) as ident)         { IDENT ident }
 
 
 

@@ -26,9 +26,13 @@ rule ini = parse
 |   comment [^'\n']* (eoln|eof)                     { ini lexbuf }
 |   eoln                                            { ini lexbuf }
 |   eof                                             { EOF }
-|   (keyStart keyContents+ keyEnd as key)             { KEY key }
-|   equal wspcs* (resStart resCont* resEnd* as r)   { RESULT r }
+|   (keyStart (keyContents+ keyEnd)* as key)        { KEY key }
+|   equal wspcs*                                    { result lexbuf }
 |   openCtx ([^ ']']* as ctx) closeCtx              { CONTEXT ctx }
+
+and result = parse
+| '"' (([^ '"']|"\\\"")* as r) '"'                  { RESULT r }
+| (resStart (resCont* resEnd)*) as r                { RESULT r }
 
 
 
