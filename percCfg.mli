@@ -25,6 +25,8 @@ module Verbose :
         val configure : unit -> unit
     end
 
+module ExtraArgs : Env.MULTI_ELT with type t = string
+
 module type ELT = 
     sig
         val file_duration : file -> return_code

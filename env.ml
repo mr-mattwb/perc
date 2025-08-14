@@ -8,64 +8,52 @@ type cfg =
     | Properties
     | Ini
 
-module type STR_PARAMS = 
+module type PARAMS = 
     sig
-        val default : string
         val name : string
         val desc : string
         val switches : string list
+    end
+module type DEFPARAMS = 
+    sig
+        type elt
+        val default : elt
+        include PARAMS
+    end
+module type STR_PARAMS = 
+    sig
+        val default : string
+        include PARAMS
     end 
 module type INT_PARAMS = 
     sig
         val default : int
-        val name : string
-        val desc : string
-        val switches : string list
+        include PARAMS
     end
 module type FLT_PARAMS = 
     sig
         val default : float
-        val name : string
-        val desc : string
-        val switches : string list
+        include PARAMS
     end
 module type BOOL_PARAMS = 
     sig
         val default : bool
-        val name : string
-        val desc : string
-        val switches : string list
+        include PARAMS
     end
-module type FLAG_PARAMS = 
-    sig
-        val name : string
-        val switches : string list
-        val desc : string
-    end
-module type PARAMS = 
-    sig
-        type elt
-        val default : elt
-        val name : string
-        val desc : string
-        val switches : string list
-    end 
+module type FLAG_PARAMS = PARAMS
+
 module type FILE_PARAMS = STR_PARAMS
 module type CMD_PARAMS = STR_PARAMS
+module type MULTI_PARAMS = PARAMS
 
 module type ELT =
     sig
-        include PARAMS
+        include DEFPARAMS
         val of_string : string -> elt
         val to_string : elt -> string
         val args : (Arg.key * Arg.spec * Arg.doc) list
         val get : unit -> elt
         val put : elt -> unit
-    end
-module type MULTI_ELT =
-    sig
-        include ELT
-        val add : elt -> unit
     end
 module type STR_ELT = ELT with type elt = string
 module type INT_ELT = ELT with type elt = int
@@ -90,8 +78,15 @@ module type CMD_ELT =
         val with_in : (in_channel -> 'a) -> string -> 'a 
     end
 
-type unixflag = string
+module type MULTI_ELT =
+    sig
+        type t
+        include ELT with type elt = t list
+        val add : t -> unit
+    end
 
+
+type unixflag = string
 let gSkipArgs = "SKIP_ARGS"
 let gAllowOverride = "ALLOW_OVERRIDE"
 let gCfgType = "CONFIG_TYPE"
@@ -125,7 +120,7 @@ let add_program_arg ?(override=false) name args =
                 raise (Failure (sprintf "Name[%s] Switch[%s] already exists" name sw)))
             args
 
-let getConfigType name = 
+let getConfigType () = 
     match String.uppercase_ascii (Unix.getenv gCfgType) with
     | "INI" -> Ini
     | "PROPERTIES" -> Properties
@@ -133,8 +128,14 @@ let getConfigType name =
         eprintf "%s:  Unknown Configuration type [%s].  Default to INI\n%!" Sys.argv.(0) unknown;
         Ini
 
+module NameMap = Map.Make(String)
+let gNameMap = ref NameMap.empty
+let add_name name (put : string -> unit) = 
+    match NameMap.find_opt name !gNameMap with
+    | None -> gNameMap := NameMap.add name put !gNameMap
+    | Some _ -> gNameMap := NameMap.add name put (NameMap.remove name !gNameMap)
 
-module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt =
+module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
         include S
         let name = P.name
@@ -150,11 +151,13 @@ module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt =
             try S.of_string (Unix.getenv name) 
             with e -> P.default
         let put v = Unix.putenv name (S.to_string v)
-        let () = add_program_arg name args
+        let () = 
+            add_program_arg name args;
+            add_name name (fun (x : string) -> Unix.putenv name x)
     end
 
 module OList = List
-module List(S : Ser.ELT)(P : PARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
+module List(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
 
 module Hide(E : ELT) = 
     struct
@@ -299,29 +302,8 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) =
             | Some s -> S.put s
     end
 
-let try_load_config_file () = 
-    try
-        let fname = CfgFile.get() in
-        match getConfigType () with
-        | Ini -> PropBase.with_file_env (IniParse.main IniLex.ini) fname
-        | Properties -> PropBase.with_file_env (PropParse.main PropLex.main) fname
-    with e ->
-        eprintf "try_load_config_file [%s]\n%!" (Printexc.to_string e)
 
-let config () =
-    try_load_config_file ();
-    arg_default()
-
-    
-module Verbose = Set(
-    struct
-        let name = "verbose"
-        let default = false
-        let switches = [ "-v"; "--verbose" ]
-        let desc = "At a minimum, turn on DEBUG logging."
-    end)
-
-module MultiValue(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = S.elt list =
+module MultiValue(S : Ser.ELT)(P : PARAMS) : MULTI_ELT with type t = S.elt =
     struct
         let name = P.name
         let switches = P.switches
@@ -337,15 +319,60 @@ module MultiValue(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type
             end)
         let of_string = LS.of_string
         let to_string = LS.to_string
-        type elt = LS.elt
-        let get () = LS.of_string (Unix.getenv name)
-        let put v = Unix.putenv name (LS.to_string v)
+        type t = S.elt
+        type elt = t list
+        let rec get () = try LS.of_string (Unix.getenv name) with Not_found -> default
+        and put v = Unix.putenv name (LS.to_string v)
 
-        let add item = put ((S.of_string item) :: (get()))
+        let add item = put (item :: (get()))
 
+        let addstr item = 
+            add (S.of_string item)
         let do_switch sw = 
-            (sw, Arg.String (fun item -> add item), 
+            (sw, Arg.String (fun item -> addstr item), 
                 sprintf "[%s][%s] %s" name (to_string default) desc)
         let args = OList.map do_switch P.switches
+        let () = 
+            add_program_arg name args;
+            add_name name (fun str -> put ((S.of_string str)::(get())))
     end
 
+module Verbose = Set(
+    struct
+        let name = "verbose"
+        let default = false
+        let switches = [ "-v"; "--verbose" ]
+        let desc = "At a minimum, turn on DEBUG logging."
+    end)
+
+open PropBase
+
+let rec try_config_file () = 
+    try parse_config (CfgFile.get())
+    with Not_found -> eprintf "Config file not found\n%!"
+and parse_config fname = 
+    match getConfigType () with
+    | Ini -> with_lex_file (main None (IniParse.main IniLex.ini)) fname
+    | Properties -> with_lex_file (main None (PropParse.main PropLex.main)) fname
+and with_lex_file fn fname = Tools.with_in_file (fun fin -> fn (Lexing.from_channel fin)) fname
+and main ctx parse lex = 
+    match parse lex with
+    | Eof -> ()
+    | Context "" -> main None parse lex
+    | Context c -> main (Some c) parse lex
+    | Pair (k, v) ->
+        let k' = 
+            match ctx with
+            | None -> k
+            | Some c -> c^"."^k
+        in
+        newpair k' v;
+        main ctx parse lex
+and newpair name v = 
+    match NameMap.find_opt name !gNameMap with
+    | None -> Unix.putenv name v
+    | Some put -> put v
+
+let config () =
+    try_config_file ();
+    arg_default ()

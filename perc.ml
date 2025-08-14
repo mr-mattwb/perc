@@ -1,11 +1,21 @@
-open Env
-open Log
-open PercCfg
-
 open Unix
 open Printf
 open Stdlib
 open Arg
+module OList = List
+
+open Env
+open Log
+open PercCfg
+
+let extra_args_to_string = function
+    | [] -> ""
+    | x :: [] -> x
+    | x :: xs ->
+        let buf = Buffer.create 1024 in
+        Buffer.add_string buf x;
+        OList.iter (fun y -> Buffer.add_char buf ','; Buffer.add_string buf y) xs;
+        Buffer.contents buf
 
 let rec main () = 
     Env.config ();
@@ -19,6 +29,7 @@ let rec main () =
     CLog.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
     CLog.debug "%s [%b]" Play.name (Play.get());
     CLog.debug "%s [%b]" Verbose.name (Verbose.get());
+    CLog.debug "%s [%s]" ExtraArgs.name (extra_args_to_string (ExtraArgs.get()));
     run ()
 and run () = 
     let module RLog = LogName(struct let mod_name = "run" end) in
@@ -41,6 +52,6 @@ if not !Sys.interactive then
         main ();
         exit (0)
     with e ->
-        eprintf "[%s] Fatal Error [%s]\n%!" Sys.argv.(0) (Printexc.to_string e);
+        Printf.eprintf "[%s] Fatal Error [%s]\n%!" Sys.argv.(0) (Printexc.to_string e);
         exit (-1)
 ;;

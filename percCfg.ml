@@ -1,6 +1,9 @@
 open Unix
 open Printf
 open Stdlib
+module OList = List
+module Rxp = Str
+
 
 open Tools
 open Env
@@ -90,6 +93,14 @@ module Verbose =
             else clear_verbose()
     end
 
+module ExtraArgs = MultiValue(Ser.Str)(
+    struct
+        type elt = string
+        let name = "extra.args"
+        let switches = [ "-x" ]
+        let desc = "Add more assignments"
+    end)
+
 module type ELT = 
     sig
         val file_duration : file -> return_code
@@ -144,7 +155,14 @@ let with_percolator_file fn =
         | None -> Perc5sWav.percolate
         | Some fname -> Tools.get_file fname
     in with_contents contents fn
-    
 
-
+let extra_args () = 
+    let eq = Rxp.regexp "=" in
+    let add_item str = 
+        match Rxp.split eq str with
+        | [] -> ()
+        | x :: [] -> Unix.putenv x ""
+        | x :: y -> Unix.putenv x (OList.hd y)
+    in
+    OList.iter add_item (ExtraArgs.get())
 

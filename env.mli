@@ -8,54 +8,48 @@ type cfg =
     | Properties
     | Ini
 
-module type STR_PARAMS = 
+module type PARAMS = 
     sig
-        val default : string
         val name : string
         val desc : string
         val switches : string list
+    end
+module type DEFPARAMS = 
+    sig
+        type elt
+        val default : elt
+        include PARAMS
+    end
+
+module type STR_PARAMS = 
+    sig
+        val default : string
+        include PARAMS
     end 
 module type INT_PARAMS = 
     sig
         val default : int
-        val name : string
-        val desc : string
-        val switches : string list
+        include PARAMS
     end
 module type FLT_PARAMS = 
     sig
         val default : float
-        val name : string
-        val desc : string
-        val switches : string list
+        include PARAMS
     end
 module type BOOL_PARAMS = 
     sig
         val default : bool
-        val name : string
-        val desc : string
-        val switches : string list
+        include PARAMS
     end
-module type FLAG_PARAMS = 
-    sig
-        val name : string
-        val switches : string list
-        val desc : string
-    end
-module type PARAMS = 
-    sig
-        type elt
-        val default : elt
-        val name : string
-        val desc : string
-        val switches : string list
-    end 
+module type FLAG_PARAMS = PARAMS
+
 module type FILE_PARAMS = STR_PARAMS
 module type CMD_PARAMS = STR_PARAMS 
+module type MULTI_PARAMS = PARAMS 
 
 module type ELT =
     sig
-        include PARAMS
+        include DEFPARAMS
         val of_string : string -> elt
         val to_string : elt -> string
         val args : (Arg.key * Arg.spec * Arg.doc) list
@@ -85,6 +79,13 @@ module type CMD_ELT =
         val with_in : (in_channel -> 'a) -> string -> 'a
     end
 
+module type MULTI_ELT = 
+    sig
+        type t
+        include ELT with type elt = t list
+        val add : t -> unit
+    end
+
 type unixflag
 val gSkipArgs : unixflag
 
@@ -97,9 +98,9 @@ val args : (string -> unit) -> string -> unit
 val parse_args : string -> unit
 val arg_default : unit -> unit
 
-module Make(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = P.elt
+module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type elt = P.elt
 
-module List(S : Ser.ELT)(P : PARAMS with type elt = S.elt list) : ELT with type elt = P.elt
+module List(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt list) : ELT with type elt = P.elt
 
 module Str(P : STR_PARAMS) : STR_ELT
 module Int(P : INT_PARAMS) : INT_ELT
@@ -124,9 +125,12 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) : ELT with type elt = S
 
 module Hide(E : ELT) : ELT with type elt = E.elt
 
-val try_load_config_file : unit -> unit
-val config : unit -> unit
+module MultiValue(S : Ser.ELT)(P : PARAMS) : MULTI_ELT with type t = S.elt 
 
 module Verbose : BOOL_ELT 
 
-module MultiValue(S : Ser.ELT)(P : PARAMS with type elt = S.elt) : ELT with type elt = S.elt list
+val try_config_file : unit -> unit
+val parse_config : file -> unit
+val with_lex_file : (Lexing.lexbuf -> unit) -> file -> unit
+val config : unit -> unit
+
