@@ -31,7 +31,7 @@ cfg-x:  cfg.cmxa cfg.ml
 	$(OCO) $+ -o $@
 
 redis.cma:  libcredis.a
-	$(OCC) -custom -cclib -L. -ccopt -lcredis -ccopt -lhiredis -a -o $@
+	$(OCC) -custom -cclib -L. -ccopt -lcredis -ccopt lhiredis -a -o $@
 
 libcredis.a:  credis.o
 	ar rcs $@ $+
