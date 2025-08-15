@@ -30,6 +30,15 @@ cfg:  cfg.cma cfg.ml
 cfg-x:  cfg.cmxa cfg.ml
 	$(OCO) $+ -o $@
 
+redis.cma:  libcredis.a
+	$(OCC) -custom -cclib -L. -ccopt -lcredis -ccopt -lhiredis -a -o $@
+
+libcredis.a:  credis.o
+	ar rcs $@ $+
+
+credis.o:  credis.c redis.cmo redis.cmi
+	$(OCC) -o $@ credis.c
+
 lex.ml:  lex.mll
 	$(OLEX) lex.mll
 
@@ -62,6 +71,9 @@ propLex.cmx:  propParse.cmx propLex.ml
 
 propParse.ml:  propParse.mly
 	$(OPRS)  $<
+
+%.cmi:  %.mli
+	$(OCC) -c $<
 
 %.cmo:  %.ml
 	$(OCC) -c $<i
