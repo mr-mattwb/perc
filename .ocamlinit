@@ -1,0 +1,19 @@
+open Unix
+open Printf
+open Stdlib
+module Rxp = Str
+
+(*
+#load "cfg.cma"
+open Env
+
+module MV = MultiValue(Ser.Str)(
+    struct
+        type elt = string
+        let name = "A"
+        let desc = "A"
+        let switches = ["-a"]
+        let default = ""
+    end)
+
+*)
