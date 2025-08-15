@@ -156,13 +156,3 @@ let with_percolator_file fn =
         | Some fname -> Tools.get_file fname
     in with_contents contents fn
 
-let extra_args () = 
-    let eq = Rxp.regexp "=" in
-    let add_item str = 
-        match Rxp.split eq str with
-        | [] -> ()
-        | x :: [] -> Unix.putenv x ""
-        | x :: y -> Unix.putenv x (OList.hd y)
-    in
-    OList.iter add_item (ExtraArgs.get())
-

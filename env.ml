@@ -167,8 +167,26 @@ module Hide(E : ELT) =
     end
 
 module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
+module StrEmpty(P : PARAMS) = Str(
+    struct
+        type elt = string
+        include P
+        let default = ""
+    end)
 module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
+module Int0(P : PARAMS) = Int(
+    struct
+        type elt = int
+        include P
+        let default = 0
+    end)
 module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
+module Flt0(P : PARAMS) = Flt(
+    struct
+        type elt = float
+        include P
+        let default = 0.
+    end)
 module Bool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P end)
 module Set(P : FLAG_PARAMS) =
     struct
@@ -352,7 +370,7 @@ let rec try_config_file () =
     with Not_found -> eprintf "Config file not found\n%!"
 and parse_config fname = 
     match getConfigType () with
-    | Ini -> with_lex_file (main None (IniParse.main IniLex.ini)) fname
+    | Ini -> with_lex_file (main None (IniParse.main IniLex.main)) fname
     | Properties -> with_lex_file (main None (PropParse.main PropLex.main)) fname
 and with_lex_file fn fname = Tools.with_in_file (fun fin -> fn (Lexing.from_channel fin)) fname
 and main ctx parse lex = 

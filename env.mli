@@ -103,8 +103,11 @@ module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type el
 module List(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt list) : ELT with type elt = P.elt
 
 module Str(P : STR_PARAMS) : STR_ELT
+module StrEmpty(P : PARAMS) : STR_ELT
 module Int(P : INT_PARAMS) : INT_ELT
+module Int0(P : PARAMS) : INT_ELT
 module Flt(P : FLT_PARAMS) : FLT_ELT
+module Flt0(P : PARAMS) : FLT_ELT
 module Bool(P : BOOL_PARAMS) : BOOL_ELT
 module Set(P : FLAG_PARAMS) : BOOL_ELT
 module Clear(P : FLAG_PARAMS) : BOOL_ELT

@@ -21,10 +21,10 @@ let eoln = '\n'
 let notWsp = [^ ';' ' ' '\t' '\r']
 let wspcs = [' ' '\t']
 
-rule ini = parse
-    wsp*                                            { ini lexbuf }
-|   comment [^'\n']* (eoln|eof)                     { ini lexbuf }
-|   eoln                                            { ini lexbuf }
+rule main = parse
+    wsp*                                            { main lexbuf }
+|   comment [^'\n']* (eoln|eof)                     { main lexbuf }
+|   eoln                                            { main lexbuf }
 |   eof                                             { EOF }
 |   (keyStart (keyContents+ keyEnd)* as key)        { KEY key }
 |   equal wspcs*                                    { result lexbuf }
