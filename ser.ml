@@ -23,6 +23,17 @@ module Int =
         let of_string v = int_of_string (String.trim v)
         let to_string = string_of_int
     end
+module Int32 =
+    struct
+        type elt = int32
+        let of_string = Int32.of_string
+        let to_string = Int32.to_string
+    end
+module Int64 =
+    struct
+        type elt = int64
+        let of_string = Int64.of_string
+        let to_string = Int64.to_string
 module Flt = 
     struct
         type elt = float
@@ -43,15 +54,16 @@ module Bool =
 
 module List(E : ELT) =
     struct
+        open Lex
         type elt = E.elt list
-        let of_string s = List.map (fun e -> E.of_string e) (Lex.comma_list s)
+        let of_string s = List.map (fun e -> E.of_string e) (item_list s)
         let to_string s = 
             let buf = Buffer.create 1024 in
             let rec aux = function 
                | [] -> 
                     Buffer.contents buf
                | y :: ys -> 
-                    Buffer.add_char buf ','; 
+                    Buffer.add_char buf gSeparator; 
                     Buffer.add_string buf (E.to_string y);
                     aux ys
             in

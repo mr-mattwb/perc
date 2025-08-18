@@ -13,6 +13,8 @@ module type ELT =
 
 module Str : ELT with type elt = string
 module Int : ELT with type elt = int
+module Int32 : ELT with type elt = int32
+module Int64 : ELT with type elt = int64
 module Flt : ELT with type elt = float
 module Bool : ELT with type elt = bool
 

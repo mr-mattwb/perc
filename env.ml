@@ -128,12 +128,16 @@ let getConfigType () =
         eprintf "%s:  Unknown Configuration type [%s].  Default to INI\n%!" Sys.argv.(0) unknown;
         Ini
 
-module NameMap = Map.Make(String)
+module NameMap = 
+    struct
+        include Map.Make(String)
+        let replace key item map = add key item (remove key map)
+    end
 let gNameMap = ref NameMap.empty
 let add_name name (put : string -> unit) = 
     match NameMap.find_opt name !gNameMap with
     | None -> gNameMap := NameMap.add name put !gNameMap
-    | Some _ -> gNameMap := NameMap.add name put (NameMap.remove name !gNameMap)
+    | Some _ -> gNameMap := NameMap.replace name put !gNameMap
 
 module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
