@@ -31,6 +31,16 @@ module type INT_PARAMS =
         val default : int
         include PARAMS
     end
+module type INT32_PARAMS = 
+    sig
+        val default : int32
+        include PARAMS
+    end
+module type INT64_PARAMS = 
+    sig
+        val default : int64
+        include PARAMS
+    end
 module type FLT_PARAMS = 
     sig
         val default : float
@@ -58,6 +68,8 @@ module type ELT =
     end
 module type STR_ELT = ELT with type elt = string
 module type INT_ELT = ELT with type elt = int
+module type INT32_ELT = ELT with type elt = int32
+module type INT64_ELT = ELT with type elt = int64
 module type FLT_ELT = ELT with type elt = float
 module type BOOL_ELT = ELT with type elt = bool
 module type FILE_ELT = 
@@ -105,6 +117,8 @@ module List(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt list) : ELT with ty
 module Str(P : STR_PARAMS) : STR_ELT
 module StrEmpty(P : PARAMS) : STR_ELT
 module Int(P : INT_PARAMS) : INT_ELT
+module Int32(P : INT32_PARAMS) : INT32_ELT
+module Int64(P : INT64_PARAMS) : INT64_ELT
 module Int0(P : PARAMS) : INT_ELT
 module Flt(P : FLT_PARAMS) : FLT_ELT
 module Flt0(P : PARAMS) : FLT_ELT

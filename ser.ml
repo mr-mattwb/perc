@@ -1,6 +1,7 @@
 open Unix
 open Printf
 open Stdlib
+module Rxp = Str
 
 open Tools
 
@@ -101,4 +102,26 @@ module MakeOption(E : ELT)(O : OPTION) =
             | None -> O.none
             | Some s -> E.to_string s
     end
+
+module Time = 
+    struct
+        type elt = int
+        let sep = ":"
+        let rsep = Rxp.regexp sep 
+
+        let to_int = function
+        | "" -> 0
+        | ii -> int_of_string ii
+
+        let of_string hms = 
+            match Rxp.split rsep hms with
+            | [] -> to_int hms
+            | secs :: [] when String.contains hms ':' -> 3600 * (to_int secs)
+            | secs :: [] -> to_int secs
+            | hr :: min :: [] -> ((to_int hr)*3600) + ((to_int min)*60)
+            | hr :: min :: secs :: _ -> ((to_int hr)*3600) + ((to_int min)*60) + (to_int secs)
+        let to_string secs = 
+            sprintf "%02d:%02d:%02d" (secs / 3600) ((secs /60) mod 60) (secs mod 60)
+    end
+
 
