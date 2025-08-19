@@ -192,14 +192,14 @@ module StrEmpty(P : PARAMS) = Str(
 module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
 module Int32(P : INT32_PARAMS) = Make(Ser.Int32)(struct type elt = int32 include P end)
 module Int64(P : INT64_PARAMS) = Make(Ser.Int64)(struct type elt = int64 include P end)
-module Int0(P : PARAMS) = Int(
+module Int_0(P : PARAMS) = Int(
     struct
         type elt = int
         include P
         let default = 0
     end)
 module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
-module Flt0(P : PARAMS) = Flt(
+module Flt_0(P : PARAMS) = Flt(
     struct
         type elt = float
         include P

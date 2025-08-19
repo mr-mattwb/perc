@@ -67,6 +67,20 @@ module ExtraSwitches = MultiValue(Ser.Str)(
         let desc = "Description"
         let switches = [ "-x" ]
     end)
+module TestInt32 = Int32(
+    struct
+        let name = "TESTINT32"
+        let default = 100l
+        let desc = "Test Int32"
+        let switches = ["--i32"]
+    end)
+module TestInt64 = Int64(
+    struct
+        let name = "TESTINT64"
+        let default = 101L
+        let desc = "Test Int64"
+        let switches = ["--i64"]
+    end)
 
 let run () = 
     Env.config();
@@ -74,15 +88,20 @@ let run () =
         PlayCommand.name (PlayCommand.get());
     printf "%s [%s]\n%s [%s]\n" OutFile.name (OutFile.get()) PercFile.name (PercFile.get());
     printf "%s [%d]\n%s [%b]\n%s [%s]\n" Seconds.name (Seconds.get()) Play.name (Play.get()) FileExt.name (FileExt.get());
-    printf "%s [%s]\n%!" ExtraSwitches.name (Unix.getenv ExtraSwitches.name);
-    printf "%s [" ExtraSwitches.name;
-    match ExtraSwitches.get() with
-    | [] -> printf "]\n%!"
-    | x :: [] -> printf "%s]\n%!" x
-    | x :: xs -> 
-        printf "%s" x;
-        OList.iter (fun x -> printf ",%s" x) xs;
-        printf "]\n%!"
+    printf "%s [%ldl]\n%!" TestInt32.name (TestInt32.get());
+    printf "%s [%LdL]\n%!" TestInt64.name (TestInt64.get());
+    try
+        printf "%s [%s]\n%!" ExtraSwitches.name (Unix.getenv ExtraSwitches.name);
+        printf "%s [" ExtraSwitches.name;
+        match ExtraSwitches.get() with
+        | [] -> printf "]\n%!"
+        | x :: [] -> printf "%s]\n%!" x
+        | x :: xs -> 
+            printf "%s" x;
+            OList.iter (fun x -> printf ",%s" x) xs;
+            printf "]\n%!"
+    with Not_found ->
+        eprintf "ExtraSwitches triggered Not_found exception\n%!"
 
 ;;
 
