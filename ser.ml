@@ -34,6 +34,7 @@ module Int64 =
         type elt = int64
         let of_string = Int64.of_string
         let to_string = Int64.to_string
+    end
 module Flt = 
     struct
         type elt = float
