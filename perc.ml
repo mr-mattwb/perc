@@ -29,7 +29,7 @@ let rec main () =
     CLog.debug "%s [%s]" LogLevel.name (LevelSer.to_string (LogLevel.get()));
     CLog.debug "%s [%b]" Play.name (Play.get());
     CLog.debug "%s [%b]" Verbose.name (Verbose.get());
-    CLog.debug "%s [%s]" ExtraArgs.name (extra_args_to_string (ExtraArgs.get()));
+    CLog.debug "%s [%s]" ExtraArgs.name (ExtraArgs.to_string (ExtraArgs.get()));
     run ()
 and run () = 
     let module RLog = LogName(struct let mod_name = "run" end) in

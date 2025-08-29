@@ -113,6 +113,7 @@ val arg_default : unit -> unit
 module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type elt = P.elt
 
 module List(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt list) : ELT with type elt = P.elt
+module ListEmpty(S : Ser.ELT)(P : PARAMS) : ELT with type elt = S.elt list
 
 module Str(P : STR_PARAMS) : STR_ELT
 module StrEmpty(P : PARAMS) : STR_ELT
@@ -129,8 +130,6 @@ module Clear(P : FLAG_PARAMS) : BOOL_ELT
 module File(P : FILE_PARAMS) : FILE_ELT
 module Cmd(P : CMD_PARAMS) : CMD_ELT
 
-module CfgFile : STR_ELT
-
 module Option(S : ELT) : ELT with type elt = S.elt option
 
 module type NONE = 
@@ -144,7 +143,7 @@ module Hide(E : ELT) : ELT with type elt = E.elt
 
 module MultiValue(S : Ser.ELT)(P : PARAMS) : MULTI_ELT with type t = S.elt 
 
-module Verbose : BOOL_ELT 
+module Verbose : BOOL_ELT
 
 val try_config_file : unit -> unit
 val parse_config : file -> unit

@@ -73,7 +73,6 @@ module List(E : ELT) =
             | [] -> ""
             | x :: [] -> (E.to_string x)
             | x :: xs -> Buffer.add_string buf (E.to_string x); aux xs
-
     end
 
 module Option(E : ELT) =

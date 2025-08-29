@@ -128,6 +128,8 @@ let add_program_arg ?(override=false) name args =
                 gProgramArgs := SwMap.add sw (sw, spec, desc) !gProgramArgs
             | Some arg when unix_get_flag gAllowOverride || override -> 
                 gProgramArgs := SwMap.add sw (sw, spec, desc) (SwMap.remove sw !gProgramArgs)
+            | Some (sw', spec', desc') when sw=sw' && desc=desc' ->
+                ()
             | Some _ ->
                 raise (Failure (sprintf "Name[%s] Switch[%s] already exists" name sw)))
             args
@@ -174,6 +176,12 @@ module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type el
 
 module OList = List
 module List(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
+module ListEmpty(S : Ser.ELT)(P : PARAMS) : ELT with type elt = S.elt list = List(S)( 
+    struct 
+        type elt = S.elt list 
+        include P
+        let default = [] 
+    end)
 
 module Hide(E : ELT) = 
     struct

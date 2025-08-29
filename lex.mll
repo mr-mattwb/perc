@@ -23,10 +23,11 @@ let unescape src =
     | n -> aux 0
 }
 
+let escSep = "\\;"
 let wspc = [ ' ' '\t' '\r' '\n' ]
-let begItem = ([^ ';' ' ' '\t' '\r' '\n' ]|"\\;")
-let midItem = ([^ ';' '\n' ]|"\\;")
-let endItem = ([^ ';' ' ' '\t' '\r' '\n' ]|"\\;")
+let begItem = ([^ ';' ' ' '\t' '\r' '\n' ]|escSep)
+let midItem = ([^ ';' '\n' ]|escSep)
+let endItem = ([^ ';' ' ' '\t' '\r' '\n' ]|escSep)
 let eoln = '\n'
 
 rule itemList esc = parse

@@ -58,7 +58,7 @@ module FileExt = Str(
     struct
         let name = "percolate.extension"
         let default = ".wav"
-        let switches = ["-x"; "--file-extension"]
+        let switches = ["-E"; "--file-extension"]
         let desc = "File extension to use for any output files"
     end)
 module ExtraSwitches = MultiValue(Ser.Str)(

@@ -3,8 +3,10 @@ OLEX=ocamllex
 OPRS=ocamlyacc
 UCC=ocamlc -I +unix -I +str
 OCC=ocamlc -I +unix -I +str unix.cma str.cma 
+OCA=ocamlc -I +unix -I +str
 OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
 UCO=ocamlopt -I +unix -I +str
+TOP=ocamlmktop -I +unix -I +str
 MODS=tools lex propBase iniLex propLex ser env log soxi
 ML=tools.ml lex.ml propBase.ml iniParse.ml iniLex.ml propParse.ml propLex.ml ser.ml env.ml log.ml soxi.ml
 PERCML=perc5sWav.ml percCfg.ml
@@ -30,14 +32,17 @@ cfg:  cfg.cma cfg.ml
 cfg-x:  cfg.cmxa cfg.ml
 	$(OCO) $+ -o $@
 
-redis.cma:  libcredis.a
-	$(OCC) -custom -cclib -L. -ccopt -lcredis -ccopt lhiredis -a -o $@
+ccaml:  syslog.cma 
+	$(TOP) -custom -o $@ unix.cma str.cma $+
 
-libcredis.a:  credis.o
+syslog.cma:  libcsyslog.a syslog.cmo syslog.cmi
+	$(OCA) -custom -ccopt -L. -cclib -lcsyslog -a -o $@ syslog.cmo
+
+libcsyslog.a:  csyslog.o 
 	ar rcs $@ $+
 
-credis.o:  credis.c redis.cmo redis.cmi
-	$(OCC) -o $@ credis.c
+csyslog.o:  csyslog.c syslog.cmo syslog.cmi
+	$(UCC) -o $@ csyslog.c
 
 lex.ml:  lex.mll
 	$(OLEX) lex.mll
@@ -96,8 +101,7 @@ cfg.cmxa:  $(CMX)
 
 clean:
 	rm *.cm[ioax] *.cmxa *.o lex.ml iniLex.ml iniParse.ml iniParse.mli propLex.ml propParse.ml propParse.mli *.a perc perc-x cfg cfg-x
-	rm .depend.ml
-	rm .depend.mli
+	rm csyslog.o libcsyslog.a syslog.cm?
 
 depend: dep
 dep:  *.ml *.mli
