@@ -5,6 +5,7 @@ type cmd = string
 type seconds = int
 type return_code = int
 type perms = int
+type ucid = private string
 
 val name : file
 val basename : file
@@ -40,5 +41,7 @@ val with_temp_file : string -> string -> (file -> 'a) -> 'a
 
 val spawn : ('a -> 'b) -> 'a -> int * Unix.process_status
 
+val int_of_string : string -> int
 val tolerint_of_string : string -> int
 val ceil_of_string : string -> int
+

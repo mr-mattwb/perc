@@ -9,6 +9,7 @@ type cmd = string
 type seconds = int
 type return_code = int
 type perms = int
+type ucid = string
 
 let name = Sys.argv.(0)
 let basename = Filename.basename name   
@@ -108,16 +109,59 @@ let spawn fn arg =
     | 0 -> forkagain ()
     | pid -> Unix.waitpid [] (-1)
 
+let int_of_string s = int_of_string (String.trim s)
+
 let tolerint_of_string str = 
     let rex = Str.regexp {|^\([0-9]*\).*$|} in
     match Str.replace_first rex {|\1|} str with
     | "" -> 0
     | num -> 
-        try int_of_string num
+        try Stdlib.int_of_string num
         with _ -> raise (Failure (sprintf "tolerint_of_string [%s]" num))
 
 let ceil_of_string str =
     int_of_float (Float.ceil (float_of_string str))
 
+let ucid_of_string s = s
+let string_of_ucid s = s
+let hexs = [| '0';'1';'2';'3';'4';'5';'6';'7';'8';'9';'A';'B';'C';'D';'E';'F' |]
+let new_ucid ?(len=16) () = 
+    let buf = Buffer.create len in
+    let rec loop = function
+        | n when n < len -> 
+            Buffer.add_char buf hexs.(Random.int len);
+            loop (n+1)
+        
+        | n ->
+            Buffer.contents buf
+    in loop 0
+
+let make_intTable ?(len=16) () =
+    let itbl = Hashtbl.create len in
+    let rec loop = function
+        | n when n < len ->
+            Hashtbl.add itbl hexs.(n) n;
+            loop (n+1)
+        | _ ->
+            itbl
+    in 
+    let loaded = loop 0 in
+    Hashtbl.add loaded 'a' 10;
+    Hashtbl.add loaded 'b' 11;
+    Hashtbl.add loaded 'c' 12;
+    Hashtbl.add loaded 'd' 13;
+    Hashtbl.add loaded 'e' 14;
+    Hashtbl.add loaded 'f' 15;
+    loaded
+let ints = make_intTable()
+
+let int_of_ucid ucid =
+    let rec loop iuc = function
+        | n when n <= (String.length ucid) - 1 ->
+            let nd = Hashtbl.find ints ucid.[n] in
+            loop (nd + (iuc * 16)) (n + 1)
+        | n -> 
+            iuc
+    in loop 0 0
 
 
