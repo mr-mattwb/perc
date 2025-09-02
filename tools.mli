@@ -45,3 +45,12 @@ val int_of_string : string -> int
 val tolerint_of_string : string -> int
 val ceil_of_string : string -> int
 
+val str_reverse : string -> string
+
+val ucid_of_string : string -> ucid
+val string_of_ucid : ucid -> string
+val new_ucid : ?length:int -> unit -> ucid
+
+val int64_of_ucid : ucid -> int64
+val ucid_of_int64 : ?length:int -> int64 -> ucid
+

@@ -122,46 +122,75 @@ let tolerint_of_string str =
 let ceil_of_string str =
     int_of_float (Float.ceil (float_of_string str))
 
+let str_reverse str = 
+    let buf = Buffer.create (String.length str) in
+    let rec loop = function
+        | n when n < 0 -> 
+            Buffer.contents buf
+        | n ->
+            Buffer.add_char buf str.[n];
+            loop (n-1)
+    in loop (String.length str - 1)
+
+let hexs = [| '0';'1';'2';'3';'4';'5';'6';'7';'8';'9';'A';'B';'C';'D';'E';'F' |]
+
 let ucid_of_string s = s
 let string_of_ucid s = s
-let hexs = [| '0';'1';'2';'3';'4';'5';'6';'7';'8';'9';'A';'B';'C';'D';'E';'F' |]
-let new_ucid ?(len=16) () = 
-    let buf = Buffer.create len in
+let new_ucid ?(length=16) () = 
+    let buf = Buffer.create length in
     let rec loop = function
-        | n when n < len -> 
-            Buffer.add_char buf hexs.(Random.int len);
+        | n when n < length -> 
+            Buffer.add_char buf hexs.(Random.int length);
             loop (n+1)
         
         | n ->
             Buffer.contents buf
-    in loop 0
+    in 
+    (* First digit can't have the top two bits sset *)
+    Buffer.add_char buf (hexs.(Random.int 3));
+    loop 1
 
-let make_intTable ?(len=16) () =
-    let itbl = Hashtbl.create len in
+let ( -*- ) = Int64.mul
+let ( -+- ) = Int64.add
+let ( -%- ) = Int64.rem
+let ( -/- ) = Int64.div
+
+let make_intTable ?(length=16) () =
+    let itbl = Hashtbl.create length in
     let rec loop = function
-        | n when n < len ->
-            Hashtbl.add itbl hexs.(n) n;
+        | n when n < length ->
+            Hashtbl.add itbl hexs.(n) (Int64.of_int n);
             loop (n+1)
         | _ ->
             itbl
     in 
     let loaded = loop 0 in
-    Hashtbl.add loaded 'a' 10;
-    Hashtbl.add loaded 'b' 11;
-    Hashtbl.add loaded 'c' 12;
-    Hashtbl.add loaded 'd' 13;
-    Hashtbl.add loaded 'e' 14;
-    Hashtbl.add loaded 'f' 15;
+    Hashtbl.add loaded 'a' 10L;
+    Hashtbl.add loaded 'b' 11L;
+    Hashtbl.add loaded 'c' 12L;
+    Hashtbl.add loaded 'd' 13L;
+    Hashtbl.add loaded 'e' 14L;
+    Hashtbl.add loaded 'f' 15L;
     loaded
 let ints = make_intTable()
 
-let int_of_ucid ucid =
+let int64_of_ucid ucid =
     let rec loop iuc = function
         | n when n <= (String.length ucid) - 1 ->
             let nd = Hashtbl.find ints ucid.[n] in
-            loop (nd + (iuc * 16)) (n + 1)
+            loop (nd -+- (iuc -*- 16L)) (n + 1)
         | n -> 
             iuc
-    in loop 0 0
+    in loop 0L 0
 
+let ucid_of_int64 ?(length=16) i64 = 
+    let len = Int64.of_int 16 in
+    let buf = Buffer.create length in
+    let rec loop = function
+        | acc when acc <= 0L ->
+            str_reverse (Buffer.contents buf)
+        | acc ->
+            Buffer.add_char buf hexs.(Int64.to_int (acc -%- len));
+            loop (acc -/- len)
+    in loop i64
 

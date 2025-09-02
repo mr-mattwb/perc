@@ -75,16 +75,16 @@ module List(E : ELT) =
             | x :: xs -> Buffer.add_string buf (E.to_string x); aux xs
     end
 
-module Option(E : ELT) =
+module Option(E : ELT) : ELT with type elt = E.elt option =
     struct
         type elt = E.elt option
         let of_string str = 
             match str with
             | "" -> None
-            | ss -> Some ss
+            | ss -> Some (E.of_string ss)
         let to_string = function
             | None -> ""
-            | Some ss -> ss
+            | Some ss -> E.to_string ss
     end
 
 module type OPTION = 
@@ -123,4 +123,11 @@ module Time =
             sprintf "%02d:%02d:%02d" (secs / 3600) ((secs /60) mod 60) (secs mod 60)
     end
 
+module Ucid = 
+    struct
+        type elt = ucid
+        let of_string s = ucid_of_string s
+        let to_string s = string_of_ucid s
+        let make = new_ucid
+    end
 
