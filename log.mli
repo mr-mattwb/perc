@@ -39,7 +39,7 @@ module type LEVEL_SER = Ser.ELT with type elt = level
 module type LEVEL_PARAMS = 
     sig
         val name : string
-        val default : level
+        val default : unit -> level
         val switches : string list
         val desc : string
     end 
@@ -49,7 +49,7 @@ module type OUT_SER = Ser.ELT with type elt = out list
 module type OUT_PARAMS =
     sig
         val name : string
-        val default : out list
+        val default : unit -> out list
         val switches : string list
         val desc : string
     end

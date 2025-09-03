@@ -37,7 +37,7 @@ module type LEVEL_SER = Ser.ELT with type elt = level
 module type LEVEL_PARAMS = 
     sig
         val name : string
-        val default : level
+        val default : unit -> level
         val switches : string list
         val desc : string
     end 
@@ -47,7 +47,7 @@ module type OUT_SER = Ser.ELT with type elt = out list
 module type OUT_PARAMS =
     sig
         val name : string
-        val default : out list
+        val default : unit -> out list
         val switches : string list
         val desc : string
     end
@@ -82,6 +82,7 @@ module LevelEnv(LP : LEVEL_PARAMS) = Env.Make(LevelSer)(
     struct
         type elt = level
         include LP
+        let default = LP.default
     end)
 
 module OutSerItem = 
@@ -241,7 +242,7 @@ module ModSubName = Env.Hide(Env.Str(
 module Level = LevelEnv(
     struct
         let name = "logging.level"
-        let default = Warn
+        let default () = Warn
         let switches = ["--log-level"]
         let desc = "Logging level"
     end)
@@ -249,7 +250,7 @@ module Targets = OutEnv(
     struct
         type elt = out list
         let name = "logging.targets"
-        let default = [Channel stderr]
+        let default () = [Channel stderr]
         let switches = ["--log-targets"]
         let desc = "Log targets"
     end)

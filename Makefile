@@ -20,6 +20,9 @@ CFGCMA=cfg.cma
 
 all:  cfg.cma cfg.cmxa perc cfg perc-x cfg-x
 
+install:
+	
+
 perc:  cfg.cma $(PERCCMO) perc.ml
 	$(UCC) $+ -o $@
 

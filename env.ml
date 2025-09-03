@@ -20,6 +20,12 @@ module type DEFPARAMS =
         val default : elt
         include PARAMS
     end
+module type DEFUNPARAMS = 
+    sig
+        type elt
+        val default : unit -> elt
+        include PARAMS
+    end
 module type STR_PARAMS = 
     sig
         val default : string
@@ -55,10 +61,11 @@ module type FLAG_PARAMS = PARAMS
 module type FILE_PARAMS = STR_PARAMS
 module type CMD_PARAMS = STR_PARAMS
 module type MULTI_PARAMS = PARAMS
+module type UCID_PARAMS = PARAMS
 
 module type ELT =
     sig
-        include DEFPARAMS
+        include DEFUNPARAMS
         val of_string : string -> elt
         val to_string : elt -> string
         val args : (Arg.key * Arg.spec * Arg.doc) list
@@ -97,6 +104,11 @@ module type MULTI_ELT =
         val add : t -> unit
     end
 
+module type UCID_ELT = 
+    sig
+        include ELT with type elt = ucid
+        val create : unit -> elt
+    end
 
 type unixflag = string
 let gSkipArgs = "SKIP_ARGS"
@@ -153,7 +165,7 @@ let add_name name (put : string -> unit) =
     | None -> gNameMap := NameMap.add name put !gNameMap
     | Some _ -> gNameMap := NameMap.replace name put !gNameMap
 
-module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type elt = P.elt =
+module Make(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
         include S
         let name = P.name
@@ -163,11 +175,11 @@ module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type el
         let args = 
             List.map (fun switch -> 
                 (switch, Arg.String (fun v -> Unix.putenv name v), 
-                    sprintf "[%s][%s] %s" P.name (S.to_string P.default) P.desc))
+                    sprintf "[%s][%s] %s" P.name (S.to_string (default())) P.desc))
                 switches
         let get () = 
             try S.of_string (Unix.getenv name) 
-            with e -> P.default
+            with e -> default()
         let put v = Unix.putenv name (S.to_string v)
         let () = 
             add_program_arg name args;
@@ -175,12 +187,12 @@ module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type el
     end
 
 module OList = List
-module List(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
+module List(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
 module ListEmpty(S : Ser.ELT)(P : PARAMS) : ELT with type elt = S.elt list = List(S)( 
     struct 
         type elt = S.elt list 
         include P
-        let default = [] 
+        let default () = [] 
     end)
 
 module Hide(E : ELT) = 
@@ -190,30 +202,30 @@ module Hide(E : ELT) =
             OList.iter (fun switch -> gProgramArgs := SwMap.remove switch !gProgramArgs ) E.switches
     end
 
-module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
+module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P let default () = P.default end)
 module StrEmpty(P : PARAMS) = Str(
     struct
         type elt = string
         include P
         let default = ""
     end)
-module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
-module Int32(P : INT32_PARAMS) = Make(Ser.Int32)(struct type elt = int32 include P end)
-module Int64(P : INT64_PARAMS) = Make(Ser.Int64)(struct type elt = int64 include P end)
+module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P let default () = P.default end)
+module Int32(P : INT32_PARAMS) = Make(Ser.Int32)(struct type elt = int32 include P let default () = P.default end)
+module Int64(P : INT64_PARAMS) = Make(Ser.Int64)(struct type elt = int64 include P let default () = P.default end)
 module Int_0(P : PARAMS) = Int(
     struct
         type elt = int
         include P
         let default = 0
     end)
-module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
+module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P let default () = P.default end)
 module Flt_0(P : PARAMS) = Flt(
     struct
         type elt = float
         include P
         let default = 0.
     end)
-module Bool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P end)
+module Bool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P let default () = P.default end)
 module Set(P : FLAG_PARAMS) =
     struct
         include Bool(
@@ -224,7 +236,7 @@ module Set(P : FLAG_PARAMS) =
             end)
         let args = 
             OList.map (fun switch ->
-                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name default P.desc))
+                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "true")), sprintf "[%s][%b] %s" P.name false P.desc))
                 switches
         let () = add_program_arg ~override:true name args
     end
@@ -238,7 +250,7 @@ module Clear(P : FLAG_PARAMS) =
             end)
         let args = 
             OList.map (fun switch -> 
-                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name default P.desc))
+                (switch, Arg.Unit (fun () -> (Unix.putenv P.name "false")), sprintf "[%s][%b] %s" P.name true P.desc))
                 switches
         let () = add_program_arg ~override:true name args
     end
@@ -250,7 +262,7 @@ module File(P : FILE_PARAMS) =
                 type elt = file
                 let name = P.name
                 let desc = P.desc
-                let default = P.default
+                let default () = P.default
                 let switches = P.switches
             end)
         include F
@@ -299,10 +311,10 @@ module Option(S : ELT) =
             | None -> ""
             | Some str -> S.to_string str
         let name = S.name
-        let default = 
-            match S.to_string S.default with
+        let default () = 
+            match S.to_string (S.default()) with
             | "" -> None
-            | _ -> Some S.default
+            | _ -> Some (S.default())
         let switches = S.switches
         let desc = S.desc
         let args = S.args
@@ -333,7 +345,7 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) =
             | None -> snone
             | Some msg -> S.to_string msg
         let name = S.name
-        let default  = Some S.default
+        let default () = Some (S.default())
         let switches = S.switches
         let desc = S.desc
         let args = S.args
@@ -352,20 +364,20 @@ module MultiValue(S : Ser.ELT)(P : PARAMS) : MULTI_ELT with type t = S.elt =
         let name = P.name
         let switches = P.switches
         let desc = P.desc
-        let default = []
+        let default () = []
         module LS = List(S)(
             struct
                 type elt = S.elt list
                 let name = P.name
                 let switches = P.switches
                 let desc = P.desc
-                let default = []
+                let default () = []
             end)
         let of_string = LS.of_string
         let to_string = LS.to_string
         type t = S.elt
         type elt = t list
-        let rec get () = try LS.of_string (Unix.getenv name) with Not_found -> default
+        let rec get () = try LS.of_string (Unix.getenv name) with Not_found -> default ()
         and put v = Unix.putenv name (LS.to_string v)
 
         let add item = put (item :: (get()))
@@ -374,12 +386,24 @@ module MultiValue(S : Ser.ELT)(P : PARAMS) : MULTI_ELT with type t = S.elt =
             add (S.of_string item)
         let do_switch sw = 
             (sw, Arg.String (fun item -> addstr item), 
-                sprintf "[%s][%s] %s" name (to_string default) desc)
+                sprintf "[%s][%s] %s" name (to_string (default())) desc)
         let args = OList.map do_switch P.switches
-        let () = 
+        let () =
             add_program_arg name args;
             add_name name (fun str -> put ((S.of_string str)::(get())))
     end
+
+module Ucid(P : UCID_PARAMS) = 
+    struct
+        include Make(Ser.Ucid)(
+            struct
+                type elt = ucid
+                include P
+                let default () = new_ucid()
+            end)
+        let create () = new_ucid()
+    end
+
 
 module Verbose = Set(
     struct

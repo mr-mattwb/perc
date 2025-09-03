@@ -146,8 +146,7 @@ let new_ucid ?(length=16) () =
         | n ->
             Buffer.contents buf
     in 
-    (* First digit can't have the top two bits sset *)
-    Buffer.add_char buf (hexs.(Random.int 3));
+    Buffer.add_char buf hexs.(Random.int 3);
     loop 1
 
 let ( -*- ) = Int64.mul
@@ -193,4 +192,20 @@ let ucid_of_int64 ?(length=16) i64 =
             Buffer.add_char buf hexs.(Int64.to_int (acc -%- len));
             loop (acc -/- len)
     in loop i64
+
+
+let ucid_of_int64 ?(base=16) iuc =
+    let basel = Int64.of_int base in
+    let buf = Buffer.create base in
+    let rec loop = function
+        | 0L -> str_reverse (Buffer.contents buf)
+        | n ->
+            Buffer.add_char buf hexs.(Int64.to_int (n |%| basel));
+            loop (Int64.div n basel) 
+    in 
+    loop iuc
+
+let rm fn = Sys.remove fn
+let move src dst = Sys.rename src dst 
+let copy src dst = put_file dst (get_file src)
 

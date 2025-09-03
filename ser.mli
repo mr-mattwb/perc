@@ -26,11 +26,16 @@ module type OPTION =
     end
 module MakeOption(E : ELT)(O : OPTION) : ELT with type elt = E.elt option
 
-module Time : ELT with type elt = private int 
+module Time : 
+    sig
+        include ELT with type elt = private int
+        val now : unit -> elt
+        val to_int : elt -> int
+    end
 
 module Ucid : 
     sig
-        include ELT with type elt = Tools.ucid
-        val make : ?length:int -> unit -> elt
+        include ELT with type elt = ucid
+        val make : unit -> ucid
     end
 

@@ -121,13 +121,17 @@ module Time =
             | hr :: min :: secs :: _ -> ((to_int hr)*3600) + ((to_int min)*60) + (to_int secs)
         let to_string secs = 
             sprintf "%02d:%02d:%02d" (secs / 3600) ((secs /60) mod 60) (secs mod 60)
+
+        let now () = 
+            let tm = Unix.localtime (Unix.time()) in
+            (tm.tm_hour * 3600) + (tm.tm_min * 60) + tm.tm_sec
+        let to_int s = s
     end
 
 module Ucid = 
     struct
         type elt = ucid
-        let of_string s = ucid_of_string s
-        let to_string s = string_of_ucid s
-        let make = new_ucid
+        let of_string = ucid_of_string
+        let to_string = string_of_ucid
+        let make () = new_ucid ()
     end
-

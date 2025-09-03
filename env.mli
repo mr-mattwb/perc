@@ -20,7 +20,12 @@ module type DEFPARAMS =
         val default : elt
         include PARAMS
     end
-
+module type DEFUNPARAMS =
+    sig
+        type elt
+        val default : unit -> elt
+        include PARAMS
+    end
 module type STR_PARAMS = 
     sig
         val default : string
@@ -56,10 +61,11 @@ module type FLAG_PARAMS = PARAMS
 module type FILE_PARAMS = STR_PARAMS
 module type CMD_PARAMS = STR_PARAMS 
 module type MULTI_PARAMS = PARAMS 
+module type UCID_PARAMS = PARAMS
 
 module type ELT =
     sig
-        include DEFPARAMS
+        include DEFUNPARAMS
         val of_string : string -> elt
         val to_string : elt -> string
         val args : (Arg.key * Arg.spec * Arg.doc) list
@@ -98,6 +104,12 @@ module type MULTI_ELT =
         val add : t -> unit
     end
 
+module type UCID_ELT =
+    sig
+        include ELT with type elt = Tools.ucid 
+        val create : unit -> elt
+    end
+
 type unixflag
 val gSkipArgs : unixflag
 
@@ -110,9 +122,9 @@ val args : (string -> unit) -> string -> unit
 val parse_args : string -> unit
 val arg_default : unit -> unit
 
-module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type elt = P.elt
+module Make(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt) : ELT with type elt = P.elt
 
-module List(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt list) : ELT with type elt = P.elt
+module List(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt list) : ELT with type elt = P.elt
 module ListEmpty(S : Ser.ELT)(P : PARAMS) : ELT with type elt = S.elt list
 
 module Str(P : STR_PARAMS) : STR_ELT
@@ -142,6 +154,8 @@ module MakeOption(S : ELT)(N : NONE with type o = S.elt) : ELT with type elt = S
 module Hide(E : ELT) : ELT with type elt = E.elt
 
 module MultiValue(S : Ser.ELT)(P : PARAMS) : MULTI_ELT with type t = S.elt 
+
+module Ucid(P : UCID_PARAMS) : ELT with type elt = ucid
 
 module Verbose : BOOL_ELT
 
