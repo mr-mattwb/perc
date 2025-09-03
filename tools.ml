@@ -182,18 +182,6 @@ let int64_of_ucid ucid =
             iuc
     in loop 0L 0
 
-let ucid_of_int64 ?(length=16) i64 = 
-    let len = Int64.of_int 16 in
-    let buf = Buffer.create length in
-    let rec loop = function
-        | acc when acc <= 0L ->
-            str_reverse (Buffer.contents buf)
-        | acc ->
-            Buffer.add_char buf hexs.(Int64.to_int (acc -%- len));
-            loop (acc -/- len)
-    in loop i64
-
-
 let ucid_of_int64 ?(base=16) iuc =
     let basel = Int64.of_int base in
     let buf = Buffer.create base in
