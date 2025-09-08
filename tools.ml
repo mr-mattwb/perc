@@ -200,7 +200,7 @@ let ucid_of_int64 ?(base=16) iuc =
     let rec loop = function
         | 0L -> str_reverse (Buffer.contents buf)
         | n ->
-            Buffer.add_char buf hexs.(Int64.to_int (n |%| basel));
+            Buffer.add_char buf hexs.(Int64.to_int (n -%- basel));
             loop (Int64.div n basel) 
     in 
     loop iuc

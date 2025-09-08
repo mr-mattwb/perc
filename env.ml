@@ -65,7 +65,7 @@ module type UCID_PARAMS = PARAMS
 
 module type ELT =
     sig
-        include DEFUNPARAMS
+        include DEFPARAMS
         val of_string : string -> elt
         val to_string : elt -> string
         val args : (Arg.key * Arg.spec * Arg.doc) list
@@ -165,7 +165,7 @@ let add_name name (put : string -> unit) =
     | None -> gNameMap := NameMap.add name put !gNameMap
     | Some _ -> gNameMap := NameMap.replace name put !gNameMap
 
-module Make(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt) : ELT with type elt = P.elt =
+module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
         include S
         let name = P.name
@@ -175,7 +175,7 @@ module Make(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt) : ELT with type 
         let args = 
             List.map (fun switch -> 
                 (switch, Arg.String (fun v -> Unix.putenv name v), 
-                    sprintf "[%s][%s] %s" P.name (S.to_string (default())) P.desc))
+                    sprintf "[%s][%s] %s" P.name (S.to_string (default))) P.desc))
                 switches
         let get () = 
             try S.of_string (Unix.getenv name) 
@@ -187,7 +187,7 @@ module Make(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt) : ELT with type 
     end
 
 module OList = List
-module List(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
+module List(S : Ser.ELT)(P : DEFNPARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
 module ListEmpty(S : Ser.ELT)(P : PARAMS) : ELT with type elt = S.elt list = List(S)( 
     struct 
         type elt = S.elt list 
