@@ -57,8 +57,11 @@ module type BOOL_PARAMS =
         include PARAMS
     end
 module type FLAG_PARAMS = PARAMS
-
 module type FILE_PARAMS = STR_PARAMS
+module type PATH_PARAMS =
+    sig
+        val path : unit -> file
+    end
 module type CMD_PARAMS = STR_PARAMS
 module type MULTI_PARAMS = PARAMS
 module type UCID_PARAMS = PARAMS
@@ -78,16 +81,27 @@ module type INT32_ELT = ELT with type elt = int32
 module type INT64_ELT = ELT with type elt = int64
 module type FLT_ELT = ELT with type elt = float
 module type BOOL_ELT = ELT with type elt = bool
-module type FILE_ELT = 
+module type PATH =
     sig
-        include ELT with type elt = file
+        val path : unit -> file
         val exists : unit -> bool
         val file : unit -> file option
         val base : unit -> file
-        val dir : unit -> dir
+        val dir : unit -> file
         val is_dir : unit -> bool
         val touch : unit -> unit
-        val mkdir : perms -> unit
+        val mkdir : ?perms:int -> unit -> unit
+    end
+module type FILE_ELT = 
+    sig
+        include ELT with type elt = file
+        include PATH
+    end
+module type SFILE_ELT =
+    sig
+        module Dir : FILE_ELT
+        module File : FILE_ELT
+        include PATH
     end
 module type CMD_ELT = 
     sig
@@ -255,6 +269,30 @@ module Clear(P : FLAG_PARAMS) =
         let () = add_program_arg ~override:true name args
     end
 
+
+module MakePath(E : PATH_PARAMS) =
+    struct
+        let path () = E.path()
+        let exists () = Sys.file_exists (path())
+        let file () =
+            if exists() then Some (path())
+            else None
+        let base () = Filename.basename (path())
+        let dir () = Filename.dirname (path())   
+        let is_dir () = 
+            match file() with
+            | None -> false
+            | Some f -> (stat f).st_kind = S_DIR
+        let touch () = 
+            let fname = path() in
+            if Sys.file_exists fname && (stat fname).st_kind = S_DIR then
+                Unix.closedir (Unix.opendir fname)
+            else
+                Tools.with_out_file flush fname
+        let mkdir ?(perms=0o777) () = 
+            try Unix.mkdir (path()) perms
+            with Unix_error (EEXIST, "mkdir", _) -> ()
+    end
 module File(P : FILE_PARAMS) = 
     struct
         module F = Make(Ser.Str)(
@@ -266,23 +304,20 @@ module File(P : FILE_PARAMS) =
                 let switches = P.switches
             end)
         include F
-        let exists () = Sys.file_exists (F.get())
-        let file () = 
-            if exists() then Some (get())
-            else None
-        let base () = Filename.basename (get())
-        let dir () = Filename.dirname (get())
-        let is_dir () = 
-            match file() with
-            | None -> false
-            | Some f -> (stat f).st_kind = S_DIR
-        let touch () = 
-            let fname = get() in
-            if Sys.file_exists fname && (stat fname).st_kind = S_DIR then
-                Unix.closedir (Unix.opendir fname)
-            else
-                Tools.with_out_file flush fname
-        let mkdir perms = Unix.mkdir (get()) perms
+        include MakePath(
+            struct
+                let path () = F.get ()
+            end)
+    end
+module DirFile(D : FILE_PARAMS)(F : FILE_PARAMS) =
+    struct
+        module MakeFile = File
+        module Dir = MakeFile(D)
+        module File = MakeFile(F)
+        include MakePath(
+            struct
+                let path () = Filename.concat (Dir.path()) (File.path())
+            end)
     end
 
 module Cmd(P : CMD_PARAMS) =

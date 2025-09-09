@@ -57,8 +57,11 @@ module type BOOL_PARAMS =
         include PARAMS
     end
 module type FLAG_PARAMS = PARAMS
-
 module type FILE_PARAMS = STR_PARAMS
+module type PATH_PARAMS = 
+    sig
+        val path : unit -> file
+    end
 module type CMD_PARAMS = STR_PARAMS 
 module type MULTI_PARAMS = PARAMS 
 module type UCID_PARAMS = PARAMS
@@ -78,16 +81,27 @@ module type INT32_ELT = ELT with type elt = int32
 module type INT64_ELT = ELT with type elt = int64
 module type FLT_ELT = ELT with type elt = float
 module type BOOL_ELT = ELT with type elt = bool
-module type FILE_ELT = 
+module type PATH = 
     sig
-        include ELT with type elt = file
+        val path : unit -> file
         val exists : unit -> bool
         val file : unit -> file option
         val base : unit -> file
-        val dir : unit -> dir
+        val dir : unit -> file
         val is_dir : unit -> bool
         val touch : unit -> unit
-        val mkdir : perms -> unit
+        val mkdir : ?perms:int -> unit -> unit
+    end
+module type FILE_ELT =
+    sig
+        include ELT with type elt = file
+        include PATH
+    end
+module type SFILE_ELT =
+    sig
+        module Dir : FILE_ELT
+        module File : FILE_ELT
+        include PATH
     end
 module type CMD_ELT = 
     sig
@@ -139,7 +153,9 @@ module Bool(P : BOOL_PARAMS) : BOOL_ELT
 module Set(P : FLAG_PARAMS) : BOOL_ELT
 module Clear(P : FLAG_PARAMS) : BOOL_ELT
 
+module MakePath(E : PATH_PARAMS) : PATH
 module File(P : FILE_PARAMS) : FILE_ELT
+module DirFile(D : FILE_PARAMS)(F : FILE_PARAMS) : SFILE_ELT
 module Cmd(P : CMD_PARAMS) : CMD_ELT
 
 module Option(S : ELT) : ELT with type elt = S.elt option
