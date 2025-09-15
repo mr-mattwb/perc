@@ -3,126 +3,7 @@ open Printf
 open Stdlib
 
 open Tools
-
-type cfg = 
-    | Properties
-    | Ini
-
-module type PARAMS = 
-    sig
-        val name : string
-        val desc : string
-        val switches : string list
-    end
-module type DEFPARAMS = 
-    sig
-        type elt
-        val default : elt
-        include PARAMS
-    end
-module type DEFUNPARAMS = 
-    sig
-        type elt
-        val default : unit -> elt
-        include PARAMS
-    end
-module type STR_PARAMS = 
-    sig
-        val default : string
-        include PARAMS
-    end 
-module type INT_PARAMS = 
-    sig
-        val default : int
-        include PARAMS
-    end
-module type INT32_PARAMS = 
-    sig
-        val default : int32
-        include PARAMS
-    end
-module type INT64_PARAMS = 
-    sig
-        val default : int64
-        include PARAMS
-    end
-module type FLT_PARAMS = 
-    sig
-        val default : float
-        include PARAMS
-    end
-module type BOOL_PARAMS = 
-    sig
-        val default : bool
-        include PARAMS
-    end
-module type FLAG_PARAMS = PARAMS
-module type FILE_PARAMS = STR_PARAMS
-module type PATH_PARAMS =
-    sig
-        val path : unit -> file
-    end
-module type CMD_PARAMS = STR_PARAMS
-module type MULTI_PARAMS = PARAMS
-module type UCID_PARAMS = PARAMS
-
-module type ELT =
-    sig
-        include DEFPARAMS
-        val of_string : string -> elt
-        val to_string : elt -> string
-        val args : (Arg.key * Arg.spec * Arg.doc) list
-        val get : unit -> elt
-        val put : elt -> unit
-    end
-module type STR_ELT = ELT with type elt = string
-module type INT_ELT = ELT with type elt = int
-module type INT32_ELT = ELT with type elt = int32
-module type INT64_ELT = ELT with type elt = int64
-module type FLT_ELT = ELT with type elt = float
-module type BOOL_ELT = ELT with type elt = bool
-module type PATH =
-    sig
-        val path : unit -> file
-        val exists : unit -> bool
-        val file : unit -> file option
-        val base : unit -> file
-        val dir : unit -> file
-        val is_dir : unit -> bool
-        val touch : unit -> unit
-        val mkdir : ?perms:int -> unit -> unit
-    end
-module type FILE_ELT = 
-    sig
-        include ELT with type elt = file
-        include PATH
-    end
-module type SFILE_ELT =
-    sig
-        module Dir : FILE_ELT
-        module File : FILE_ELT
-        include PATH
-    end
-module type CMD_ELT = 
-    sig
-        include ELT with type elt = cmd
-        val run : unit -> return_code
-        val run_args : cmd -> return_code
-        val with_in : (in_channel -> 'a) -> string -> 'a 
-    end
-
-module type MULTI_ELT =
-    sig
-        type t
-        include ELT with type elt = t list
-        val add : t -> unit
-    end
-
-module type UCID_ELT = 
-    sig
-        include ELT with type elt = ucid
-        val create : unit -> elt
-    end
+open EnvParam
 
 type unixflag = string
 let gSkipArgs = "SKIP_ARGS"
@@ -179,7 +60,7 @@ let add_name name (put : string -> unit) =
     | None -> gNameMap := NameMap.add name put !gNameMap
     | Some _ -> gNameMap := NameMap.replace name put !gNameMap
 
-module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type elt = P.elt =
+module Make(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt) : ELT with type elt = P.elt =
     struct
         include S
         let name = P.name
@@ -189,7 +70,7 @@ module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type el
         let args = 
             List.map (fun switch -> 
                 (switch, Arg.String (fun v -> Unix.putenv name v), 
-                    sprintf "[%s][%s] %s" P.name (S.to_string (default))) P.desc))
+                    sprintf "[%s][%s] %s" P.name (S.to_string (default())) P.desc))
                 switches
         let get () = 
             try S.of_string (Unix.getenv name) 
@@ -201,7 +82,7 @@ module Make(S : Ser.ELT)(P : DEFPARAMS with type elt = S.elt) : ELT with type el
     end
 
 module OList = List
-module List(S : Ser.ELT)(P : DEFNPARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
+module List(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt list) : ELT with type elt  = P.elt = Make(Ser.List(S))(P)
 module ListEmpty(S : Ser.ELT)(P : PARAMS) : ELT with type elt = S.elt list = List(S)( 
     struct 
         type elt = S.elt list 
@@ -216,37 +97,37 @@ module Hide(E : ELT) =
             OList.iter (fun switch -> gProgramArgs := SwMap.remove switch !gProgramArgs ) E.switches
     end
 
-module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P let default () = P.default end)
+module Str(P : STR_PARAMS) = Make(Ser.Str)(struct type elt = string include P end)
 module StrEmpty(P : PARAMS) = Str(
     struct
         type elt = string
         include P
-        let default = ""
+        let default () = ""
     end)
-module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P let default () = P.default end)
-module Int32(P : INT32_PARAMS) = Make(Ser.Int32)(struct type elt = int32 include P let default () = P.default end)
-module Int64(P : INT64_PARAMS) = Make(Ser.Int64)(struct type elt = int64 include P let default () = P.default end)
+module Int(P : INT_PARAMS) = Make(Ser.Int)(struct type elt = int include P end)
+module Int32(P : INT32_PARAMS) = Make(Ser.Int32)(struct type elt = int32 include P end)
+module Int64(P : INT64_PARAMS) = Make(Ser.Int64)(struct type elt = int64 include P end)
 module Int_0(P : PARAMS) = Int(
     struct
         type elt = int
         include P
-        let default = 0
+        let default () = 0
     end)
-module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P let default () = P.default end)
+module Flt(P : FLT_PARAMS) = Make(Ser.Flt)(struct type elt = float include P end)
 module Flt_0(P : PARAMS) = Flt(
     struct
         type elt = float
         include P
-        let default = 0.
+        let default () = 0.
     end)
-module Bool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P let default () = P.default end)
+module Bool(P : BOOL_PARAMS) = Make(Ser.Bool)(struct type elt = bool include P end)
 module Set(P : FLAG_PARAMS) =
     struct
         include Bool(
             struct
                 type elt = bool
                 include P
-                let default = false
+                let default () = false
             end)
         let args = 
             OList.map (fun switch ->
@@ -260,7 +141,7 @@ module Clear(P : FLAG_PARAMS) =
             struct
                 type elt = bool
                 include P
-                let default = true
+                let default () = true
             end)
         let args = 
             OList.map (fun switch -> 
@@ -270,51 +151,31 @@ module Clear(P : FLAG_PARAMS) =
     end
 
 
-module MakePath(E : PATH_PARAMS) =
-    struct
-        let path () = E.path()
-        let exists () = Sys.file_exists (path())
-        let file () =
-            if exists() then Some (path())
-            else None
-        let base () = Filename.basename (path())
-        let dir () = Filename.dirname (path())   
-        let is_dir () = 
-            match file() with
-            | None -> false
-            | Some f -> (stat f).st_kind = S_DIR
-        let touch () = 
-            let fname = path() in
-            if Sys.file_exists fname && (stat fname).st_kind = S_DIR then
-                Unix.closedir (Unix.opendir fname)
-            else
-                Tools.with_out_file flush fname
-        let mkdir ?(perms=0o777) () = 
-            try Unix.mkdir (path()) perms
-            with Unix_error (EEXIST, "mkdir", _) -> ()
-    end
-module File(P : FILE_PARAMS) = 
+module MakeFile(P : FILE_PARAMS) = 
     struct
         module F = Make(Ser.Str)(
             struct
                 type elt = file
                 let name = P.name
                 let desc = P.desc
-                let default () = P.default
+                let default = P.default
                 let switches = P.switches
             end)
         include F
-        include MakePath(
+        include FileOps.Make(
+            struct
+               let path () = get ()
+            end)
+        include FileOps.Make(
             struct
                 let path () = F.get ()
             end)
     end
 module DirFile(D : FILE_PARAMS)(F : FILE_PARAMS) =
     struct
-        module MakeFile = File
         module Dir = MakeFile(D)
         module File = MakeFile(F)
-        include MakePath(
+        include FileOps.Make(
             struct
                 let path () = Filename.concat (Dir.path()) (File.path())
             end)
@@ -328,11 +189,11 @@ module Cmd(P : CMD_PARAMS) =
         let with_in fn args = Tools.with_in_process fn ((get())^args)
     end
 
-module CfgFile = Hide(File(
+module CfgFile = Hide(MakeFile(
     struct
         let name = "CONFIGFILE"
         let desc = "Name of the configuration file"
-        let default = (Filename.basename Sys.argv.(0))^".cfg"
+        let default () = (Filename.basename Sys.argv.(0))^".cfg"
         let switches = ["--cfg-file"]
     end))
 

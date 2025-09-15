@@ -3,14 +3,14 @@ open Printf
 open Stdlib
 
 open Tools
-open Env
+open EnvParam
 
-module Soxi = Cmd(
+module Soxi = Env.Cmd(
     struct
         let name = "SOXI"
         let switches = [ "--cmd-soxi" ]
         let desc = "soxi command"
-        let default = "/usr/bin/soxi"
+        let default () = "/usr/bin/soxi"
     end)
 
 let with_soxi sw fname = 

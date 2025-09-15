@@ -41,7 +41,7 @@ module type LEVEL_PARAMS =
         val switches : string list
         val desc : string
     end 
-module type LEVEL_ENV = Env.ELT with type elt = level
+module type LEVEL_ENV = EnvParam.ELT with type elt = level
 
 module type OUT_SER = Ser.ELT with type elt = out list
 module type OUT_PARAMS =
@@ -53,7 +53,7 @@ module type OUT_PARAMS =
     end
 module type OUT_ENV = 
     sig
-        include Env.ELT with type elt = out list
+        include EnvParam.ELT with type elt = out list
         val add : out -> out list
         val remove : out -> out list
     end
@@ -227,14 +227,14 @@ module Stderr(P : PARAMS) = Make(
 module ModName = Env.Hide(Env.Str(
     struct
         let name = "logging.modname"
-        let default = Tools.basename
+        let default () = Tools.basename
         let switches = ["--log-mod-name"]
         let desc = "Log Mod Name"
     end))
 module ModSubName = Env.Hide(Env.Str(
     struct
         let name = "logging.modsubname"
-        let default = ""
+        let default () = ""
         let switches = ["--log-mod-sub-name"]
         let desc = "Log module Sub name"
     end))

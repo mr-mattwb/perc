@@ -3,7 +3,7 @@ open Printf
 open Stdlib
 
 open Tools
-open Env
+open EnvParam
 
 type mod_name = string
 type level =
@@ -43,7 +43,7 @@ module type LEVEL_PARAMS =
         val switches : string list
         val desc : string
     end 
-module type LEVEL_ENV = Env.ELT with type elt = level
+module type LEVEL_ENV = EnvParam.ELT with type elt = level
 
 module type OUT_SER = Ser.ELT with type elt = out list
 module type OUT_PARAMS =
@@ -55,13 +55,13 @@ module type OUT_PARAMS =
     end
 module type OUT_ENV = 
     sig
-        include Env.ELT with type elt = out list
+        include EnvParam.ELT with type elt = out list
         val add : out -> out list
         val remove : out -> out list
     end
 
 module LevelSer : LEVEL_SER
-module LevelEnv(LP : LEVEL_ENV) : Env.ELT with type elt = level
+module LevelEnv(LP : LEVEL_ENV) : EnvParam.ELT with type elt = level
 
 module OutSerItem : Ser.ELT with type elt = out
 module OutSer : Ser.ELT with type elt = out list
@@ -85,11 +85,11 @@ module Stdout(P : PARAMS) : ELT
 module Stderr(P : PARAMS) : ELT
 
 (* LOGMODNAME : log name or basename if not found *)
-module ModName : Env.ELT with type elt = string
-module ModSubName : Env.ELT with type elt = string
+module ModName : EnvParam.ELT with type elt = string
+module ModSubName : EnvParam.ELT with type elt = string
 
 (* LOGLEVEL : log level or Debug if not specified *)
-module Level : Env.ELT with type elt = level
+module Level : EnvParam.ELT with type elt = level
 module Targets : OUT_ENV
 module Enviro : ELT
 

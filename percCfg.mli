@@ -4,6 +4,7 @@ open Stdlib
 
 open Tools
 open Log
+open EnvParam
 open Env
 
 type return_code = int
@@ -21,11 +22,11 @@ module LogTargets : Log.OUT_ENV
 module LogName(N : Log.NAME) : Log.ELT
 module Verbose : 
     sig
-        include Env.BOOL_ELT
+        include BOOL_ELT
         val configure : unit -> unit
     end
 
-module ExtraArgs : Env.MULTI_ELT with type t = string
+module ExtraArgs : MULTI_ELT with type t = string
 
 module type ELT = 
     sig

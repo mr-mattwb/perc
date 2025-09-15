@@ -128,6 +128,24 @@ module Time =
         let to_int s = s
     end
 
+module Date = 
+    struct
+        type elt = int
+        let lastSep = ref "-"
+        let sep = Rxp.regexp "[^0-9]"
+        let storeSep str = 
+            lastSep := (Rxp.global_replace (Rxp.regexp "[0-9][0-9][0-9][0-9]\\([^0-9]\\).*$") "\\1" str)
+        let of_string str = 
+            storeSep str;
+            match Rxp.split sep str with
+            | [] -> 0
+            | yr :: [] -> (int_of_string yr * 10000)
+            | yr :: mn :: [] -> ((int_of_string yr) * 10000) + ((int_of_string mn) * 100)
+            | yr :: mn :: dy :: _ -> ((int_of_string yr) * 10000) + ((int_of_string mn) * 100) + (int_of_string dy)
+        let to_string ymd = 
+            sprintf "%04d%s%02d%s%02d" (ymd / 10000) !lastSep ((ymd / 100) mod 100) !lastSep (ymd mod 100)
+    end
+
 module Ucid = 
     struct
         type elt = ucid
@@ -135,3 +153,5 @@ module Ucid =
         let to_string = string_of_ucid
         let make () = new_ucid ()
     end
+
+

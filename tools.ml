@@ -195,5 +195,22 @@ let ucid_of_int64 ?(base=16) iuc =
 
 let rm fn = Sys.remove fn
 let move src dst = Sys.rename src dst 
-let copy src dst = put_file dst (get_file src)
+
+exception Not_exists of file
+
+let file_kind f = (stat f).st_kind
+
+let copy_file src dst = 
+    put_file dst (get_file src)
+let rec copy src dst = 
+    if not (Sys.file_exists src) then
+        raise (Not_exists src)
+    else
+        if (Sys.file_exists dst) then
+            match (stat src).st_kind, (stat dst).st_kind with
+            | _, S_DIR -> copy_file src (Filename.concat dst src)
+            | _ -> copy_file src dst
+        else
+            copy_file src dst
+
 

@@ -7,15 +7,15 @@ OCA=ocamlc -I +unix -I +str
 OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
 UCO=ocamlopt -I +unix -I +str
 TOP=ocamlmktop -I +unix -I +str
-MODS=tools lex propBase iniLex propLex ser env log soxi
-ML=tools.ml lex.ml propBase.ml iniParse.ml iniLex.ml propParse.ml propLex.ml ser.ml env.ml log.ml soxi.ml
+MODS=tools lex propBase iniLex propLex ser fileOps envParam env log soxi
+ML=tools.ml lex.ml propBase.ml iniParse.ml iniLex.ml propParse.ml propLex.ml ser.ml fileOps.ml envParam.ml env.ml log.ml soxi.ml
 PERCML=perc5sWav.ml percCfg.ml
 PERCCMO=$(subst ml,cmo,$(PERCML))
 PERCCMX=$(subst ml,cmx,$(PERCML))
 CMO=$(subst ml,cmo,$(ML))
 CMI=$(subst ml,cmi,$(ML))
 CMX=$(subst ml,cmx,$(ML))
-MLI=tools.mli ser.mli env.mli log.mli soxi.mli
+MLI=tools.mli ser.mli fileOps.mli envParam.mli env.mli log.mli soxi.mli
 CFGCMA=cfg.cma
 
 all:  cfg.cma cfg.cmxa perc cfg perc-x cfg-x

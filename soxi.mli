@@ -2,7 +2,9 @@ open Unix
 open Printf
 open Stdlib
 
-module Soxi : Env.CMD_ELT
+open EnvParam
+
+module Soxi : CMD_ELT
 val with_soxi : string -> string -> string option
 val with_soxi_int : string -> string -> int option
 val with_soxi_float : string -> string -> float option

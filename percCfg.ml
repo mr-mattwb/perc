@@ -5,6 +5,7 @@ module OList = List
 module Rxp = Str
 
 open Tools
+open EnvParam
 open Env
 open Log
 
@@ -13,42 +14,42 @@ type return_code = int
 module BuildCommand = Cmd(
     struct
         let name = "commands.build"
-        let default = "/usr/bin/sox"
+        let default () = "/usr/bin/sox"
         let switches = ["-b"; "--build-cmd" ]
         let desc = "Conversion command to use"
     end)
 module DurCommand = Cmd(
     struct
         let name = "commands.duration"
-        let default = "/usr/bin/soxi -D"
+        let default () = "/usr/bin/soxi -D"
         let switches = ["-d"; "--dur-cmd"]
         let desc = "Return the duration of a sound file in seconds"
     end)
 module PlayCommand = Cmd(
     struct
         let name = "commands.play"
-        let default = "/usr/bin/play"
+        let default () = "/usr/bin/play"
         let switches = ["-P"; "--play-cmd"]
         let desc = "Command to play a sound file"
     end)
-module OutFile = File(
+module OutFile = MakeFile(
     struct
         let name = "percolate.outfile"
-        let default = "out.wav"
+        let default () = "out.wav"
         let switches = ["-o"; "--out-file"]
         let desc = "Output filename"
     end)
 module Seconds = Int(
     struct
         let name = "percolate.seconds"
-        let default = 20
+        let default () = 20
         let switches = ["-s"; "--seconds"]
         let desc = "Seconds of percolation."
     end) 
 module Play = Set(
     struct
         let name = "percolate.play"
-        let default = false
+        let default () = false
         let switches = ["-p"; "--play"]
         let desc = "Play the output file"
     end)
@@ -56,15 +57,15 @@ module Play = Set(
 module FileExt = Str(
     struct
         let name = "percolate.extension"
-        let default = ".wav"
+        let default () = ".wav"
         let switches = ["--file-extension"]
         let desc = "File extension to use for any output files"
     end)
 
-module PercFile = Option(File(
+module PercFile = Option(MakeFile(
     struct
         let name = "percolate.soundfile"
-        let default = ""
+        let default () = ""
         let switches = ["--sound-file"]
         let desc = "Percolator file"
     end))
