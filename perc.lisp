@@ -1,27 +1,58 @@
 
 (defclass envar ()
-    ((name :initarg :name :accessor name)
-     (switches :initarg :switches :accessor switches)
-     (desc :initarg :desc :accessor desc)
-     (default :initarg :default :accessor default))
-    )
+  ((name :accessor name 
+         :initarg :name)
+   (desc :accessor desc
+         :initarg :desc)
+   (default :accessor default
+            :initarg :default)))
 
-(defmethod get-env (e)
-  (if (uiop:getenvp (name e))
-    (uiop:getenv (name e))
-    (progn 
-        (setf (uiop:getenv (name e)) (default e))
-        (uiop:getenv (name e)))))
+(defmethod getvar ((e envar)) 
+    (if (null (uiop:getenv (name e))) (default e) (uiop:getenv (name e))))
 
-(defmethod put-env (e v)
-  (setf (uiop:getenv (name e)) v))
+(defvar *build-command* (make-instance 'envar
+                                       :name "commands.build"
+                                       :default "/usr/bin/sox" 
+                                       :desc "command to convert sound files"))
+(defvar *play-command* (make-instance 'envar 
+                                      :name "commands.play" 
+                                      :default "/usr/bin/play" 
+                                      :desc "Command to play a sound file"))
+(defvar *dur-command* (make-instance 'envar
+                                     :name "commands.duration"
+                                     :default "/usr/bin/soxi -D"
+                                     :desc "Command to get sound fie duration in seconds"))
+(defvar *out-file* (make-instance 'envar
+                                  :name "percolate.outfile"
+                                  :default "out.wav"
+                                  :desc "Output filename"))
+(defvar *seconds* (make-instance 'envar
+                                 :name "percolate.seconds"
+                                 :default 20
+                                 :desc "Seconds of percolation"))
+(defvar *play* (make-instance 'envar
+                              :name "percolate.play"
+                              :default nil
+                              :desc "Play the output file"))
+(defvar *file-ext* (make-instance 'envar
+                                  :name "percolate.extension"
+                                  :default ".wav"
+                                  :desc "File extension for output file"))
+(defvar *perc-file* (make-instance 'envar
+                                   :name "percolate.soundfile"
+                                   :default ""
+                                   :desc "Percolator sound file"))
 
-(defun getFile (fname) 
-  (with-open-file (fin fname :direction :input)
-    (let ((buf (make-array (file-length fin) :element-type 'unsigned-byte)))
-      (read-sequence buf fin)
-      buf)))
+(defmethod play-file (player fname)
+    (uiop:run-program (concatenate 'string (getvar player) " " fname)))
 
-(defun putFile (fname buf)
-  (with-open-file (fout fname :direction :output :if-exists :overwrite)
-    (write-sequence buf fout)))
+(defmethod duration-file (cmd fname)
+    (read-from-string
+        (uiop:run-program (concatenate 'string (getvar cmd) " " fname) :output :string)))
+
+(defun builder (seconds percfile)
+  (labels ((aux (loops cmd)
+                (if (<= loops 0) (concatenate 'string cmd " " (getvar *out-file*))
+                  (aux (- loops seconds) (concatenate 'string cmd " " percfile)))))
+    (aux (getvar *seconds*) (getvar *build-command*))))
+

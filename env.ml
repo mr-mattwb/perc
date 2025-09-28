@@ -300,6 +300,17 @@ module Ucid(P : UCID_PARAMS) =
         let create () = new_ucid()
     end
 
+module Rex(P : REX_PARAMS) = 
+    struct
+        module S = Make(Ser.Str)(
+            struct
+                type elt = string
+                include P
+            end)
+        include S
+        let rex () = Rxp.regexp (S.get())
+        let split s = Rxp.split (rex ()) s
+    end
 
 module Verbose = Set(
     struct
@@ -313,7 +324,7 @@ open PropBase
 
 let rec try_config_file () = 
     try parse_config (CfgFile.get())
-    with Not_found -> eprintf "Config file not found\n%!"
+    with Not_found -> eprintf "Config file not found [%s]\n%!" (CfgFile.get())
 and parse_config fname = 
     match getConfigType () with
     | Ini -> with_lex_file (main None (IniParse.main IniLex.main)) fname
@@ -340,3 +351,4 @@ and newpair name v =
 let config () =
     try_config_file ();
     arg_default ()
+

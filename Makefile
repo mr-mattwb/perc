@@ -7,18 +7,18 @@ OCA=ocamlc -I +unix -I +str
 OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
 UCO=ocamlopt -I +unix -I +str
 TOP=ocamlmktop -I +unix -I +str
-MODS=tools lex propBase iniLex propLex ser fileOps envParam env log soxi
-ML=tools.ml lex.ml propBase.ml iniParse.ml iniLex.ml propParse.ml propLex.ml ser.ml fileOps.ml envParam.ml env.ml log.ml soxi.ml
+MODS=tools lex propBase iniLex propLex ser fileOps envParam env log time date soxi
+ML=tools.ml lex.ml propBase.ml iniParse.ml iniLex.ml propParse.ml propLex.ml ser.ml fileOps.ml envParam.ml env.ml log.ml time.ml date.ml soxi.ml
 PERCML=perc5sWav.ml percCfg.ml
 PERCCMO=$(subst ml,cmo,$(PERCML))
 PERCCMX=$(subst ml,cmx,$(PERCML))
 CMO=$(subst ml,cmo,$(ML))
 CMI=$(subst ml,cmi,$(ML))
 CMX=$(subst ml,cmx,$(ML))
-MLI=tools.mli ser.mli fileOps.mli envParam.mli env.mli log.mli soxi.mli
+MLI=tools.mli ser.mli fileOps.mli envParam.mli env.mli log.mli time.mli date.mli soxi.mli
 CFGCMA=cfg.cma
 
-all:  cfg.cma cfg.cmxa perc cfg perc-x cfg-x
+all:  cfg.cma cfg.cmxa perc cfg perc-x cfg-x syslog.cma mlog 
 
 install:
 	
@@ -35,7 +35,10 @@ cfg:  cfg.cma cfg.ml
 cfg-x:  cfg.cmxa cfg.ml
 	$(OCO) $+ -o $@
 
-ccaml:  syslog.cma 
+mlog:  cfg.cma syslog.cma mlog.ml
+	$(UCC) $+ -o $@
+
+craml:  syslog.cma 
 	$(TOP) -custom -o $@ unix.cma str.cma $+
 
 syslog.cma:  libcsyslog.a syslog.cmo syslog.cmi
@@ -103,8 +106,8 @@ cfg.cmxa:  $(CMX)
 #	$(OCC) -c $<
 
 clean:
-	rm *.cm[ioax] *.cmxa *.o lex.ml iniLex.ml iniParse.ml iniParse.mli propLex.ml propParse.ml propParse.mli *.a perc perc-x cfg cfg-x
-	rm csyslog.o libcsyslog.a syslog.cm?
+	rm -f *.cm[ioax] *.cmxa *.o lex.ml iniLex.ml iniParse.ml iniParse.mli propLex.ml propParse.ml propParse.mli *.a perc perc-x cfg cfg-x
+	rm -f csyslog.o libcsyslog.a syslog.cm? mlog
 
 depend: dep
 dep:  *.ml *.mli

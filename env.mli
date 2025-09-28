@@ -53,6 +53,8 @@ module MultiValue(S : Ser.ELT)(P : PARAMS) : MULTI_ELT with type t = S.elt
 
 module Ucid(P : UCID_PARAMS) : ELT with type elt = ucid
 
+module Rex(P : REX_PARAMS) : REX_ELT
+
 module Verbose : BOOL_ELT
 
 val try_config_file : unit -> unit

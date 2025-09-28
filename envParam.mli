@@ -1,6 +1,7 @@
 open Unix
 open Printf
 open Stdlib
+module Rxp = Str
 
 open Tools
 
@@ -61,6 +62,7 @@ module type FILE_PARAMS = STR_PARAMS
 module type CMD_PARAMS = STR_PARAMS 
 module type MULTI_PARAMS = PARAMS 
 module type UCID_PARAMS = PARAMS
+module type REX_PARAMS = STR_PARAMS
 
 module type ELT =
     sig
@@ -107,5 +109,12 @@ module type UCID_ELT =
     sig
         include ELT with type elt = Tools.ucid 
         val create : unit -> elt
+    end
+
+module type REX_ELT = 
+    sig
+        include STR_ELT
+        val rex : unit -> Rxp.regexp
+        val split : string -> string list
     end
 

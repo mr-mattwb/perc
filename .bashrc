@@ -11,3 +11,5 @@ export PATH=$HOME/mine/perc:$PATH
 #load "perc5sWav.cmo"
 
 echo initialized
+
+alias ctop='ledit ./ccaml -I +unix -I +str -I .'
