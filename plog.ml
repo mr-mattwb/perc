@@ -59,23 +59,23 @@ let rec chaining fin ls =
 module CallMap = Map.Make(String)
 module DateTimeMap = Map.Make(
     struct
-        type t = Date.t * Time.t * int
+        type t = Date.t * Time.t * int * string
         let compare = Stdlib.compare 
     end)
 let accum cmap link = 
     match CallMap.find_opt link.id cmap with
     | None ->
-        let dtmap = DateTimeMap.add (link.date, link.time, link.msec) link.data DateTimeMap.empty in
+        let dtmap = DateTimeMap.add (link.date, link.time, link.msec, fst link.data) link.data DateTimeMap.empty in
         CallMap.add link.id dtmap cmap
     | Some dtmap ->
-        let dtmap' = DateTimeMap.add (link.date, link.time, link.msec) link.data dtmap in
+        let dtmap' = DateTimeMap.add (link.date, link.time, link.msec, fst link.data) link.data dtmap in
         CallMap.add link.id dtmap' cmap
 
 let load_calls fin = List.fold_left accum CallMap.empty (chaining fin [])
 
 let rec call_nodes calls = List.map translate (CallMap.bindings calls)
 and translate (id, nodes) = id, (List.rev (List.fold_left node_xlate [] (DateTimeMap.bindings nodes)))
-and node_xlate acc ((ymd, hms, msc), (nf, nt)) = 
+and node_xlate acc ((ymd, hms, msc, _), (nf, nt)) = 
     match List.length acc with
     | n when n >= 1 ->
         begin
