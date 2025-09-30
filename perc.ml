@@ -4,7 +4,6 @@ open Stdlib
 open Arg
 module OList = List
 
-open Env
 open Log
 open PercCfg
 

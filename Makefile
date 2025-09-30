@@ -114,4 +114,7 @@ dep:  *.ml *.mli
 	ocamldep *.ml > .depend.ml
 	ocamldep *.mli > .depend.mli
 
+include .depend.ml
+include .depend.mli
+
 # Dependencies
