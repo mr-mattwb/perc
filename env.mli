@@ -17,6 +17,8 @@ val args : (string -> unit) -> string -> unit
 val parse_args : string -> unit
 val arg_default : unit -> unit
 
+val getConfigType : unit -> EnvParam.cfg
+
 module Make(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt) : ELT with type elt = P.elt
 
 module List(S : Ser.ELT)(P : DEFUNPARAMS with type elt = S.elt list) : ELT with type elt = P.elt

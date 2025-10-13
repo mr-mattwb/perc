@@ -53,8 +53,11 @@ let to_string dt =
 let rec of_string str = 
     let dtrxp = Rxp.regexp (DateTimeSep.get()) in
     match Rxp.split dtrxp str with
-    | dt :: tm :: _ -> (date_of_str dt, time_of_str tm)
+    | dt :: tm :: _ -> of_strings dt tm
     | _ -> raise (Failure ("DateTime ["^str^"]"))
+
+and of_strings dt tm = (date_of_str dt, time_of_str tm)
+
 and date_of_str str = 
     let drxp = Rxp.regexp (DateSep.get()) in
     match Rxp.split drxp str with

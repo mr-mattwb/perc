@@ -7,19 +7,19 @@ open PropBase
 open IniParse
 }
 let wsp = [' ' '\t' '\r']
+let comment = ';' 
+let eoln = '\n'
 let keyStart = [^ '[' '=' '\n' ' ' '\t' '\r' ';']
 let keyContents = [^ '=' ';' ]
 let keyEnd = [^ ';' '=' ' ' '\t' '\r']
+let equal = '='
+let wspcs = [' ' '\t']
+let openCtx = '['
+let closeCtx = ']'
 let resStart = [^ ' ' '\t']
 let resCont = [^ ';' '\n' ]
 let resEnd = [^ ';' ' ' '\t' '\r' '\n']
-let openCtx = '['
-let closeCtx = ']'
-let comment = ';' 
-let equal = '='
-let eoln = '\n'
 let notWsp = [^ ';' ' ' '\t' '\r']
-let wspcs = [' ' '\t']
 
 rule main = parse
     wsp*                                            { main lexbuf }

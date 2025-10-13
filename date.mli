@@ -16,6 +16,9 @@ module Sep : EnvParam.REX_ELT
 val to_string : t -> string
 val of_string : string -> t
 
+val to_int : t -> int
+val of_int : int -> t
+
 module Ser : Ser.ELT with type elt = t
 
 module type ENV_PARAM = 

@@ -42,11 +42,14 @@ let add_program_arg ?(override=false) name args =
             args
 
 let getConfigType () = 
-    match String.uppercase_ascii (Unix.getenv gCfgType) with
-    | "INI" -> Ini
-    | "PROPERTIES" -> Properties
-    | unknown ->
-        eprintf "%s:  Unknown Configuration type [%s].  Default to INI\n%!" Sys.argv.(0) unknown;
+    try
+        match String.uppercase_ascii (Unix.getenv gCfgType) with
+        | "INI" -> Ini
+        | "PROPERTIES" -> Properties
+        | unknown ->
+            eprintf "%s:  Unknown Configuration type [%s].  Default to INI\n%!" Sys.argv.(0) unknown;
+            Ini
+    with Not_found ->
         Ini
 
 module NameMap = 

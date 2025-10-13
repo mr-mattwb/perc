@@ -28,6 +28,7 @@ val second : t -> int
 
 val to_string : t -> string
 val of_string : string -> t
+val of_strings : string -> string -> t
 
 val now : unit -> t
 

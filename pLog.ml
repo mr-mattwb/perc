@@ -19,9 +19,7 @@ type 'a entry = {
     ivr : string;
     data : 'a
 }
-type trans = string * string
-
-
+type link = string * string
 
 let chain_str = prefix ^ "|reporting\\.CDRUtil|chaining from >\\(.+\\)< to >\\(.*\\)<"
 let chain = Rxp.regexp chain_str
@@ -55,47 +53,46 @@ let rec chaining fin ls =
         chaining fin (extract line :: ls)
     | Some line ->
         chaining fin ls
-        
+
+let chain_file fname = Tools.with_in_file (fun fin -> chaining fin []) fname 
+
+let entry_hash a = 
+    let key = (Date.to_int a.date * 100000000) + (Time.to_int a.time * 1000) + a.msec in
+    key
+
 module CallMap = Map.Make(String)
-module DateTimeMap = Map.Make(
+module DateTimeSet = Set.Make(
     struct
-        type t = Date.t * Time.t * int * string
-        let compare = Stdlib.compare 
+        type t = (string * string) entry 
+        let compare a b =
+            match (entry_hash a) - (entry_hash b) with
+            | n when n <> 0 -> n
+            | _ -> String.compare (fst a.data) (fst b.data) 
+
     end)
 let accum cmap link = 
     match CallMap.find_opt link.id cmap with
     | None ->
-        let dtmap = DateTimeMap.add (link.date, link.time, link.msec, fst link.data) link.data DateTimeMap.empty in
-        CallMap.add link.id dtmap cmap
-    | Some dtmap ->
-        let dtmap' = DateTimeMap.add (link.date, link.time, link.msec, fst link.data) link.data dtmap in
-        CallMap.add link.id dtmap' cmap
-
+        let dtset = DateTimeSet.add link DateTimeSet.empty in
+        CallMap.add link.id dtset cmap
+    | Some dtset ->
+        let dtset = DateTimeSet.add link dtset in
+        CallMap.add link.id dtset cmap
 let load_calls fin = List.fold_left accum CallMap.empty (chaining fin [])
 
+
 let rec call_nodes calls = List.map translate (CallMap.bindings calls)
-and translate (id, nodes) = id, (List.rev (List.fold_left node_xlate [] (DateTimeMap.bindings nodes)))
-and node_xlate acc ((ymd, hms, msc, _), (nf, nt)) = 
+and translate (id, nodes) = id, (List.rev (List.fold_left node_xlate [] (DateTimeSet.elements nodes)))
+and node_xlate acc link = 
     match List.length acc with
     | n when n >= 1 ->
         begin
             match List.hd acc with 
-            | n when n = nf -> nt :: acc
-            | n -> nt :: nf :: acc
+            | n when n = (fst link.data) -> (snd link.data) :: acc
+            | n -> (snd link.data) :: (fst link.data) :: acc
         end
     | _ -> 
-        nt :: nf :: acc
+        (snd link.data) :: (fst link.data) :: acc
 
-let write_call fout (id, nodes) =
-    fprintf fout "%s : " id;
-    List.iter (fun n -> fprintf fout "%s " n) nodes;
-    fprintf fout "\n%!"
-
-let write_calls nodes fout = List.iter (write_call fout) nodes
-
-let rec list_calls infile outfile = 
-    let calls = with_in_file load_calls infile in
-    let nodes = call_nodes calls in
-    with_out_file (write_calls nodes) outfile
 
 

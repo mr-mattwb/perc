@@ -1,17 +1,17 @@
 
-(defclass date () ((date 
-                    :accessor date 
-                    :initarg :date)))
+(defclass tdate () ((tdatk 
+                    :accessor tdate 
+                    :initarg :tdate)))
 
 (defvar pfx-date "([0-9][0-9][0-9][0-9]\-[0-9][0-9]\-[0-9][0-9])")
 
-(defmethod make-date (year month day) (make-instance 'date :date (+ (* 10000 year) (* 100 month) day)))
+(defmethod make-date (year month day) (make-instance 'tdate :tdate (+ (* 10000 year) (* 100 month) day)))
 (defmethod date-of-strs (year month day) (make-date (parse-integer year) (parse-integer month) (parse-integer day)))
 (defmethod date-of-string (ymd) (date-of-strs (subseq ymd 0 4) (subseq ymd 5 7) (subseq ymd 8 10)))
 
-(defmethod year ((d date)) (floor (/ (date d) 10000)))
-(defmethod month ((d date)) (mod (floor (/ (date d) 100)) 100))
-(defmethod day ((d date)) (mod (date d) 100))
+(defmethod year ((d tdate)) (floor (/ (tdate d) 10000)))
+(defmethod month ((d tdate)) (mod (floor (/ (tdate d) 100)) 100))
+(defmethod day ((d tdate)) (mod (tdate d) 100))
 
 (defmethod now-date ()
     (multiple-value-bind (a b c mday mon yr d e f) 
@@ -24,7 +24,7 @@
 (defun two-digit-string (s) 
   (let ((pfx (if (< s 10 ) "0" "")))
     (format nil "~A~A" pfx s)))
-(defmethod to-string ((d date)) 
+(defmethod to-string ((d tdate)) 
   (format t "~A-~A-~A" (four-digit-string (year d)) (two-digit-string (month d)) (two-digit-string (day d))))
   
 (defclass ttime () ((ttime 
@@ -58,7 +58,7 @@
 
 (defmethod make-datetime (yr mo dy hr mi sc) 
     (make-instance 'datetime 
-                   :date (+ (* yr 10000) (* mo 100) dy)
+                   :tdate (+ (* yr 10000) (* mo 100) dy)
                    :ttime (+ (* 3600 hr) (* 60 mi) sc)))
 
 (defmethod now ()
@@ -109,10 +109,21 @@
                 (t (looplines lines))))))
         (looplines nil))))
 
+(defmethod hash-entry ((e entry)) 
+    (concatenate 'string (tdate (tdate e)) (ttime (ttime e)) (tmsec e))
 
+(defmethod map-calls (calls) 
+    (let ((tbl (make-hash-table :test 'equal)))
+        (map 'list (lambda (e)
+                     (format t "mapping id [~A] ~A ~A~%" (id e) (tfrom e) (tto e))
+                     (setf (gethash (id e) tbl) (callmap e (gethash (id e) tbl))))
+             calls)
+        tbl))
 
-
-
-
-
-
+(defun get-keys (tbl) 
+    (let ((keys '())) 
+      (maphash (lambda (key val)
+                 (declare (ignore val))
+                 (push key keys))
+               tbl)
+      (nreverse keys)))

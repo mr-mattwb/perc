@@ -29,6 +29,9 @@ let of_string ymd =
     | months :: days :: [] -> of_ints 0 (int_of_string months) (int_of_string days)
     | years :: months :: days :: _ -> of_ints (int_of_string years) (int_of_string months) (int_of_string days)
 
+let to_int ymd = ymd
+let of_int ymd = ymd
+
 module Ser = 
     struct
         type elt = t
@@ -38,8 +41,7 @@ module Ser =
 
 module type ENV_PARAM = 
     sig
-        val name : string
-        val switches : string list
+        val name : string val switches : string list
         val desc : string
     end
 module type DEF_PARAM = 
