@@ -74,6 +74,9 @@ let now () =
     (make_date_time (1900+tm.tm_year) (1+tm.tm_mon) tm.tm_mday 
         tm.tm_hour tm.tm_min tm.tm_sec)
 
+let hash (dt, tm) = 
+    (dt * 10000) + tm
+
 module Ser = 
     struct
         type elt = t

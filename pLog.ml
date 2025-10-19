@@ -11,15 +11,16 @@ let pfx_callid = "|\\([0-9A-F]*\\)"
 let pfx_ivr = "|\\([\\_0-9A-Z\\.-]+\\)"
 let prefix = pfx_date ^ pfx_time ^ pfx_callid ^ pfx_ivr
 
+type id = string
 type 'a entry = {
-    date : Date.t;
-    time : Time.t;
+    time : DateTime.t;
     msec : int;
-    id : string;
+    id : id;
     ivr : string;
     data : 'a
 }
-type link = string * string
+type node = string
+type link = node * node
 
 let chain_str = prefix ^ "|reporting\\.CDRUtil|chaining from >\\(.+\\)< to >\\(.*\\)<"
 let chain = Rxp.regexp chain_str
@@ -30,8 +31,7 @@ let line = "2025-08-25T05:24:35,588|6CF7AC02C98898345960E7A47D41C6E1|MOD25.09.0.
 let chainline = "2025-08-25T05:24:35,593|6CF7AC02C98898345960E7A47D41C6E1|MOD25.09.0.004-DEBUG|reporting.CDRUtil|chaining from >contr0105_CheckNodeCount_DS< to >contr0110_CheckGlobalHandling_DS<"
 
 let construct ds ts ms ids ivrs frs tos = {
-    date = Date.of_string ds;
-    time = Time.of_string ts;
+    time = DateTime.of_strings ds ts;
     msec = int_of_string ms;
     id = ids;
     ivr = ivrs;
@@ -57,8 +57,8 @@ let rec chaining fin ls =
 let chain_file fname = Tools.with_in_file (fun fin -> chaining fin []) fname 
 
 let entry_hash a = 
-    let key = (Date.to_int a.date * 100000000) + (Time.to_int a.time * 1000) + a.msec in
-    key
+    let thash = (DateTime.hash a.time) * 1000 in
+    thash + a.msec
 
 module CallMap = Map.Make(String)
 module DateTimeSet = Set.Make(
@@ -70,6 +70,10 @@ module DateTimeSet = Set.Make(
             | _ -> String.compare (fst a.data) (fst b.data) 
 
     end)
+
+type node_set = DateTimeSet.t
+type calls = node_set CallMap.t
+
 let accum cmap link = 
     match CallMap.find_opt link.id cmap with
     | None ->
@@ -79,7 +83,7 @@ let accum cmap link =
         let dtset = DateTimeSet.add link dtset in
         CallMap.add link.id dtset cmap
 let load_calls fin = List.fold_left accum CallMap.empty (chaining fin [])
-
+let load_file fname = Tools.with_in_file load_calls fname
 
 let rec call_nodes calls = List.map translate (CallMap.bindings calls)
 and translate (id, nodes) = id, (List.rev (List.fold_left node_xlate [] (DateTimeSet.elements nodes)))

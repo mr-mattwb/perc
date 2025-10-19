@@ -167,10 +167,6 @@ module MakeFile(P : FILE_PARAMS) =
         include F
         include FileOps.Make(
             struct
-               let path () = get ()
-            end)
-        include FileOps.Make(
-            struct
                 let path () = F.get ()
             end)
     end

@@ -32,6 +32,8 @@ val of_strings : string -> string -> t
 
 val now : unit -> t
 
+val hash : t -> int
+
 module Ser : Ser.ELT 
 
 module EnvMake(P : EnvParam.PARAMS) : EnvParam.ELT with type elt = t
