@@ -8,6 +8,7 @@ type t = int
 let midnight = 0
 
 let of_ints hh mm ss = (3600 * hh) + (60 * mm) + ss
+let of_strs hh mm ss = of_ints (int_of_string hh) (int_of_string mm) (int_of_string ss)
 
 module Sep = Env.Str(
     struct
@@ -31,6 +32,12 @@ let of_string = parse
 let now () = 
     let tm = Unix.localtime (Unix.time()) in
     of_ints tm.tm_hour tm.tm_min tm.tm_sec
+
+let time_pat = "(\\d\\d):(\\d\\d):(\\d\\d)"
+let parse_time line = 
+    let ss = Pcre.exec ~pat:time_pat line in
+    let tss = Pcre.get_substrings ss in
+    of_strs tss.(1) tss.(2) tss.(3)
 
 module Ser = 
     struct

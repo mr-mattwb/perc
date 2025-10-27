@@ -19,6 +19,9 @@ val of_string : string -> t
 val to_int : t -> int
 val of_int : int -> t
 
+val date_pat : string
+val parse_date : string -> t
+
 module Ser : Ser.ELT with type elt = t
 
 module type ENV_PARAM = 

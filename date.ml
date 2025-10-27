@@ -6,6 +6,7 @@ module Rxp = Str
 type t = int
 
 let of_ints yr mn dy = (yr * 10000) + (mn * 100) + dy
+let of_strs yr mn dy = of_ints (int_of_string yr) (int_of_string mn) (int_of_string dy)
 
 let year0 = 0
 let now () = 
@@ -31,6 +32,12 @@ let of_string ymd =
 
 let to_int ymd = ymd
 let of_int ymd = ymd
+
+let date_pat = "(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)"
+let parse_date d = 
+    let ss = Pcre.exec ~pat:date_pat d in
+    let sar = Pcre.get_substrings ss in
+    of_strs sar.(1) sar.(2) sar.(3)
 
 module Ser = 
     struct

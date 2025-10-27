@@ -17,6 +17,9 @@ val of_string : string -> t
 
 val now : unit -> t
 
+val time_pat : string
+val parse_time : string -> t
+
 module Ser : Ser.ELT with type elt = t
 
 module type ENV = EnvParam.ELT with type elt = t

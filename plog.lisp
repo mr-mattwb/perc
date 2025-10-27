@@ -6,8 +6,9 @@
 (defparameter pfx-callid "\([0-9A-F]*\)")
 (defparameter pfx-level "\([_0-9A-Z\.-]+\)")
 (defparameter pfx-method "\([A-Za-z0-9\.\_]+\)")
+(defparameter line-data "\(.*\)$")
 
-(defparameter prefix (concatenate 'string pfx-date "T" pfx-time "," pfx-msec "\\|" pfx-callid "\\|" pfx-level "\\|" pfx-method "\\|"))
+(defparameter prefix (concatenate 'string pfx-date "T" pfx-time "," pfx-msec "\\|" pfx-callid "\\|" pfx-level "\\|" pfx-method "\\|" line-data))
 
 (defparameter chain-pat "chaining from >\(.*\)< to >\(.*\)<")
 
@@ -20,12 +21,13 @@
 (defparameter chain (concatenate 'string prefix chain-pat))
 
 (defclass entry () 
-  ((date   :initarg :date   :accessor :date)
-   (time   :initarg :time   :accessor :time)
-   (msec   :initarg :msec   :accessor :msec)
-   (id     :initarg :id     :accessor :id)
-   (weight :initarg :weight :accessor :weight)
-   (func   :initarg :func   :accessor :func)))
+  ((date   :initarg :date   :accessor entry-date)
+   (time   :initarg :time   :accessor entry-time)
+   (msec   :initarg :msec   :accessor entry-msec)
+   (id     :initarg :id     :accessor entry-id)
+   (level  :initarg :level  :accessor entry-level)
+   (meth   :initarg :meth   :accessor entry-method)
+   (data   :initarg :data   :accessor entry-data)))
 
 (defmethod parse-date (dt)
     (ppcre:register-groups-bind (yr mn dy) ("\(\\d\\d\\d\\d\)-\(\\d\\d\)-\(\\d\\d\)" dt)
@@ -36,15 +38,43 @@
 (defmethod parse-msec (ms)
     (parse-integer ms))
 
-(defmethod entry-from-strings (dt tm ms id wt fn) 
-  (make-instance 'entry 
-                 :date (date-of-string dt)
-                 :time tm
-                 :msec ms
+(defmethod entry-from-strings (dt tm ms id wt fn d) 
+  (make-instance 'entry
+                 :date (parse-date dt)
+                 :time (parse-time tm)
+                 :msec (parse-msec ms)
                  :id id
-                 :weight wt
-                 :func fn))
+                 :level wt
+                 :meth fn
+                 :data d))
 
 (defmethod parse-entry (line)
-  (ppcre:register-groups-bind (fst snd thr fth fif six) (prefix line)
-    (entry-from-strings fst snd thr fth fif six)))
+  (ppcre:register-groups-bind (fst snd thr fth fif six sev) (prefix line)
+    (entry-from-strings fst snd thr fth fif six sev)))
+
+(defmethod hash-entry ((e entry))
+    (+ (* 100000000 (entry-date e)) (* 1000 (entry-time e)) (entry-msec e)))
+
+(defmethod parse-file (fname)
+    (with-open-file (fin fname :direction :input) 
+      (let ((line (read-line fin nil 'eof))
+            (entries '()))
+        (loop while (not (equal line 'eof)) do
+              (let ((entry (parse-entry line)))
+                (if (not (equal entry nil))
+                    (setf entries (cons entry entries)))
+              (setf line (read-line fin nil 'eof))))
+        (reverse entries))))
+
+(defmethod chain-entry-p ((e entry)) (not (equal nil (ppcre:scan chain-pat (entry-data e)))))
+(defmethod filter-chains (ls) (remove-if-not #'chain-entry-p ls))
+(defmethod chain-link ((e entry)) (ppcre:register-groups-bind (ef et) (chain-pat (entry-data e)) (list ef et)))
+(defmethod chain-from ((e entry)) (car (chain-link e)))
+(defmethod chain-to ((e entry)) (cadr (chain-link e)))
+(defmethod call-ids (ls) (remove-duplicates (mapcar #'entry-id ls) :test #'equal))
+(defmethod id-equal (id entry) (equal id (entry-id entry)))
+(defmethod id-nodes (id links) (remove-if-not #'(lambda (e) (id-equal id e)) links))
+(defmethod next-link (link links) (find-if #'(lambda (n) (equal (chain-to link) (chain-from n))) links))
+(defmethod linked-p (link1 link2) (equal (chain-from link1) (chain-to link2)))
+
+

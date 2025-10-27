@@ -12,5 +12,4 @@ export PATH=$HOME/mine/perc:$PATH
 
 echo initialized
 
-alias ctop='ledit ./ccaml -I +unix -I +str -I .'
-alias lisp='lisp --load .lisp'
+alias ctop='ledit ./ccaml -I +unix -I +str -I +../pcre -I .'

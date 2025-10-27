@@ -1,21 +1,21 @@
 
 OLEX=ocamllex
 OPRS=ocamlyacc
-UCC=ocamlc -I +unix -I +str
-OCC=ocamlc -I +unix -I +str unix.cma str.cma 
-OCA=ocamlc -I +unix -I +str
-OCO=ocamlopt -I +unix -I +str unix.cmxa str.cmxa
-UCO=ocamlopt -I +unix -I +str
-TOP=ocamlmktop -I +unix -I +str
-MODS=tools lex propBase iniLex propLex ser fileOps envParam env log dayTime date dateTime soxi pLog
-ML=tools.ml lex.ml propBase.ml iniParse.ml iniLex.ml propParse.ml propLex.ml ser.ml fileOps.ml envParam.ml env.ml log.ml dayTime.ml date.ml dateTime.ml soxi.ml pLog.ml
+UCC=ocamlc -I +unix -I +str -I +../pcre
+OCC=ocamlc -I +unix -I +str -I +../pcre unix.cma str.cma pcre.cma
+OCA=ocamlc -I +unix -I +str -I +../pcre
+OCO=ocamlopt -I +unix -I +str -I +../pcre unix.cmxa str.cmxa pcre.cmxa
+UCO=ocamlopt -I +unix -I +str -I +../pcre
+TOP=ocamlmktop -I +unix -I +str -I +../pcre
+MODS=tools lex propBase iniLex propLex ser fileOps envParam env log dayTime time date dateTime soxi 
+ML=tools.ml lex.ml propBase.ml iniParse.ml iniLex.ml propParse.ml propLex.ml ser.ml fileOps.ml envParam.ml env.ml log.ml dayTime.ml time.ml date.ml dateTime.ml soxi.ml 
 PERCML=perc5sWav.ml percCfg.ml
 PERCCMO=$(subst ml,cmo,$(PERCML))
 PERCCMX=$(subst ml,cmx,$(PERCML))
 CMO=$(subst ml,cmo,$(ML))
 CMI=$(subst ml,cmi,$(ML))
 CMX=$(subst ml,cmx,$(ML))
-MLI=tools.mli ser.mli fileOps.mli envParam.mli env.mli log.mli dayTime.mli date.mli dateTime.mli soxi.mli pLog.mli
+MLI=tools.mli ser.mli fileOps.mli envParam.mli env.mli log.mli dayTime.mli time.mli date.mli dateTime.mli soxi.mli
 CFGCMA=cfg.cma
 
 all:  cfg.cma cfg.cmxa perc cfg perc-x cfg-x syslog.cma mlog 

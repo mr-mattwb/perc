@@ -3,6 +3,7 @@ open Printf
 open Stdlib
 module Rxp = Str
 
+#load "pcre.cma";;
 #load "cfg.cma";;
 #load "perc5sWav.cmo";;
 
