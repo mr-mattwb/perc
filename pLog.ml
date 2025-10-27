@@ -65,49 +65,112 @@ let match_entry line = Pcre.pmatch ~pat:msgfmt line
 let match_link e = Pcre.pmatch ~pat:chain_pat e.data
 let match_id id e = id = e.id
 
-let rec input_entry fin = 
-    match Tools.input_line fin with
-    | Some line when match_entry line -> Some (parse_entry line)
-    | Some _ -> input_entry fin
-    | None -> None
 
-let rec process_channel acc fin = 
-    match input_entry fin with
-    | None -> List.rev acc
-    | Some e -> process_channel (e :: acc) fin
+type entries = string entry list
+type node = string
 
-type entries = string entry list 
-type ids = id list
-type call = string entry list
-type chain = (string * string) entry list
-
-let input_file fname : entries = Tools.with_in_file (process_channel []) fname
-
-let filter_links ls = List.filter match_link ls
 
 module IdSet = Set.Make(
     struct
         type t = string 
         let compare = compare
     end)
-let call_ids entries : ids = 
-    let aux acc e = IdSet.add e.id acc in
-    IdSet.elements (List.fold_left aux IdSet.empty entries)
+
+module type CHAIN = 
+    sig
+        type call_t 
+        type link_t
+        type t
+        val lfrom : link_t -> node
+        val lto : link_t -> node
+        val get_links : call_t -> t
+        val first_link : t -> link_t
+        val next_link : link_t -> t -> link_t option
+        val follow : t -> t
+        val path_names : t -> node list
+        val to_call : string entry list -> call_t
+    end
+module type ENTRIES = 
+    sig
+        type t
+        type call_t
+        val input_file : Tools.file -> t
+        val get_call : id -> t -> call_t
+        val call_ids : t -> id list
+        val get_calls : id list -> t -> (id * call_t) list
+        val of_call : t -> string entry list
+    end
+
+module Chain : CHAIN = 
+    struct
+        type call_t = string entry list
+        type link_t = (node * node) entry
+        type t = link_t list
+        let lfrom (e : link_t) = fst e.data
+        let lto (e : link_t) = snd e.data
+        let link (e : string entry) : node * node = 
+            let ss = Pcre.get_substrings (Pcre.exec ~pat:chain_pat e.data) in
+            ss.(1), ss.(2)
+        let get_links (call : call_t) : t = 
+            let aux acc e =
+                if match_link e then
+                    ({ e with data = link e } :: acc)
+                else
+                    acc
+            in
+            List.fold_left aux [] call
+        let first_link (c : t) =
+            let rec aux lws = function
+                | [] -> lws
+                | nxt :: rst when fst (lws.data) < fst (nxt.data) -> aux lws rst
+                | nxt :: rst -> aux nxt rst
+            in aux (List.hd c) (List.tl c)
+        let next_link ff links =
+            let rec aux = function
+                | [] -> None
+                | nxt :: rst when (snd ff.data) = (fst nxt.data) -> Some nxt
+                | _ :: rst -> aux rst
+            in aux links
+        let follow (links : t) : t = 
+            let rec aux ff acc = 
+                match next_link ff links with
+                | None -> List.rev acc
+                | Some n -> aux n (n :: acc)
+            in
+            let start = first_link links in
+            aux start (start :: [])
+        let path_names links = 
+            let rec aux acc = function
+                | [] -> List.rev acc
+                | e :: es -> aux ((fst e.data) :: acc) es
+            in aux [] links
+        let to_call (e : string entry list) : call_t = e
+    end
+module Entries : ENTRIES with type call_t = Chain.call_t = 
+    struct
+        type t = string entry list
+        type call_t  = Chain.call_t
+        let rec input_entry fin = 
+            match Tools.input_line fin with
+            | Some line when match_entry line -> Some (parse_entry line)
+            | Some _ -> input_entry fin
+            | None -> None
+        let rec process_channel acc fin = 
+            match input_entry fin with
+            | None -> List.rev acc
+            | Some e -> process_channel (e :: acc) fin
+        let input_file fname : t = Tools.with_in_file (process_channel []) fname
+        let to_list (e : t) : string entry list = e 
+        let get_call id (entries : t) : call_t = Chain.to_call (List.filter (match_id id) entries)
+        let call_ids entries : id list = 
+            let aux acc e = if e.id <> "" then IdSet.add e.id acc else acc in
+            IdSet.elements (List.fold_left aux IdSet.empty entries)
+        let get_calls (ids : id list) (entries : t) : (id * call_t) list =
+            let aux id = id, get_call id entries in
+            List.map aux ids
+        let of_call c : string entry list = c
+    end
 
 
-let link e = 
-    let ss = Pcre.get_substrings (Pcre.exec ~pat:chain_pat e.data) in
-    ss.(1), ss.(2)
-let link_from e = fst (link e)
-let link_to e = snd (link e)
-k
-let call_nodes id entries : call = List.filter (match_id id) entries
-let filter_links nodes : chain = 
-    let aux acc e =
-        if match_link e then
-            ({ e with data = link e } :: acc)
-        else
-            acc
-    in
-    List.fold_left aux [] nodes
+
 
