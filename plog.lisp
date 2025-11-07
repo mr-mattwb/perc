@@ -9,6 +9,15 @@
    (meth        :initarg :meth       :accessor entry-meth)
    (data        :initarg :data       :accessor entry-data)))
 
+(defclass call ()
+  ((id          :initarg :id        :accessor call-id)
+   (nodes       :initarg :nodes     :accessor call-nodes)))
+
+(defclass link ()
+  ((from        :initarg :from      :accessor link-from)
+   (to          :initarg :to        :accessor link-to)))
+
+
 (defparameter pfx-date "\(\\d\\d\\d\\d-\\d\\d-\\d\\d\)")
 (defparameter pfx-time "\(\\d\\d:\\d\\d:\\d\\d\)")
 (defparameter pfx-msec "\(\\d+\)")
@@ -89,33 +98,72 @@
     (aux-input-file fin '())))
 
 (defmethod get-call (id entries) 
-  (remove-if-not #'(lambda (e) (equal id (entry-id e))) entries))
+  (make-instance 'call 
+                 :id id
+                 :nodes (remove-if-not #'(lambda (e) (equal id (entry-id e))) entries)))
 
-(defmethod call-ids (entries) 
+(defmethod call-ids (entries)
   (remove-duplicates (mapcar #'entry-id entries) :test #'equal))
 
-(defmethod get-calls (entries) 
-  (mapcar #'(lambda (id) (cons id (get-call id entries))) (call-ids entries)))
+(defmethod get-calls (entries)
+  (mapcar #'(lambda (id) (get-call id entries)) (call-ids entries)))
 
-(defmethod copy-entry (e nfrom nto) 
-  (make-instance 'entry :date (entry-date e)
-                        :time (entry-time e)
-                        :msec (entry-msec e)
-                        :id   (entry-id e)
-                        :ivr  (entry-ivr e)
-                        :level (entry-level e)
-                        :meth (entry-meth e)
-                        :data (cons nfrom nto)))
+(defmethod convert-link (node) 
+    (ppcre:register-groups-bind (nfrom nto) (chain-pat (entry-data node))
+        (make-instance 'entry 
+                 :date  (entry-date node)
+                 :time  (entry-time node)
+                 :msec  (entry-msec node)
+                 :id    (entry-id node)
+                 :ivr   (entry-ivr node)
+                 :level (entry-level node)
+                 :meth  (entry-meth node)
+                 :data  (make-instance 'link :from nfrom :to nto))))
 
-(defmethod link-convert ((e entry)) 
-    (ppcre:register-groups-bind (nfrom nto) (chain-pat (entry-data e))
-        (copy-entry e nfrom nto)))
-  
-(defmethod aux-get-links (idcall)
-    (let ((call (cdr idcall)))
-        (mapcar #'link-convert (remove-if-not #'match-link call))))
+(defmethod convert-to-links (nodes) (mapcar #'convert-link nodes))
+(defmethod just-links ((c call)) 
+  (convert-to-links (remove-if-not #'match-link (call-nodes c))))
+(defmethod get-links (calls) (mapcar #'just-links calls))
 
-(defmethod get-call-links (entries)
-  (mapcar #'aux-get-links (get-calls entries)))
-    
+(defmethod entry-from ((e entry)) (link-from (entry-data e)))
+(defmethod entry-to ((e entry)) (link-to (entry-data e)))
+
+(defmethod lowest-link (links lowest)
+  (cond 
+    ((equal nil links) lowest)
+    ((string< (entry-from (car links)) (entry-from lowest)) (lowest-link (cdr links) (car links)))
+    (t (lowest-link (cdr links) lowest))))
+
+(defmethod start-link (links) (lowest-link (cdr links) (car links)))
+(defmethod next-link (fst links)
+  (cond
+    ((equal nil links) nil)
+    ((string= (entry-to fst) (entry-from (car links))) (car links))
+    (t (next-link fst (cdr links)))))
+
+(defmethod follow-links (node path links)
+  (let ((nxt (next-link node links)))
+    (cond
+      ((or (equal nil links) (equal nil nxt))  (reverse path))
+      (t (follow-links nxt (cons nxt path) (remove nxt links))))))
+
+
+(defmethod follow (links)
+  (let ((fst (start-link links)))
+    (follow-links fst (list fst) (remove fst links))))
+
+(defmethod inspect-path (links)
+  (cond
+    ((equal nil links) (format t "~%"))
+    (t (format t "~A~%" (entry-from (car links)))
+       (inspect-path (cdr links)))))
+
+
+(defparameter entries (input-file "logs/ndf.log"))
+(defparameter calls (get-calls entries))
+(defparameter links (get-links calls))
+(defparameter call (car links))
+
+
+
 
