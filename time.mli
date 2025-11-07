@@ -7,6 +7,7 @@ type t = private int
 val midnight : t
 
 val of_ints : int -> int -> int -> t
+val of_strs : string -> string -> string -> t
 
 module Sep : EnvParam.STR_ELT
 

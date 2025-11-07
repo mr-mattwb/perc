@@ -6,6 +6,7 @@ module Rxp = Str
 type t = private int
 
 val of_ints : int -> int -> int -> t
+val of_strs : string -> string -> string -> t
 
 val year0 : t
 
