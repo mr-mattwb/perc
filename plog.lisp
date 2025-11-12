@@ -78,4 +78,55 @@
 (defmethod input-file (fname) 
   (with-open-file (fin fname :direction :input) (input-channel '() fin)))
 
+(defmethod get-ids (links)
+  (remove-duplicates (mapcar #'entry-id links) :test #'equal))
 
+(defmethod get-call (id links) 
+  (make-instance 'call 
+                 :id id
+                 :nodes (remove-if-not #'(lambda (x) (equal (entry-id x) id)) links)))
+(defmethod get-calls (links)
+    (mapcar #'(lambda (id) (get-call id links)) (get-ids links)))
+
+(defmethod entry-from (link) (link-from (entry-data link)))
+(defmethod entry-to (link) (link-to (entry-data link)))
+
+(defmethod hd (ls) (car ls))
+(defmethod tl (ls) (cdr ls))
+(defmethod hd-from (links) (entry-from (car links)))
+(defmethod hd-to (links) (entry-to (car links)))
+
+(defmethod lowest-link (low nodes) 
+  (cond 
+    ((equal nodes nil) low)
+    ((string< (hd-from nodes) (entry-from low)) (lowest-link (car nodes) (cdr nodes)))
+    (t (lowest-link low (cdr nodes)))))
+(defmethod find-link (node nodes)
+  (cond
+    ((equal nil nodes) nil)
+    ((string= (entry-to node) (hd-from nodes)) (hd nodes))
+    (t (find-link node (tl nodes)))))
+
+
+(defmethod first-node (call)
+  (lowest-link (car (call-nodes call)) (cdr (call-nodes call))))
+(defmethod next-node (node call)
+  (find-link node (call-nodes call)))
+
+(defmethod follow-path (node path call) 
+  (let ((nn (next-node node call)))
+    (cond
+      ((equal nn nil) (reverse path))
+      (t (follow-path nn (cons nn path) call)))))
+
+(defmethod get-path (call)
+  (let ((ff (first-node call)))
+    (follow-path ff (cons ff '()) call)))
+
+(defmethod path-nodes (path nodes)
+  (cond 
+    ((equal path nil)  (reverse nodes))
+    (t (path-nodes (tl path) (cons (hd-from path) nodes)))))
+(defmethod callpath (call) (path-nodes (get-path call) '()))
+(defmethod idpath (id links) (path-nodes (get-path (get-call id links)) '()))
+(defmethod callpaths (calls) (mapcar #'callpath calls))

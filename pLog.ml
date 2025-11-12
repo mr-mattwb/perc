@@ -8,17 +8,17 @@ let pfx_date = "(\\d\\d\\d\\d\\-\\d\\d\\-\\d\\d)"
 let pfx_time = "(\\d\\d:\\d\\d:\\d\\d)"
 let pfx_msec = "(\\d\\d\\d)"
 let pfx_callid = "([0-9A-F]*)"
-let pfx_level = "([\\_0-9A-Z\\.-]+)"
-let pfx_meth = "([a-zA-Z0-9\\.\\_]+)"
+let pfx_prio = "([\\_0-9A-Z\\.-]+)"
+let pfx_proc = "([a-zA-Z0-9\\.\\_]+)"
 let calldata = "(.*)"
-let msgfmt = pfx_date ^ "T" ^ pfx_time ^ "," ^ pfx_msec ^ "\\|" ^ pfx_callid ^ "\\|" ^ pfx_level ^ "\\|" ^ pfx_meth ^ "\\|" ^ calldata
+let msgfmt = pfx_date ^ "T" ^ pfx_time ^ "," ^ pfx_msec ^ "\\|" ^ pfx_callid ^ "\\|" ^ pfx_prio ^ "\\|" ^ pfx_proc ^ "\\|" ^ calldata
 
 let datefmt = "(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)"
 let timefmt = "(\\d\\d):(\\d\\d):(\\d\\d)"
 let msecfmt = "(\\d\\d\\d)"
-let idfmt = "([A-F0-9]+)"
-let levelfmt = "([A-Z0-9\\.]+)-([A-Z]+)"
-let methfmt = "([a-zA-Z0-9\\.\\_]+)"
+let callidfmt = "([A-F0-9]+)"
+let priofmt = "([A-Z0-9\\.]+)-([A-Z]+)"
+let procfmt = "([a-zA-Z0-9\\.\\_]+)"
 
 let line = "2025-08-25T05:24:35,588|6CF7AC02C98898345960E7A47D41C6E1|MOD25.09.0.004-DEBUG|ivr.GlobalAppUtil|File[/usr/local/tomcat/webapps/CharterModPrompts/en-US/prompts/application/default/generic_customer_loyalty_sales_intercept.ulaw] was found:true"
 
@@ -26,7 +26,7 @@ let chainline = "2025-08-25T05:24:35,593|6CF7AC02C98898345960E7A47D41C6E1|MOD25.
 
 let chain_pat = "chaining from >(.+)< to >(.*)<"
 
-let link_pat = datefmt ^ "T" ^ timefmt ^ "," ^ msecfmt ^ "\\|" ^ idfmt ^ "\\|" ^ levelfmt ^ "\\|" ^ methfmt ^ "\\|" ^ chain_pat
+let link_pat = datefmt ^ "T" ^ timefmt ^ "," ^ msecfmt ^ "\\|" ^ callidfmt ^ "\\|" ^ priofmt ^ "\\|" ^ procfmt ^ "\\|" ^ chain_pat
 
 type id = string
 
@@ -34,10 +34,10 @@ type 'a entry = {
     date : Date.t;
     time : Time.t;
     msec : int;
-    id : id;
+    callid : id;
     ivr : string;
-    level : string;
-    meth : string;
+    prio : string;
+    proc : string;
     data : 'a
 }
 type 'a call = {
@@ -56,10 +56,10 @@ let parse_link line =
     { date = Date.of_strs ss.(1) ss.(2) ss.(3);
       time = Time.of_strs ss.(4) ss.(5) ss.(6);
       msec = int_of_string ss.(7);
-      id = ss.(8);
+      callid = ss.(8);
       ivr = ss.(9);
-      level = ss.(10);
-      meth = ss.(11);
+      prio = ss.(10);
+      proc = ss.(11);
       data = { link_from = ss.(12); link_to = ss.(13) }
     }
 
@@ -81,13 +81,13 @@ module Ids = Set.Make(String)
 let get_ids links = 
     let rec aux set = function
         | [] -> Ids.elements set
-        | link :: links -> aux (Ids.add link.id set) links
+        | link :: links -> aux (Ids.add link.callid set) links
     in aux Ids.empty links
 
 let get_call id = 
     let rec aux nodes = function
         | [] -> { call_id = id; call_nodes = nodes }
-        | n :: links when n.id = id -> aux (n :: nodes) links
+        | n :: links when n.callid = id -> aux (n :: nodes) links
         | n :: links -> aux nodes links
     in aux [] 
 
@@ -95,28 +95,21 @@ let get_calls links =
     let aux acc id = (get_call id links) :: acc in
     List.fold_left aux [] (get_ids links)
 
-let first_node call = 
-    let rec aux low = function 
-        | [] -> low
-        | n :: nodes when n.data.link_from < low.data.link_from -> aux n nodes
-        | _ :: nodes -> aux low nodes
-    in aux (List.hd call.call_nodes) (List.tl call.call_nodes) 
+let rec find_first low = function
+    | [] -> low
+    | n :: ns when n.data.link_from < low.data.link_from -> find_first n ns
+    | _ :: ns -> find_first low ns
+let rec find_next curr = function
+    | [] -> None
+    | n :: ns when curr.data.link_to = n.data.link_from -> Some n
+    | _ :: ns -> find_next curr ns
 
-let next_node cur call =
-    let rec aux = function
-        | [] -> None
-        | n :: nodes when cur.data.link_to = n.data.link_from -> Some n
-        | _ :: nodes -> aux nodes
-    in aux call.call_nodes
-
-let follow call =
-    let rec aux path cur =
-        match next_node cur call with
+let callpath call = 
+    let rec aux path curr = 
+        match find_next curr call.call_nodes with
         | None -> List.rev path
-        | Some n -> aux (n :: path) n
+        | Some n -> aux (n.data.link_from :: path) n 
     in 
-    let ff = first_node call in 
-    aux [ff] ff
-let inspect call = 
-    List.map (fun n -> n.data.link_from) (follow call)
+    let ff = find_first (List.hd call.call_nodes) (List.tl call.call_nodes) in
+    aux [ff.data.link_from] ff
 

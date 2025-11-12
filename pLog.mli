@@ -13,10 +13,10 @@ type 'a entry = {
     date : Date.t;
     time : Time.t;
     msec : int;
-    id : id;
+    callid : id;
     ivr : string;
-    level : string;
-    meth : string;
+    prio : string;
+    proc : string;
     data : 'a
 }
 type 'a call = {
@@ -28,36 +28,18 @@ type link = {
     link_to : string
 }
 
-val parse_msec : string -> int
-val parse_ivr : string -> string * string
-val parse_link : string -> string * string
-
-val entry_match : string -> bool
-val parse_entry : string -> string entry
-val match_entry : string -> bool
-val match_link : string entry -> bool
-val match_id : id -> string entry -> bool
-
-val input_entry : in_channel -> string entry option
-val input_channel : in_channel -> string entry list -> string entry list
-val input_file : Tools.file -> string entry list
+val link_match : string -> bool
+val parse_link : string -> link entry
+val input_link : in_channel -> link entry option
+val input_channel : in_channel -> link entry list
+val input_file : Tools.file -> link entry list
 
 module Ids : Set.S with type elt = id
+val get_ids : 'a entry list -> id list
+val get_call : id -> 'a entry list -> 'a entry call
+val get_calls : 'a entry list -> 'a entry call list
 
-val get_call : id -> string entry list -> string entry call
-val get_ids : string entry list -> id list
-val get_calls : string entry list -> string entry call list
+val find_first : link entry -> link entry list -> link entry
+val find_next : link entry -> link entry list -> link entry option
 
-val parse_link : string entry -> link entry
-val get_call_links : string entry call -> link entry call
-val get_links : string entry call list -> link entry call list
-
-val first_link : link entry call -> link entry
-val next_link : link entry -> link entry call -> link entry option
-
-val call_links : Tools.file -> link entry call list
-val follow_path : link entry call -> link entry list
-val inspect_path : link entry list -> string list
-
-
-
+val callpath : link entry call -> id list
