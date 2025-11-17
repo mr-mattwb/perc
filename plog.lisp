@@ -5,8 +5,8 @@
    (msec        :initarg :msec       :accessor entry-msec)
    (id          :initarg :id         :accessor entry-id)
    (ivr         :initarg :ivr        :accessor entry-ivr)
-   (level       :initarg :level      :accessor entry-level)
-   (meth        :initarg :meth       :accessor entry-meth)
+   (prio        :initarg :prio       :accessor entry-prio)
+   (proc        :initarg :proc       :accessor entry-proc)
    (data        :initarg :data       :accessor entry-data)))
 
 (defclass call ()
@@ -22,11 +22,11 @@
 (defparameter pfx-time "\(\\d\\d:\\d\\d:\\d\\d\)")
 (defparameter pfx-msec "\(\\d+\)")
 (defparameter pfx-callid "\([0-9A-F]*\)")
-(defparameter pfx-level "\([_0-9A-Z\.-]+\)")
-(defparameter pfx-method "\([A-Za-z0-9\.\_]+\)")
+(defparameter pfx-prio "\([_0-9A-Z\.-]+\)")
+(defparameter pfx-proc "\([A-Za-z0-9\.\_]+\)")
 (defparameter line-data "\(.*\)$")
 
-(defparameter entryfmt (concatenate 'string pfx-date "T" pfx-time "," pfx-msec "\\|" pfx-callid "\\|" pfx-level "\\|" pfx-method "\\|" line-data))
+(defparameter entryfmt (concatenate 'string pfx-date "T" pfx-time "," pfx-msec "\\|" pfx-callid "\\|" pfx-prio "\\|" pfx-proc "\\|" line-data))
 
 (defparameter chain-pat "chaining from >\(.*\)< to >\(.*\)<")
 
@@ -40,93 +40,98 @@
 (defparameter time-fmt "\(\\d\\d\):\(\\d\\d\):\(\\d\\d\)")
 (defparameter msec-fmt "\(\\d\\d\\d\)")
 (defparameter id-fmt "\([A-F0-9]+\)")
-(defparameter level-fmt "\([A-Z0-9\.]+\)-\([A-Z]+\)")
-(defparameter meth-fmt "\([a-zA-Z0-9\.\_]+\)")
+(defparameter prio-fmt "\([A-Z0-9\.]+\)-\([A-Z]+\)")
+(defparameter proc-fmt "\([a-zA-Z0-9\.\_]+\)")
+(defparameter data-fmt "\(.*\)")
 
-(defparameter link-pat (concatenate 'string date-fmt "T" time-fmt "," msec-fmt 
-                                   "\\|" id-fmt "\\|" level-fmt "\\|" meth-fmt "\\|" chain-pat))
+(defparameter entry-pat (concatenate 'string date-fmt "T" time-fmt "," msec-fmt 
+                                   "\\|" id-fmt "\\|" prio-fmt "\\|" proc-fmt "\\|" data-fmt))
 
 (defmethod date-of-ints (yr mn dy) (+ (* yr 10000) (* mn 100) dy))
 (defmethod time-of-ints (hh mm ss) (+ (* hh 10000) (* mm 100) ss))
 (defmethod date-of-strs (yr mn dy) (date-of-ints (parse-integer yr) (parse-integer mn) (parse-integer dy)))
 (defmethod time-of-strs (hh mm ss) (time-of-ints (parse-integer hh) (parse-integer mm) (parse-integer ss)))
 
-(defmethod parse-link (line) 
-  (ppcre:register-groups-bind (yr mn dy hh mm ss ms id ivr lvl meth nfrom nto) (link-pat line)
+(defmethod hd (ls) (car ls))
+(defmethod tl (ls) (cdr ls))
+(defmethod inspect-data (entry) (inspect (entry-data entry)))
+(defmethod inspect-hd (ls) (inspect (car ls)))
+(defmethod inspect-hd-data (ls) (inspect-data (hd ls)))
+
+(defmethod link-match (e) (ppcre:scan chain-pat (entry-data e)))
+
+(defmethod copy-entry (e)
+    (make-instance 'entry
+                   :date (entry-date e)
+                   :time (entry-time e)
+                   :msec (entry-msec e)
+                   :id (entry-id e)
+                   :ivr (entry-ivr e)
+                   :prio (entry-prio e)
+                   :proc (entry-proc e)
+                   :data (entry-data e)))
+
+(defmethod parse-entry (line) 
+  (ppcre:register-groups-bind (yr mn dy hh mm ss ms id ivr pri proc data) (entry-pat line)
     (make-instance 'entry 
                    :date (date-of-strs yr mn dy)
                    :time (time-of-strs hh mm ss)
                    :msec (parse-integer ms)
                    :id id
                    :ivr ivr
-                   :level lvl
-                   :meth meth
-                   :data (make-instance 'link :from nfrom :to nto))))
-(defmethod input-link (fin)
+                   :prio pri
+                   :proc proc
+                   :data data)))
+
+(defmethod parse-link (line)
+  (ppcre:register-groups-bind (nfrom nto) (chain-pat line) 
+    (make-instance 'link :from nfrom :to nto)))
+
+(defmethod input-line (fin)
   (let ((line (read-line fin nil 'eof)))
     (cond 
-      ((equal line 'eof) nil)
-      ((ppcre:scan link-pat line) (parse-link line))
-      (t (input-link fin)))))
+        ((equal line 'eof) nil)
+        ((ppcre:scan entry-pat line) line)
+        (t (input-line fin)))))
 
-(defmethod input-channel (links fin) 
-  (let ((e (input-link fin)))
+(defmethod input-entry (fin)
+  (let ((line (input-line fin)))
+    (cond 
+      ((equal line nil) nil)
+      (t (parse-entry line)))))
+
+(defmethod input-channel (entries fin) 
+  (let ((e (input-entry fin)))
     (cond
-      ((equal e nil)  links)
-      (t (input-channel (cons e links) fin)))))
+      ((equal e nil)  entries)
+      (t (input-channel (cons e entries) fin)))))
 
 (defmethod input-file (fname) 
   (with-open-file (fin fname :direction :input) (input-channel '() fin)))
 
-(defmethod get-ids (links)
-  (remove-duplicates (mapcar #'entry-id links) :test #'equal))
+(defmethod convert-2-link (e) 
+  (let ((cpy (copy-entry e)))
+    (setf (entry-data cpy) (parse-link (entry-data e)))
+    cpy))
 
-(defmethod get-call (id links) 
-  (make-instance 'call 
-                 :id id
-                 :nodes (remove-if-not #'(lambda (x) (equal (entry-id x) id)) links)))
-(defmethod get-calls (links)
-    (mapcar #'(lambda (id) (get-call id links)) (get-ids links)))
+(defmethod link-match-hd (ls) (link-match (hd ls)))
+(defmethod add-hd-link (links entries) (cons (convert-2-link (hd entries)) links))
 
-(defmethod entry-from (link) (link-from (entry-data link)))
-(defmethod entry-to (link) (link-to (entry-data link)))
-
-(defmethod hd (ls) (car ls))
-(defmethod tl (ls) (cdr ls))
-(defmethod hd-from (links) (entry-from (car links)))
-(defmethod hd-to (links) (entry-to (car links)))
-
-(defmethod lowest-link (low nodes) 
-  (cond 
-    ((equal nodes nil) low)
-    ((string< (hd-from nodes) (entry-from low)) (lowest-link (car nodes) (cdr nodes)))
-    (t (lowest-link low (cdr nodes)))))
-(defmethod find-link (node nodes)
+(defmethod aux-links-of-entries (links entries)
   (cond
-    ((equal nil nodes) nil)
-    ((string= (entry-to node) (hd-from nodes)) (hd nodes))
-    (t (find-link node (tl nodes)))))
+    ((equal nil entries) links)
+    ((link-match (hd entries)) (aux-links-of-entries (add-hd-link links entries) (tl entries)))
+    (t (aux-links-of-entries links (tl entries)))))
+
+(defmethod links-of-entries (entries) (aux-links-of-entries '() entries))
+
+(defmethod get-ids (links) (remove-duplicates (mapcar #'entry-id links) :test #'equal))
+(defmethod get-call (id links) 
+  (make-instance 'call :id id :nodes (remove-if-not #'(lambda (x) (string= id (entry-id x))) links)))
+(defmethod get-calls (links) (mapcar #'(lambda (x) (get-call x links)) (get-ids links)))
+(defmethod calls-of-links (links) (get-calls links))
+
+(defmethod calls-of-entries (entries) (calls-of-links (links-of-entries entries)))
 
 
-(defmethod first-node (call)
-  (lowest-link (car (call-nodes call)) (cdr (call-nodes call))))
-(defmethod next-node (node call)
-  (find-link node (call-nodes call)))
 
-(defmethod follow-path (node path call) 
-  (let ((nn (next-node node call)))
-    (cond
-      ((equal nn nil) (reverse path))
-      (t (follow-path nn (cons nn path) call)))))
-
-(defmethod get-path (call)
-  (let ((ff (first-node call)))
-    (follow-path ff (cons ff '()) call)))
-
-(defmethod path-nodes (path nodes)
-  (cond 
-    ((equal path nil)  (reverse nodes))
-    (t (path-nodes (tl path) (cons (hd-from path) nodes)))))
-(defmethod callpath (call) (path-nodes (get-path call) '()))
-(defmethod idpath (id links) (path-nodes (get-path (get-call id links)) '()))
-(defmethod callpaths (calls) (mapcar #'callpath calls))
