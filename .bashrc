@@ -6,6 +6,7 @@ export logging_targets=STDERR
 export ALLOW_OVERRIDE=true
 
 export PATH=$HOME/mine/perc:$PATH
+export PATH=$HOME/mine/perc/_build/default:$PATH
 
 #load "cfg.cma"
 #load "perc5sWav.cmo"

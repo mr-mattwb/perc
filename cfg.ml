@@ -7,63 +7,63 @@ open Env
 
 module BuildCommand = Cmd(
     struct
-        let name = "commands.build"
+        let name = "commands_build"
         let default () = "/usr/bin/sox"
         let desc = "Command to convert sound file"
         let switches = ["-b"; "--build-command"]
     end)
 module DurCommand = Cmd(
     struct
-        let name = "commands.duration"
+        let name = "commands_duration"
         let default () = "/usr/bin/soxi -D"
         let desc = "Command to get file duration"
         let switches = ["-d"; "--dur-command"]
     end)
 module PlayCommand = Cmd(
     struct
-        let name = "commands.play"
+        let name = "commands_play"
         let default () = "/usr/bin/play"
         let desc = "Command to get play a sound file"
         let switches = ["-p"; "--play-cmd"]
     end)
 module OutFile = MakeFile(
     struct
-        let name = "percolate.outfile"
+        let name = "percolate_outfile"
         let default () = "output.ulaw"
         let desc = "Output sound file"
         let switches = ["-o"; "--out-file"]
     end)
 module PercFile = MakeFile(
     struct
-        let default () = "percolate.ulaw"
+        let default () = "percolate_ulaw"
         let desc = "Sound file that plays percolate music"
         let switches = ["-p"; "--perc-file"]
         let name = "PERCFILE"
     end)
 module Seconds = Int(
     struct
-        let name = "percolate.seconds"
+        let name = "percolate_seconds"
         let default () = 60
         let desc = "Seconds from a config file"
         let switches = ["-s"; "--seconds"]
     end)
 module Play = Set(
     struct
-        let name = "percolate.play"
+        let name = "percolate_play"
         let default () = false
         let desc = "Command to play a sound file"
         let switches = ["--play"]
     end)
 module FileExt = Str(
     struct
-        let name = "percolate.extension"
+        let name = "percolate_extension"
         let default () = ".wav"
         let switches = ["-E"; "--file-extension"]
         let desc = "File extension to use for any output files"
     end)
 module ExtraSwitches = MultiValue(Ser.Str)(
     struct
-        let name = "extra.args"
+        let name = "extra_args"
         let desc = "Description"
         let switches = [ "-x" ]
     end)

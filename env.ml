@@ -323,7 +323,13 @@ open PropBase
 
 let rec try_config_file () = 
     try parse_config (CfgFile.get())
-    with Not_found -> eprintf "Config file not found [%s]\n%!" (CfgFile.get())
+    with 
+    | Sys_error _
+    | Not_found -> 
+        if Verbose.get () then 
+            eprintf "Config file not found [%s]\n%!" (CfgFile.get())
+        else
+            ()
 and parse_config fname = 
     match getConfigType () with
     | Ini -> with_lex_file (main None (IniParse.main IniLex.main)) fname
