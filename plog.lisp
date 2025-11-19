@@ -26,7 +26,7 @@
 (defparameter pfx-proc "\([A-Za-z0-9\.\_]+\)")
 (defparameter line-data "\(.*\)$")
 
-(defparameter entryfmt (concatenate 'string pfx-date "T" pfx-time "," pfx-msec "\\|" pfx-callid "\\|" pfx-prio "\\|" pfx-proc "\\|" line-data))
+(defparameter entryfmt (concatenate 'string pfx-date "T" pfx-time "," pfx-msec "\\|" pfx-callid "\\|" pfx-prio "\\|" pfx-proc "\\|"))
 
 (defparameter chain-pat "chaining from >\(.*\)< to >\(.*\)<")
 
@@ -45,7 +45,10 @@
 (defparameter data-fmt "\(.*\)")
 
 (defparameter entry-pat (concatenate 'string date-fmt "T" time-fmt "," msec-fmt 
-                                   "\\|" id-fmt "\\|" prio-fmt "\\|" proc-fmt "\\|" data-fmt))
+                                   "\\|" id-fmt "\\|" prio-fmt "[ ]*\\|" proc-fmt "\\|" data-fmt))
+(defparameter link-pat (concatenate 'string date-fmt "T" time-fmt "," msec-fmt 
+                                   "\\|" id-fmt "\\|" prio-fmt "[ ]*\\|" proc-fmt "\\|" chain-pat))
+
 
 (defmethod date-of-ints (yr mn dy) (+ (* yr 10000) (* mn 100) dy))
 (defmethod time-of-ints (hh mm ss) (+ (* hh 10000) (* mm 100) ss))
@@ -58,7 +61,8 @@
 (defmethod inspect-hd (ls) (inspect (car ls)))
 (defmethod inspect-hd-data (ls) (inspect-data (hd ls)))
 
-(defmethod link-match (e) (ppcre:scan chain-pat (entry-data e)))
+(defmacro link-match (line) `(ppcre:scan link-pat ,line))
+(defmacro entry-match (line) `(ppcre:scan entry-pat ,line))
 
 (defmethod copy-entry (e)
     (make-instance 'entry
@@ -71,8 +75,8 @@
                    :proc (entry-proc e)
                    :data (entry-data e)))
 
-(defmethod parse-entry (line) 
-  (ppcre:register-groups-bind (yr mn dy hh mm ss ms id ivr pri proc data) (entry-pat line)
+(defmacro parse-entry (line) 
+  `(ppcre:register-groups-bind (yr mn dy hh mm ss ms id ivr pri proc data) (entry-pat ,line)
     (make-instance 'entry 
                    :date (date-of-strs yr mn dy)
                    :time (time-of-strs hh mm ss)
@@ -83,55 +87,37 @@
                    :proc proc
                    :data data)))
 
-(defmethod parse-link (line)
-  (ppcre:register-groups-bind (nfrom nto) (chain-pat line) 
+(defmacro parse-entry-link (line) 
+  `(ppcre:register-groups-bind (yr mn dy hh mm ss ms id ivr pri proc nfrom nto) (link-pat ,line)
+    (make-instance 'entry 
+                   :date (date-of-strs yr mn dy)
+                   :time (time-of-strs hh mm ss)
+                   :msec (parse-integer ms)
+                   :id id
+                   :ivr ivr
+                   :prio pri
+                   :proc proc
+                   :data (make-instance 'link :from nfrom :to nto))))
+
+(defmacro parse-link (line)
+  `(ppcre:register-groups-bind (nfrom nto) (chain-pat ,line)
     (make-instance 'link :from nfrom :to nto)))
 
-(defmethod input-line (fin)
-  (let ((line (read-line fin nil 'eof)))
-    (cond 
-        ((equal line 'eof) nil)
-        ((ppcre:scan entry-pat line) line)
-        (t (input-line fin)))))
-
 (defmethod input-entry (fin)
-  (let ((line (input-line fin)))
-    (cond 
-      ((equal line nil) nil)
-      (t (parse-entry line)))))
-
-(defmethod input-channel (entries fin) 
-  (let ((e (input-entry fin)))
+  (let ((line (read-line fin nil 'eof)))
     (cond
-      ((equal e nil)  entries)
-      (t (input-channel (cons e entries) fin)))))
+        ((equal line 'eof) nil)
+        ((link-match line) (parse-entry-link line))
+        (t (input-entry fin)))))
 
-(defmethod input-file (fname) 
-  (with-open-file (fin fname :direction :input) (input-channel '() fin)))
+(defmethod input-channel (fin entries)
+  (let ((entry (input-entry fin)))
+    (cond
+      ((equal nil entry) entries)
+      (t (input-channel fin (cons entry entries))))))
 
-(defmethod convert-2-link (e) 
-  (let ((cpy (copy-entry e)))
-    (setf (entry-data cpy) (parse-link (entry-data e)))
-    cpy))
-
-(defmethod link-match-hd (ls) (link-match (hd ls)))
-(defmethod add-hd-link (links entries) (cons (convert-2-link (hd entries)) links))
-
-(defmethod aux-links-of-entries (links entries)
-  (cond
-    ((equal nil entries) links)
-    ((link-match (hd entries)) (aux-links-of-entries (add-hd-link links entries) (tl entries)))
-    (t (aux-links-of-entries links (tl entries)))))
-
-(defmethod links-of-entries (entries) (aux-links-of-entries '() entries))
-
-(defmethod get-ids (links) (remove-duplicates (mapcar #'entry-id links) :test #'equal))
-(defmethod get-call (id links) 
-  (make-instance 'call :id id :nodes (remove-if-not #'(lambda (x) (string= id (entry-id x))) links)))
-(defmethod get-calls (links) (mapcar #'(lambda (x) (get-call x links)) (get-ids links)))
-(defmethod calls-of-links (links) (get-calls links))
-
-(defmethod calls-of-entries (entries) (calls-of-links (links-of-entries entries)))
-
+(defmacro input-file (fname)
+  `(with-open-file (fin ,fname :direction :input)
+     (input-channel fin '())))
 
 

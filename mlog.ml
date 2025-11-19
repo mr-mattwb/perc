@@ -7,57 +7,57 @@ open Syslog
 
 module Ident = Env.Str(
     struct
-        let name = "log.ident"
+        let name = "log_ident"
         let switches = [ "--log-ident"; "--ident"; "-i" ]
         let desc = "Log identity name"
         let default () = Tools.basename
     end)
 module UsePid = Env.Set(
     struct
-        let name = "log.opt.pid"
+        let name = "log_opt_pid"
         let switches = [ "--opt-pid"; "--pid"; "-p" ]
         let desc = "Log pid in message"
     end)
 module UseCons = Env.Set(
     struct
-        let name = "log.opt.console"
+        let name = "log_opt_console"
         let switches = [ "--opt-console"; "--console"; "-c" ]
         let desc = "Log to console too"
     end)
 module UsePerror = Env.Set(
     struct
-        let name = "log.opt.perror"
+        let name = "log_opt_perror"
         let switches = [ "--opt-perror"; "--perror" ]
         let desc = "Include the LOG_PERROR flag"
     end)
 module UseODelay = Env.Set(
     struct
-        let name = "log.opt.odelay"
+        let name = "log_opt_odelay"
         let switches = [ "--opt-odelay"; "--odelay" ]
         let desc = "Add the LOG_ODELAY flag"
     end)
 module UseNDelay = Env.Set(
     struct
-        let name = "log.opt.ndelay"
+        let name = "log_opt_ndelay"
         let switches = [ "--opt-ndelay"; "--ndelay" ]
         let desc = "Use the LOG_NDELAY flag"
     end)
 module UseNoWait = Env.Set(
     struct
-        let name = "log.opt.nowait"
+        let name = "log_opt_nowait"
         let switches = [ "--opt-nowait"; "--nowait"; "--now" ]
         let desc = "Include the LOG_NOWAIT flag"
     end)
 module Prio = Syslog.EnvPrio(
     struct
-        let name = "log.priority"
+        let name = "log_priority"
         let switches = [ "--log-prio"; "--prio"; "-P" ]
         let desc = "Log priority value"
         let default () = Syslog.LOG_INFO
     end)
 module Message = Env.StrEmpty(
     struct
-        let name = "log.message"
+        let name = "log_message"
         let switches = [ "--log-message"; "--log-msg"; "--msg"; "-m"; "--message" ]
         let desc = "Log this message instead of reading from stdin."
     end)

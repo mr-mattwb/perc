@@ -38,9 +38,6 @@ cfg-x:  cfg.cmxa cfg.ml
 mlog:  cfg.cma syslog.cma mlog.ml
 	$(UCC) $+ -o $@
 
-logp:  cfg.cma logp.ml
-	$(UCC) $+ -o $@
-
 craml:  syslog.cma 
 	$(TOP) -custom -o $@ unix.cma str.cma $+
 

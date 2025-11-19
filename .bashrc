@@ -14,3 +14,5 @@ export PATH=$HOME/mine/perc/_build/default:$PATH
 echo initialized
 
 alias ctop='ledit ./ccaml -I +unix -I +str -I +../pcre -I .'
+
+ocamlincdirs='-I +unix -I +str -I +../dbm -I +../pcre -I _build/default -I _build/default/.cfg.objs/byte str.cma'
