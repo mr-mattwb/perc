@@ -4,6 +4,12 @@ open Printf
 open Stdlib
 
 open PLogBase
+
+type token = 
+    | Date of Date.t
+    | Time of Time.t
+    | MSec of int
+    | Rest of string * string * string * string * data 
 }
 
 let year = ['0'-'9']['0'-'9']['0'-'9']['0'-'9']
@@ -17,10 +23,13 @@ let msec = ['0'-'9']['0'-'9']['0'-'9']
 let callid = ['0'-'9' 'A'-'F']
 let version = ['0'-'9' 'A'-'Z' '.']
 let priority = ['A'-'Z']
-let func = ['A'-'Z' 'a'-'z' '0'-'9' '.' '_']
+let func = ['A'-'Z' 'a'-'z' '0'-'9' '.' '_' ' ']
 let rest = [^ '\n']*
 let token = ['A'-'Z' 'a'-'z' '0'-'9' '_']
 let identifier = [^ '\n']
+let field = [^ '|']
+
+let eoln = '\n'
 
 rule entry = parse
     | (year as yr) '-' (month as mon) '-' (day as day)  
@@ -50,7 +59,7 @@ and data = parse
       }
 
 and entrydata = parse
-    | (year as yr) '-' (month as mon) '-' (day as day)  
+      (year as yr) '-' (month as mon) '-' (day as day)  
       'T' (hour as hh) ':' (minute as mm) ':' (second as ss) 
       ',' (msec as ms) 
       '|' (callid* as id) 
@@ -66,4 +75,14 @@ and entrydata = parse
               data = data lexbuf
             }
           }
+
+and entry_token = parse
+    | (year as yr) '-' (month as mon) '-' (day as day)          { Date (Date.of_strs yr mon day) }
+    | 'T' (hour as hh) ':' (minute as mm) ':' (second as ss)    { Time (Time.of_strs hh mm ss) }
+    | ',' (msec as ms)                                          { MSec (int_of_string ms) }
+    | '|' (callid* as id)                                       
+      '|' (version+ as ivr) '-' (priority* as pri) [' ']*       
+      '|' (func* as f) '|'                                      { Rest (id, ivr, pri, f, data lexbuf) }
+
+
 
