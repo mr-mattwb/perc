@@ -16,6 +16,9 @@ val parse : string -> t
 val to_string : t -> string
 val of_string : string -> t
 
+val to_int : t -> int
+val of_int : int -> t
+
 val now : unit -> t
 
 val time_pat : string

@@ -7,7 +7,7 @@ type t = int
 
 let midnight = 0
 
-let of_ints hh mm ss = (3600 * hh) + (60 * mm) + ss
+let of_ints hh mm ss = (10000 * hh) + (100 * mm) + ss
 let of_strs hh mm ss = of_ints (int_of_string hh) (int_of_string mm) (int_of_string ss)
 
 module Sep = Env.Str(
@@ -26,8 +26,11 @@ let parse hhmmss =
     | hh :: mm :: ss :: _ -> of_ints (int_of_string hh) (int_of_string mm) (int_of_string ss)
 
 let to_string nw = 
-    sprintf "%02d%s%02d%s%02d" (nw / 3600) (Sep.get()) ((nw / 60) mod 60) (Sep.get()) (nw mod 60)
+    sprintf "%02d%s%02d%s%02d" (nw / 10000) (Sep.get()) ((nw / 100) mod 100) (Sep.get()) (nw mod 100)
 let of_string = parse
+
+let to_int hms = hms
+let of_int hms = hms
 
 let now () = 
     let tm = Unix.localtime (Unix.time()) in

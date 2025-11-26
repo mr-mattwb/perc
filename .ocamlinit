@@ -21,3 +21,8 @@ module MV = MultiValue(Ser.Str)(
     end)
 
 *)
+
+let line1 = "2025-08-25T09:22:07,338|0E03F170AD334C4ECB217F4246909BF9|MOD25.09.0.004-DEBUG|reporting.CDRUtil|this is some other data"
+let line2 = "2025-08-25T05:28:35,842|659E437BD782705B6FFEDA02E7FC6758|MOD25.09.0.004-INFO |decision.welcid0405_CheckAniLookup_DS|Label: No ANI Match"
+
+
