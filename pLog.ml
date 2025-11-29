@@ -21,7 +21,7 @@ and parse_line fin line =
 let input_channel fin = 
     let rec aux path = 
         match input_entry fin with
-        | None -> List.rev path
+        | None -> path
         | Some e -> aux (e :: path) 
     in
     aux []
@@ -38,7 +38,7 @@ let get_call id entries =
         else acc
     in
     { call_id = id; 
-      call_nodes = List.rev (List.fold_left add [] entries) }
+      call_nodes = List.fold_left add [] entries }
 
 let calls_of_entries entries =
     let add acc id = (get_call id entries) :: acc in

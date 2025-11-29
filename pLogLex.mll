@@ -5,25 +5,20 @@ open Stdlib
 
 open PLogBase
 
-type token = 
-    | Date of Date.t
-    | Time of Time.t
-    | MSec of int
-    | Rest of string * string * string * string * data 
 }
 
-let year = ['0'-'9']['0'-'9']['0'-'9']['0'-'9']
-let month = ['0'-'9']['0'-'9']
-let day = ['0'-'9']['0'-'9']
-let hour = ['0'-'9']['0'-'9']
-let minute = ['0'-'9']['0'-'9']
-let second = ['0'-'9']['0'-'9']
+let year = ['1'-'2']['0'-'9']['0'-'9']['0'-'9']
+let month = ("0" ['1'-'9'] | "1" ['0'-'2'])
+let day = ("0" ['1'-'9'] | ['1'-'2'] ['0'-'9'] | "3" ['0'-'1']) 
+let hour = (['0'-'1'] ['0'-'9'] | "2" ['0'-'3'])
+let minute = (['0'-'5'] ['0'-'9']) 
+let second = (['0'-'5'] ['0'-'9'])
 let msec = ['0'-'9']['0'-'9']['0'-'9']
 
 let callid = ['0'-'9' 'A'-'F']
 let version = ['0'-'9' 'A'-'Z' '.']
 let priority = ['A'-'Z']
-let func = ['A'-'Z' 'a'-'z' '0'-'9' '.' '_' ' ']
+let func = ['A'-'Z' 'a'-'z' '0'-'9' '.' '_']
 let rest = [^ '\n']*
 let token = ['A'-'Z' 'a'-'z' '0'-'9' '_']
 let identifier = [^ '\n']
@@ -70,19 +65,14 @@ and entrydata = parse
               msec = int_of_string ms;
               id   = id;
               ivr  = ver;
-              prio = pri;
+              prio = PLogBase.PriSer.of_string pri;
               func = f;
               data = data lexbuf
             }
           }
 
-and entry_token = parse
-    | (year as yr) '-' (month as mon) '-' (day as day)          { Date (Date.of_strs yr mon day) }
-    | 'T' (hour as hh) ':' (minute as mm) ':' (second as ss)    { Time (Time.of_strs hh mm ss) }
-    | ',' (msec as ms)                                          { MSec (int_of_string ms) }
-    | '|' (callid* as id)                                       
-      '|' (version+ as ivr) '-' (priority* as pri) [' ']*       
-      '|' (func* as f) '|'                                      { Rest (id, ivr, pri, f, data lexbuf) }
-
-
-
+and priority = parse
+    | "INFO"        { INFO      }
+    | "DEBUG"       { DEBUG     }
+    | "WARN"        { WARN      }
+    | "ERROR"       { ERROR     }

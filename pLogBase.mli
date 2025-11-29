@@ -4,13 +4,19 @@ open Stdlib
 
 type id = string
 
+type priority = 
+    | INFO
+    | DEBUG
+    | WARN
+    | ERROR
+
 type 'a entry = {
     date : Date.t;
     time : Time.t;
     msec : int;
     id : id;
     ivr : string;
-    prio : string;
+    prio : priority;
     func : string;
     data : 'a
 }
@@ -48,12 +54,5 @@ val link_match : string -> bool
 val label_match : string -> bool
 val state_match : string -> bool
 
-val baseline : string
-val linkline : string
-val labelline : string
-val labelline2 : string
-val stateline : string
-
-val fakelinkline : string
-
+module PriSer : Ser.ELT with type elt = priority
 
