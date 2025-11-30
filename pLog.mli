@@ -2,7 +2,7 @@ open Unix
 open Printf
 open Stdlib
 
-open PLogBase
+open PLogLex
 
 exception ParseFail of string
 
