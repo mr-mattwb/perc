@@ -1,9 +1,8 @@
 
 (library
     (name cfg)
-    (public_name perc)
     (wrapped false)
-    (modules tools lex propBase propParse iniParse propLex iniLex ser fileOps envParam env log dayTime time date dateTime soxi perc5sWav syslog pLogLex pLog)
+    (modules tools lex propBase propParse iniParse propLex iniLex ser fileOps envParam env log dayTime time date dateTime soxi perc5sWav syslog pLogLex pLog nLog)
     (libraries unix pcre)
     (foreign_stubs (language c) (names csyslog)) 
     (flags -keep-locs -I +unix -I +str -I +../pcre)
