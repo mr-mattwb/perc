@@ -55,6 +55,10 @@ type data =
     | State of state
     | Other of string
 
+let pat = "([1-2][0-9][0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])"
+let pat = pat ^ "T([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]),[0-9][0-9][0-9]"
+let entry_pat = pat ^ "|([A-F0-9])|(A-Z0-9\\.\\_\\-]+)|[^|]*|[^\n]*"
+let entry_rex = Pcre.regexp entry_pat
 }
 let year = ['1'-'2']['0'-'9']['0'-'9']['0'-'9']
 let month = ('0'['1'-'9']|'1'['0'-'2']) 
@@ -72,11 +76,29 @@ let data = [^ '|' '\n']
 let node = [^ '<']
 let ident = [^ '\n']
  
-rule line = parse 
+rule entry_line = parse 
     | (year as yr) '-' (month as mn) '-' (day as dy) 'T' 
       (hour as hh) ':' (minute as mm) ':' (second as ss) ',' 
       (msec as ms) '|' (call_id* as id) '|' (version+ as ver) '-'
-      (priority as pri) '|' (funcname* as func) '|' 
+      (priority as pri) [' ']* '|' (funcname* as func) '|' 
+      {
+        {
+            entry_date = Date.of_strs yr mn dy;
+            entry_time = Time.of_strs hh mm ss;
+            entry_msec = int_of_string ms;
+            entry_id   = id;
+            entry_vers = ver;
+            entry_prio = PriSer.of_string pri;
+            entry_func = func;
+            entry_data = data lexbuf
+        }
+      }
+
+and entry_test = parse 
+    | (year as yr) '-' (month as mn) '-' (day as dy) 'T' 
+      (hour as hh) ':' (minute as mm) ':' (second as ss) ',' 
+      (msec as ms) '|' (call_id* as id) '|' (version+ as ver) '-'
+      (priority as pri) [' ']* '|' (funcname* as func) '|'
       {
         {
             entry_date = Date.of_strs yr mn dy;
@@ -103,4 +125,30 @@ and data = parse
     | (ident* as other) {
             Other other
         }
+
+{
+let rec input_entry fin = 
+    match Tools.input_line fin with
+    | None -> None
+    | Some line when Pcre.pmatch ~rex:entry_rex line -> 
+        read_entry fin line
+    | Some line -> input_entry fin
+
+and read_entry fin line = 
+    let entry = entry_line (Lexing.from_string line) in
+    match entry.entry_data with
+    | Other _ -> input_entry fin
+    | x -> Some x
+
+let input_channel fin = 
+    let aux ls = 
+        match input_entry fin with
+        | None -> ls
+        | Some e -> aux (e :: ls)
+    in
+    aux []
+
+let input_file fname = Tools.with_in_file input_channel fname 
+
+}
 
