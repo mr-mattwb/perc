@@ -2,13 +2,13 @@
 (library
     (name cfg)
     (wrapped false)
-    (modules tools lex propBase propParse iniParse propLex iniLex ser fileOps envParam env log dayTime time date dateTime soxi perc5sWav syslog pLogLex pLog nLog kLogLex)
+    (modules tools lex propBase propParse iniParse propLex iniLex ser fileOps envParam env log dayTime time date dateTime soxi perc5sWav syslog pLogLex pLog nLog kLog ipc)
     (libraries unix pcre)
-    (foreign_stubs (language c) (names csyslog)) 
+    (foreign_stubs (language c) (names csyslog cIpc)) 
     (flags -keep-locs -I +unix -I +str -I +../pcre)
 )
 (ocamlyacc (modules iniParse propParse))
-(ocamllex (modules iniLex propLex lex pLogLex kLogLex))
+(ocamllex (modules iniLex propLex lex pLogLex kLog))
 
 (executable 
   (name cfg)
