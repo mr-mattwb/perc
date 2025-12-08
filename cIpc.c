@@ -11,6 +11,7 @@
 #include <caml/mlvalues.h>
 #include <caml/alloc.h>
 #include <caml/memory.h>
+#include <caml/unixsupport.h>
 
 #define Val_key(v)          (Val_int(v))
 #define Key_val(v)          (Int_val(v))
@@ -44,6 +45,44 @@ int Shmat_flag[] = {
     SHM_RDONLY
 };
 
+int Unix_errno[] = {
+    EACCES,
+    EFAULT,
+    EIDRM,
+    EINVAL,
+    ENOMEM,
+    EOVERFLOW,
+    EPERM,
+    EEXIST,
+    ENOENT,
+    ENFILE,
+    ENOSPC,
+    E2BIG,
+    EAGAIN,
+    EFAULT,
+    EFBIG,
+    EIDRM,
+    EINTR,
+    ERANGE
+};
+
+value cIpc_ipc_perm(struct ipc_perm ds) {
+    CAMLparam0();
+    CAMLlocal1(v_perms);
+    v_perms = caml_alloc_tuple(7);
+    Store_field(v_perms, 0, Val_key(ds.__key));
+    Store_field(v_perms, 1, Val_int(ds.uid));
+    Store_field(v_perms, 2, Val_int(ds.gid));
+    Store_field(v_perms, 3, Val_int(ds.cuid));
+    Store_field(v_perms, 4, Val_int(ds.cgid));
+    Store_field(v_perms, 5, Val_int(ds.mode));
+    Store_field(v_perms, 6, Val_int(ds.__seq));
+    CAMLreturn(v_perms);
+}
+
+#define unix_error2(fn)        (caml_unix_error(errno, fn, caml_copy_string("")))
+#define unix_error_ctl(fn, id)  (caml_unix_error(errno, fn, caml_copy_string(id)))
+
 value cIpc_ftok(value v_path, value v_id) {
     CAMLparam2(v_path, v_id);
     CAMLreturn(Val_key(ftok(String_val(v_path), Int_val(v_id))));
@@ -57,8 +96,7 @@ value cIpc_semget(value v_key, value v_nsems, value v_semflg, value v_semperm) {
     semflg = semflg | Int_val(v_semperm);
     int rc = semget(key, nsems, semflg);
     if (rc == -1) {
-        printf("semget error [%d]\n", errno);
-        caml_failwith("semget");
+        unix_error2("semget");
     }
     CAMLreturn(Val_int(rc));
 }
@@ -72,8 +110,7 @@ value cIpc_semop1(value v_sem, value v_num, value v_op, value v_flg) {
     sops[0].sem_flg = caml_convert_flag_list(v_flg, Semop_flag);
     int rc = semop(semid, (struct sembuf *)&sops, 1);
     if (rc == -1) {
-        printf("semop error [%d]\n", errno);
-        caml_failwith("semop");
+        unix_error2("semop1");
     }
     CAMLreturn (Val_unit);
 }
@@ -97,8 +134,7 @@ value cIpc_semop(value v_sem, value v_sembuf, value v_len) {
     int semid = Int_val(v_sem);
     int rc = semop(semid, (struct sembuf *)sops, len);
     if ( rc == -1 ) {
-        printf("semop error [%d]\n", errno);
-        caml_failwith("semop");
+        unix_error2("semop");
     }
     CAMLreturn(Val_unit);
 }
@@ -112,19 +148,10 @@ value cIpc_semctl_stat(value v_sem, value v_num) {
     struct semid_ds ds;
     int rc = semctl(semid, semnum, semop, &ds);
     if (rc == -1) {
-        printf ("semctl [%d]\n", errno);
-        caml_failwith("semctl(IPC_STAT)");
+        unix_error_ctl("semctl", "IPC_STAT");
     }
-    v_perms = caml_alloc_tuple(7);
-    Store_field(v_perms, 0, Val_key(ds.sem_perm.__key));
-    Store_field(v_perms, 1, Val_int(ds.sem_perm.uid));
-    Store_field(v_perms, 2, Val_int(ds.sem_perm.gid));
-    Store_field(v_perms, 3, Val_int(ds.sem_perm.cuid));
-    Store_field(v_perms, 4, Val_int(ds.sem_perm.cgid));
-    Store_field(v_perms, 5, Val_int(ds.sem_perm.mode));
-    Store_field(v_perms, 6, Val_int(ds.sem_perm.__seq));
     v_rc = caml_alloc_tuple(4);
-    Store_field(v_rc, 0, v_perms);
+    Store_field(v_rc, 0, cIpc_ipc_perm(ds.sem_perm));
     Store_field(v_rc, 1, Val_int(ds.sem_otime));
     Store_field(v_rc, 2, Val_int(ds.sem_ctime));
     Store_field(v_rc, 3, Val_int(ds.sem_nsems));
@@ -141,8 +168,7 @@ value cIpc_semctl_set(value v_semid, value v_semnum, value v_args) {
     ds.sem_perm.mode = Int_val(Field(v_args, 2));
     int rc = semctl(semid, semnum, IPC_SET, &ds);
     if (rc == -1) {
-        printf("semctl(IPC_SET) [%d]\n", errno);
-        caml_failwith("semctl(IPC_SET)");
+        unix_error_ctl("semctl", "IPC_SET");
     }
     CAMLreturn(Val_unit);
 }
@@ -151,8 +177,7 @@ value cIpc_semctl_rmid(value v_semid) {
     CAMLparam1(v_semid);
     int rc = semctl(Int_val(v_semid), 0, IPC_RMID, NULL);
     if (rc == -1) {
-        printf("semctl(IPC_RMID) [%d]\n", errno);
-        caml_failwith("semctl(IPC_RMID)");
+        unix_error_ctl("semctl", "IPC_RMID");
     }
     CAMLreturn(Val_unit);
 }
@@ -165,15 +190,13 @@ value cIpc_semctl_getall(value v_semid) {
     int rc;
     rc = semctl(semid, 0, IPC_STAT, &ds);
     if (rc == -1) {
-        printf("semctl(getall)(ipc_stat) [%d]\n", errno);
-        caml_failwith("semctl(GETALL)(ipc_stat)");
+        unix_error_ctl("semctl", "IPC_STAT");
     }
     int nsems = ds.sem_nsems;
     unsigned short array[nsems];
     rc = semctl(semid, 0, GETALL, array);
     if (rc == -1) {
-        printf("semctl(GETALL) [%d]\n", errno);
-        caml_failwith("semctl(GETALL)");
+        unix_error_ctl("semctl", "GETALL");
     }
     v_head = Val_emptylist;
     for (int i = 0; i < nsems; ++i) {
@@ -190,8 +213,7 @@ value cIpc_semctl_getncnt(value v_sem, value v_semnum) {
     int ds;
     int rc = semctl(Int_val(v_sem), Int_val(v_semnum), GETNCNT, &ds);
     if (rc == -1) {
-        printf("semctl(GETNCNT) [%d]\n", errno);
-        caml_failwith("semctl(GETNCNT)");
+        unix_error_ctl("semctl","GETNCNT");
     }
     CAMLreturn(Val_int(rc));
 }
@@ -201,8 +223,7 @@ value cIpc_semctl_getpid(value v_sem, value v_semnum) {
     int ds;
     int rc = semctl(Int_val(v_sem), Int_val(v_semnum), GETPID, &ds);
     if (rc == -1) {
-        printf("semctl(GETPID) [%d]\n", errno);
-        caml_failwith("semctl(GETPID)");
+        unix_error_ctl("semctl","GETPID");
     }
     CAMLreturn(Val_int(rc));
 }
@@ -212,8 +233,7 @@ value cIpc_semctl_getval(value v_sem, value v_semnum) {
     int arg_val = 0;
     int rc = semctl(Int_val(v_sem), Int_val(v_semnum), GETVAL, &arg_val);
     if (rc == -1) {
-        printf("semctl(GETVAL) [%d]\n", errno);
-        caml_failwith("semctl(GETVAL)");
+        unix_error_ctl("semctl","GETVAL");
     }
     CAMLreturn(Val_int(rc));
 }
@@ -223,8 +243,7 @@ value cIpc_semctl_getzcnt(value v_sem, value v_semnum) {
     int ds;
     int rc = semctl(Int_val(v_sem), Int_val(v_semnum), GETZCNT, &ds);
     if (rc == -1) {
-        printf("semctl(GETZCNT) [%d]\n", errno);
-        caml_failwith("semctl(GETZCNT)");
+        unix_error_ctl("semctl","GETZCNT");
     }
     CAMLreturn(Val_int(rc));
 }
@@ -235,8 +254,7 @@ value cIpc_semctl_setval(value v_sem, value v_semnum, value v_ds) {
     ds = Int_val(v_ds);
     int rc = semctl(Int_val(v_sem), Int_val(v_semnum), SETVAL, ds);
     if (rc == -1) {
-        printf("semctl(SETVAL) [%d] \n", errno);
-        caml_failwith("semctl(SETVAL)");
+        unix_error_ctl("semctl","SETVAL");
     }
     CAMLreturn(Val_unit);
 }
@@ -259,8 +277,7 @@ value cIpc_semctl_setall(value v_sem, value v_list) {
     }
     int rc = semctl(Int_val(v_sem), 0, SETALL, array);
     if (rc == -1) {
-        printf("semctl(SETALL) [%d]\n",errno);
-        caml_failwith("semctl(SETALL)");
+        unix_error_ctl("semctl","SETALL");
     }
     CAMLreturn(Val_unit);
 }
@@ -272,8 +289,7 @@ value cIpc_msgget(value v_key, value v_flgs, value v_perms) {
     msgflg = msgflg | Int_val(v_perms);
     int msg = msgget(key, msgflg);
     if (msg == -1) {
-        printf("msgget error [%d]\n", errno);
-        caml_failwith("msgget");
+        caml_unix_error(errno, "msgget", caml_copy_string(""));
     }
     CAMLreturn(Val_int(msg));
 }
@@ -300,8 +316,7 @@ value cIpc_msgsnd(value v_mid, value v_msg, value v_flgs) {
     int rc = msgsnd(mid, msg, length, flgs);
     free(ptr);
     if (rc == -1) {
-        printf("msgsnd [%d]\n", errno);
-        caml_failwith("msgsnd");
+        caml_unix_error(errno, "msgsnd", v_msg);
     }
     CAMLreturn(Val_unit);
 }
@@ -319,8 +334,7 @@ value cIpc_msgrcv(value v_mid, value v_mtype, value v_len, value v_flgs) {
     int rc = msgrcv(mid, msg, length, mtype, flgs);
     if (rc == -1) {
         free(ptr);
-        printf("msgrcv [%d]\n", errno);
-        caml_failwith("msgrcv");
+        caml_unix_error(errno, "msgrcv", v_len);
     }
     msg->mtext[length] = '\0';
     v_rc = caml_alloc_tuple(2);
@@ -332,23 +346,14 @@ value cIpc_msgrcv(value v_mid, value v_mtype, value v_len, value v_flgs) {
 
 value cIpc_msgctl_stat(value v_msqid) {
     CAMLparam1(v_msqid);
-    CAMLlocal2(v_rc, v_perms);
+    CAMLlocal1(v_rc);
     struct msqid_ds ds;
     int rc = msgctl(Int_val(v_msqid), IPC_STAT, &ds);
     if (rc == -1) {
-        printf("msgctl(IPC_STAT) [%d]\n",errno);
-        caml_failwith("msgctl(IPC_STAT)");
+        unix_error_ctl("msgctl","IPC_STAT");;
     }
-    v_perms = caml_alloc_tuple(7);
-    Store_field(v_perms, 0, Val_key(ds.msg_perm.__key));
-    Store_field(v_perms, 1, Val_int(ds.msg_perm.uid));
-    Store_field(v_perms, 2, Val_int(ds.msg_perm.gid));
-    Store_field(v_perms, 3, Val_int(ds.msg_perm.cuid));
-    Store_field(v_perms, 4, Val_int(ds.msg_perm.cgid));
-    Store_field(v_perms, 5, Val_int(ds.msg_perm.mode));
-    Store_field(v_perms, 6, Val_int(ds.msg_perm.__seq));
     v_rc = caml_alloc_tuple(9);
-    Store_field(v_rc, 0, v_perms);
+    Store_field(v_rc, 0, cIpc_ipc_perm(ds.msg_perm));
     Store_field(v_rc, 1, Val_int(ds.msg_stime));
     Store_field(v_rc, 2, Val_int(ds.msg_rtime));
     Store_field(v_rc, 3, Val_int(ds.msg_ctime));
@@ -369,8 +374,7 @@ value cIpc_msgctl_set(value v_msqid, value v_flds) {
     ds.msg_perm.mode = Int_val(Field(v_flds, 3));
     int rc = msgctl(Int_val(v_msqid), IPC_SET, &ds);
     if (rc == -1) {
-        printf("msgctl(IPC_SET) [%d]\n", errno);
-        caml_failwith("msgctl(IPC_SET)");
+        unix_error_ctl("msgctl", "IPC_SET");
     }
     CAMLreturn(Val_unit);
 }
@@ -380,8 +384,7 @@ value cIpc_msgctl_rmid(value v_msqid) {
     struct msqid_ds ds;
     int rc = msgctl(Int_val(v_msqid), IPC_RMID, &ds);
     if (rc == -1) {
-        printf("msgctl(IPC_RMID) [%d]\n", errno);
-        caml_failwith("msgctl(IPC_RMID)");
+        unix_error_ctl("msgctl", "IPC_RMID");
     }
     CAMLreturn(Val_unit);
 }
@@ -427,3 +430,46 @@ value cIpc_shm_read(value v_mem) {
     char *mem = Mem_val(v_mem);
     CAMLreturn(caml_copy_string(mem));
 }
+
+value cIpc_shmctl_stat(value v_shmid) {
+    CAMLparam1(v_shmid);
+    CAMLlocal1(v_rc);
+    struct shmid_ds ds;
+    int rc = shmctl(Int_val(v_shmid), IPC_STAT, &ds);
+    if (rc == -1) {
+        unix_error_ctl("shmctl", "IPC_STAT");
+    }
+    v_rc = caml_alloc_tuple(8);
+    Store_field(v_rc, 0, cIpc_ipc_perm(ds.shm_perm));
+    Store_field(v_rc, 1, Val_int(ds.shm_segsz));
+    Store_field(v_rc, 2, Val_int(ds.shm_atime));
+    Store_field(v_rc, 3, Val_int(ds.shm_dtime));
+    Store_field(v_rc, 4, Val_int(ds.shm_ctime));
+    Store_field(v_rc, 5, Val_int(ds.shm_cpid));
+    Store_field(v_rc, 6, Val_int(ds.shm_lpid));
+    Store_field(v_rc, 6, Val_int(ds.shm_nattch));
+    CAMLreturn(v_rc);
+}
+
+value cIpc_shmctl_set(value v_shmid, value v_flds) {
+    CAMLparam2(v_shmid, v_flds);
+    struct shmid_ds ds;
+    ds.shm_perm.uid = Int_val(Field(v_flds, 0));
+    ds.shm_perm.gid = Int_val(Field(v_flds, 1));
+    ds.shm_perm.mode = Int_val(Field(v_flds, 2));
+    int rc = shmctl(Int_val(v_shmid), IPC_SET, &ds);
+    if (rc == -1) {
+        unix_error_ctl("shmctl", "IPC_SET");
+    }
+    CAMLreturn(Val_unit);
+}
+
+value cIpc_shmctl_rmid(value v_shmid) {
+    CAMLparam1(v_shmid);
+    int rc = shmctl(Int_val(v_shmid), IPC_RMID, NULL);
+    if (rc == -1) {
+        unix_error_ctl("shmctl", "IPC_RMID");
+    }
+    CAMLreturn(Val_unit);
+}
+

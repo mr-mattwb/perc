@@ -5,6 +5,18 @@ open Stdlib
 type key_t
 type time_t = int
 type perms = int
+type size_t = int
+type shmatt_t = int
+type pid_t = int
+type ipc_perm = {
+    __key : key_t;
+    uid : int;
+    gid : int;
+    cuid : int;
+    cgid : int;
+    mode : int;
+    __seq : int;
+}
 
 val ftok : string -> int -> key_t
 
@@ -24,15 +36,6 @@ module Sem :
             flg : op_flag list
         }   
 
-        type ipc_perm = {
-            __key : key_t;
-            uid : int;
-            gid : int;
-            cuid : int;
-            cgid : int;
-            mode : int;
-            __seq : int;
-        }
         type semid_ds = {
             perm : ipc_perm;
             otime : time_t;
@@ -68,15 +71,6 @@ module Msg :
         type msgnum_t = int
         type msglen_t = int
 
-        type ipc_perm = {
-            __key : key_t;
-            uid : int;
-            gid : int;
-            cuid : int;
-            cgid : int;
-            mode : int;
-            __seq : int
-        }
         type msqid_ds = {
             msg_perm : ipc_perm;
             msg_stime : time_t;
@@ -85,8 +79,8 @@ module Msg :
             msg_cbytes : int;
             msg_qnum : msgnum_t;
             msg_qbytes : msglen_t;
-            msg_lspid : int;
-            msg_lrpid : int
+            msg_lspid : pid_t;
+            msg_lrpid : pid_t
         }
 
         type ctlset = {
@@ -116,10 +110,29 @@ module Shm :
             | Rdonly
         type mem_t
 
+        type shmid_ds = {
+            shm_perm : ipc_perm;
+            shm_segsz : size_t;
+            shm_atime : time_t;
+            shm_dtime : time_t;
+            shm_ctime : time_t;
+            shm_cpid : pid_t;
+            shm_lpid : pid_t;
+            shm_nattch : shmatt_t
+        }
+        type shmset = {
+            set_uid : int;
+            set_gid : int;
+            set_perms : perms;
+        }
+
         val shmget : key_t -> int -> shmflag list -> perms -> t 
         val shmat : t -> shmatflag list -> mem_t 
         val shmdt : mem_t -> unit
         val write : mem_t -> string -> unit
         val read : mem_t -> string
+        val stat : t -> shmid_ds 
+        val set : t -> shmset -> unit 
+        val rmid : t -> unit
     end
 
