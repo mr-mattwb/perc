@@ -8,6 +8,9 @@ type perms = int
 type size_t = int
 type shmatt_t = int
 type pid_t = int
+type msgnum_t = int
+type msglen_t = int
+
 type ipc_perm = {
     __key : key_t;
     uid : int;
@@ -18,14 +21,15 @@ type ipc_perm = {
     __seq : int;
 }
 
+type getflag = 
+    | Create
+    | Excl
+
 val ftok : string -> int -> key_t
 
 module Sem :
     sig
         type t
-        type semflag = 
-            | Excl
-            | Create
         type op_flag = 
             | NoWait
             | Undo
@@ -43,11 +47,18 @@ module Sem :
             nsems : int;
         } 
 
-        val semget : key_t -> int -> semflag list -> perms -> t 
+        type semset = {
+            set_uid : int;
+            set_gid : int;
+            set_perms : perms
+        }
+
+        val semget : key_t -> int -> getflag list -> perms -> t 
         val semop1 : t -> int -> int -> op_flag list -> unit 
         val semop : t -> buf list -> unit
-        val stat : t -> int -> semid_ds 
-        val set : t -> int -> int * int * int -> unit 
+
+        val stat : t -> semid_ds 
+        val set : t -> semset -> unit 
         val rmid : t -> unit
         val getall : t -> int list
         val getncnt : t -> int -> int
@@ -56,20 +67,23 @@ module Sem :
         val getzcnt : t -> int -> int
         val setval : t -> int -> int -> unit
         val setall : t -> int list -> unit
+
+        val create : ?num:int -> ?flags:getflag list -> ?perms:perms -> key_t -> t
+        val use : ?create:(?num:int -> ?flags:getflag list -> ?perms:perms -> key_t -> t) -> 
+                key_t -> (t -> 'a) -> 'a 
+        
+        val wait : ?num:int -> t -> unit
+        val signal : ?num:int -> t -> unit
+        val protect : ?num:int -> t -> ('a -> 'b) -> 'a -> 'b
+
     end
 
 module Msg :
     sig
         type t
-        type msgflag = 
-            | Excl
-            | Create
         type flag =
             | NoWait
             | NoError
-
-        type msgnum_t = int
-        type msglen_t = int
 
         type msqid_ds = {
             msg_perm : ipc_perm;
@@ -83,27 +97,34 @@ module Msg :
             msg_lrpid : pid_t
         }
 
-        type ctlset = {
+        type msgset = {
             set_qbytes : msglen_t;
             set_uid : int;
             set_gid : int;
             set_perms : perms
         }
 
-        val msgget : key_t -> msgflag list -> perms -> t
-        val msgsnd : t -> int * string -> flag list -> unit
-        val msgrcv : t -> int -> int -> flag list -> int * string
+        val msgget : key_t -> getflag list -> perms -> t
+        val msgsnd : t -> int -> bytes -> int -> flag list -> unit
+        val msgrcv : t -> int -> bytes -> int -> flag list -> int
+
         val stat : t -> msqid_ds 
-        val set : t -> ctlset -> unit
+        val set : t -> msgset -> unit
         val rmid : t -> unit 
+
+        val create : ?flags:getflag list -> ?perms:perms -> key_t -> t
+        val use : ?create:(?flags:getflag list -> ?perms:perms -> key_t -> t) -> key_t -> (t -> 'a) -> 'a
+
+        val send : ?max:int -> ?buf:bytes -> t -> int -> 'a -> unit
+        val recv : ?max:int -> ?buf:bytes -> ?mtype:int -> t -> int * 'a
+
+        val send_str : t -> int ->  string -> unit
+        val recv_str : ?max:int -> ?mtype:int -> t -> int * string
     end
 
 module Shm :
     sig
         type t
-        type shmflag = 
-            | Create
-            | Excl
         type shmatflag =
             | Rnd
             | Exec
@@ -120,19 +141,35 @@ module Shm :
             shm_lpid : pid_t;
             shm_nattch : shmatt_t
         }
+
         type shmset = {
             set_uid : int;
             set_gid : int;
             set_perms : perms;
         }
 
-        val shmget : key_t -> int -> shmflag list -> perms -> t 
+        val shmget : key_t -> int -> getflag list -> perms -> t 
         val shmat : t -> shmatflag list -> mem_t 
         val shmdt : mem_t -> unit
-        val write : mem_t -> string -> unit
-        val read : mem_t -> string
+
+        val _write : mem_t -> bytes -> int -> unit
+        val _read : mem_t -> bytes -> int -> unit
+        val write_str : mem_t -> string -> unit
+        val read_str : mem_t -> string
+
+        val write : ?max:int -> ?buf:bytes -> mem_t -> 'a -> int
+        val read : ?max:int -> ?buf:bytes -> mem_t -> 'a
+
         val stat : t -> shmid_ds 
         val set : t -> shmset -> unit 
         val rmid : t -> unit
+
+        type hnd = t * mem_t
+        val create : ?size:int -> ?flags:getflag list -> ?perms:perms -> key_t -> hnd
+        val destroy : hnd -> unit
+        val send : ?max:int -> ?buf:bytes -> hnd -> 'a -> int
+        val recv : ?max:int -> ?buf:bytes -> hnd -> 'a 
+
+        val use : ?create:(?size:size_t -> ?flags:getflag list -> ?perms:perms -> key_t -> hnd) -> key_t -> (mem_t -> 'a) -> 'a
     end
 

@@ -23,47 +23,18 @@ int Semop_flag[] = {
     IPC_NOWAIT,
     SEM_UNDO
 };
-int Semget_flag[] = {
-    IPC_EXCL,
-    IPC_CREAT
-};
-int Msgget_flag[] = {
-    IPC_EXCL,
-    IPC_CREAT
+int Get_flag[] = {
+    IPC_CREAT,
+    IPC_EXCL
 };
 int Msg_flag[] = {
     IPC_NOWAIT,
     MSG_NOERROR
 };
-int Shm_flag[] = {
-    IPC_CREAT,
-    IPC_EXCL
-};
 int Shmat_flag[] = {
     SHM_RND,
     SHM_EXEC,
     SHM_RDONLY
-};
-
-int Unix_errno[] = {
-    EACCES,
-    EFAULT,
-    EIDRM,
-    EINVAL,
-    ENOMEM,
-    EOVERFLOW,
-    EPERM,
-    EEXIST,
-    ENOENT,
-    ENFILE,
-    ENOSPC,
-    E2BIG,
-    EAGAIN,
-    EFAULT,
-    EFBIG,
-    EIDRM,
-    EINTR,
-    ERANGE
 };
 
 value cIpc_ipc_perm(struct ipc_perm ds) {
@@ -92,7 +63,7 @@ value cIpc_semget(value v_key, value v_nsems, value v_semflg, value v_semperm) {
     CAMLparam4(v_key, v_nsems, v_semflg, v_semperm);
     key_t key = Key_val(v_key);
     int nsems = Int_val(v_nsems);
-    int semflg = caml_convert_flag_list(v_semflg, Semget_flag);
+    int semflg = caml_convert_flag_list(v_semflg, Get_flag);
     semflg = semflg | Int_val(v_semperm);
     int rc = semget(key, nsems, semflg);
     if (rc == -1) {
@@ -139,14 +110,13 @@ value cIpc_semop(value v_sem, value v_sembuf, value v_len) {
     CAMLreturn(Val_unit);
 }
 
-value cIpc_semctl_stat(value v_sem, value v_num) {
-    CAMLparam2(v_sem, v_num);
+value cIpc_semctl_stat(value v_sem) {
+    CAMLparam1(v_sem);
     CAMLlocal2(v_rc, v_perms);
     int semid = Int_val(v_sem);
-    int semnum = Int_val(v_num);
     int semop = IPC_STAT;
     struct semid_ds ds;
-    int rc = semctl(semid, semnum, semop, &ds);
+    int rc = semctl(semid, 0, semop, &ds);
     if (rc == -1) {
         unix_error_ctl("semctl", "IPC_STAT");
     }
@@ -158,15 +128,14 @@ value cIpc_semctl_stat(value v_sem, value v_num) {
     CAMLreturn(v_rc);
 }
 
-value cIpc_semctl_set(value v_semid, value v_semnum, value v_args) {
-    CAMLparam3(v_semid, v_semnum, v_args);
+value cIpc_semctl_set(value v_semid, value v_args) {
+    CAMLparam2(v_semid, v_args);
     struct semid_ds ds;
     int semid = Int_val(v_semid);
-    int semnum = Int_val(v_semnum);
     ds.sem_perm.uid = Int_val(Field(v_args, 0));
     ds.sem_perm.gid = Int_val(Field(v_args, 1));
     ds.sem_perm.mode = Int_val(Field(v_args, 2));
-    int rc = semctl(semid, semnum, IPC_SET, &ds);
+    int rc = semctl(semid, 0, IPC_SET, &ds);
     if (rc == -1) {
         unix_error_ctl("semctl", "IPC_SET");
     }
@@ -285,7 +254,7 @@ value cIpc_semctl_setall(value v_sem, value v_list) {
 value cIpc_msgget(value v_key, value v_flgs, value v_perms) {
     CAMLparam3(v_key, v_flgs, v_perms);
     key_t key = Key_val(v_key);
-    int msgflg = caml_convert_flag_list(v_flgs, Msgget_flag);
+    int msgflg = caml_convert_flag_list(v_flgs, Get_flag);
     msgflg = msgflg | Int_val(v_perms);
     int msg = msgget(key, msgflg);
     if (msg == -1) {
@@ -299,49 +268,42 @@ struct mymsg {
     char mtext[1];
 };
 
-value cIpc_msgsnd(value v_mid, value v_msg, value v_flgs) {
-    CAMLparam3(v_mid, v_msg, v_flgs);
-    CAMLlocal2(v_mtype, v_mtext);
-    char *ptr;
-    struct mymsg *msg;
+value cIpc_msgsnd(value v_mid, value v_mtype, value v_mtext, value v_len, value v_flgs) {
+    CAMLparam5(v_mid, v_mtype, v_mtext, v_len, v_flgs);
     int mid = Int_val(v_mid);
-    int flgs = caml_convert_flag_list(v_flgs, Msg_flag);
-    v_mtype = Field(v_msg, 0);
-    v_mtext = Field(v_msg, 1);
-    int length = sizeof(long)+caml_string_length(v_mtext);
-    ptr = (char *)malloc(length);
-    msg = (struct mymsg *)ptr;
-    msg->mtype = Int_val(v_mtype);
-    strncpy(msg->mtext, String_val(v_mtext), caml_string_length(v_mtext));
-    int rc = msgsnd(mid, msg, length, flgs);
+    long mtype = Long_val(v_mtype);
+    const char *mtext = String_val(v_mtext);
+    int len = Int_val(v_len);
+    int flags = caml_convert_flag_list(v_flgs, Msg_flag);
+    char *ptr = malloc(sizeof(long)+len);
+    struct mymsg *msg = (struct mymsg *)ptr;
+    msg->mtype = mtype;
+    memcpy(msg->mtext, mtext, len);
+    int rc = msgsnd(mid, msg, len, flags);
     free(ptr);
     if (rc == -1) {
-        caml_unix_error(errno, "msgsnd", v_msg);
+        unix_error(errno, "msgsnd", v_mtext);
     }
     CAMLreturn(Val_unit);
 }
-
-value cIpc_msgrcv(value v_mid, value v_mtype, value v_len, value v_flgs) {
-    CAMLparam4(v_mid, v_mtype, v_len, v_flgs);
-    CAMLlocal1(v_rc);
+value cIpc_msgrcv(value v_mid, value v_mtype, value v_mtext, value v_len, value v_flags) {
+    CAMLparam5(v_mid, v_mtype, v_mtext, v_len, v_flags);
     int mid = Int_val(v_mid);
-    long mtype = Int_val(v_mtype);
-    int length = Int_val(v_len);
-    int flgs = caml_convert_flag_list(v_flgs, Msg_flag);
-    char *ptr = malloc(sizeof(long) + length);
+    long mtype = Long_val(v_mtype);
+    int len = Int_val(v_len);
+    int flags = caml_convert_flag_list(v_flags, Msg_flag);
+    char *ptr = malloc(sizeof(long) + len);
     struct mymsg *msg = (struct mymsg *)ptr;
     msg->mtype = mtype;
-    int rc = msgrcv(mid, msg, length, mtype, flgs);
+    int rc = msgrcv(mid, msg, len, mtype, flags);
     if (rc == -1) {
         free(ptr);
-        caml_unix_error(errno, "msgrcv", v_len);
+        unix_error(errno, "msgrcv", v_mtype);
     }
-    msg->mtext[length] = '\0';
-    v_rc = caml_alloc_tuple(2);
-    Store_field(v_rc, 0, Val_long(msg->mtype));
-    Store_field(v_rc, 1, caml_copy_string(msg->mtext));
+    int mtype_rsp = (int)msg->mtype;
+    memcpy((char *)v_mtext, msg->mtext, len);
     free(ptr);
-    CAMLreturn(v_rc);
+    CAMLreturn(Val_int(mtype_rsp));
 }
 
 value cIpc_msgctl_stat(value v_msqid) {
@@ -391,11 +353,11 @@ value cIpc_msgctl_rmid(value v_msqid) {
 
 value cIpc_shmget(value v_key, value v_size, value v_flgs, value v_perms) {
     CAMLparam4(v_key, v_size, v_flgs, v_perms);
-    int shmflg = caml_convert_flag_list(v_flgs, Shm_flag);
-    int rc = shmget(Key_val(v_key), Int_val(v_size), shmflg | Int_val(v_perms));
+    int shmflg = caml_convert_flag_list(v_flgs, Get_flag);
+    shmflg = shmflg | Int_val(v_perms);
+    int rc = shmget(Key_val(v_key), Int_val(v_size), shmflg);
     if (rc == -1) {
-        printf("shmget [%d]\n", errno);
-        caml_failwith("shmget");
+        caml_unix_error(errno, "shmget", caml_copy_string(""));
     }
     CAMLreturn(Val_int(rc));
 }
@@ -404,8 +366,7 @@ value cIpc_shmat(value v_shmid, value v_flags) {
     int flags = caml_convert_flag_list(v_flags, Shmat_flag);
     char *rc = shmat(Int_val(v_shmid), NULL, flags);
     if (rc == (void *)-1) {
-        printf("shmat [%d]\n", errno);
-        caml_failwith("shmat");
+        unix_error2("shmat");
     }
     CAMLreturn(Val_mem(rc));
 }
@@ -414,18 +375,29 @@ value cIpc_shmdt(value v_mem) {
     char *mem = Mem_val(v_mem);
     int rc = shmdt(mem);
     if (rc == -1) {
-        printf("shmdt [%d]\n", errno);
-        caml_failwith("shmdt");
+        unix_error2("shmdt");
     }
     CAMLreturn(Val_unit);
 }
-value cIpc_shm_write(value v_mem, value v_msg) {
-    CAMLparam2(v_mem, v_msg);
+value cIpc_shm_write(value v_mem, value v_bytes, value v_len) {
+    CAMLparam3(v_mem, v_bytes, v_len);
     char *mem = Mem_val(v_mem);
-    strncpy(mem, String_val(v_msg), caml_string_length(v_msg));
+    memcpy(mem, (char *)v_bytes, Int_val(v_len));
     CAMLreturn(Val_unit);
 }
-value cIpc_shm_read(value v_mem) {
+value cIpc_shm_read(value v_mem, value v_bytes,  value v_len) {
+    CAMLparam3(v_mem, v_bytes, v_len);
+    char *mem = Mem_val(v_mem);
+    memcpy((char *)(v_bytes), mem, Int_val(v_len));
+    CAMLreturn(Val_unit);
+}
+value cIpc_shm_write_str(value v_mem, value v_str) {
+    CAMLparam2(v_mem, v_str);
+    char *mem = Mem_val(v_mem);
+    strncpy(mem, String_val(v_str), caml_string_length(v_str));
+    CAMLreturn(Val_unit);
+}
+value cIpc_shm_read_str(value v_mem) {
     CAMLparam1(v_mem);
     char *mem = Mem_val(v_mem);
     CAMLreturn(caml_copy_string(mem));
