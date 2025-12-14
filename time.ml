@@ -10,7 +10,7 @@ let midnight = 0
 let of_ints hh mm ss = (10000 * hh) + (100 * mm) + ss
 let of_strs hh mm ss = of_ints (int_of_string hh) (int_of_string mm) (int_of_string ss)
 
-module Sep = Env.Str(
+module Sep = MEnv.Str(
     struct
         let name = "time.sep"
         let switches = [ "--time-sep"; "--ts" ]
@@ -54,7 +54,7 @@ module type ENV = EnvParam.ELT with type elt = t
 module type ENV_PARAM = EnvParam.PARAMS
 module type DEF_PARAM = EnvParam.DEFUNPARAMS with type elt = t
 
-module MakeEnv(P : DEF_PARAM) = Env.Make(Ser)(P)
+module MakeEnv(P : DEF_PARAM) = MEnv.Make(Ser)(P)
 module Midnight(P : ENV_PARAM) = MakeEnv(
     struct
         type elt = t

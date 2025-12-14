@@ -84,7 +84,7 @@ module type ENV_PARAM_PRIO =
         val default : unit -> priority
     end
     
-module EnvPrio(P : ENV_PARAM_PRIO) = Env.Make(SerPrio)(
+module EnvPrio(P : ENV_PARAM_PRIO) = MEnv.Make(SerPrio)(
     struct
         type elt = priority
         include P

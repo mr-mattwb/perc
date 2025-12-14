@@ -95,9 +95,9 @@ let with_temp_file pfx sfx fn =
 
 let spawn fn arg =
     let forkagain () = 
-        Unix.dup2 Unix.stdin Unix.stdin;
-        Unix.dup2 Unix.stdout Unix.stdout;
-        Unix.dup2 Unix.stderr Unix.stderr;
+        close Unix.stdout;
+        close Unix.stdin;
+        close Unix.stderr;
         match Unix.fork () with
         | 0 ->  
             ignore(fn arg); 

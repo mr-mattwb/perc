@@ -5,44 +5,44 @@ module Rxp = Str
 open EnvParam
 open Syslog
 
-module Ident = Env.Str(
+module Ident = MEnv.Str(
     struct
         let name = "log_ident"
         let switches = [ "--log-ident"; "--ident"; "-i" ]
         let desc = "Log identity name"
         let default () = Tools.basename
     end)
-module UsePid = Env.Set(
+module UsePid = MEnv.Set(
     struct
         let name = "log_opt_pid"
         let switches = [ "--opt-pid"; "--pid"; "-p" ]
         let desc = "Log pid in message"
     end)
-module UseCons = Env.Set(
+module UseCons = MEnv.Set(
     struct
         let name = "log_opt_console"
         let switches = [ "--opt-console"; "--console"; "-c" ]
         let desc = "Log to console too"
     end)
-module UsePerror = Env.Set(
+module UsePerror = MEnv.Set(
     struct
         let name = "log_opt_perror"
         let switches = [ "--opt-perror"; "--perror" ]
         let desc = "Include the LOG_PERROR flag"
     end)
-module UseODelay = Env.Set(
+module UseODelay = MEnv.Set(
     struct
         let name = "log_opt_odelay"
         let switches = [ "--opt-odelay"; "--odelay" ]
         let desc = "Add the LOG_ODELAY flag"
     end)
-module UseNDelay = Env.Set(
+module UseNDelay = MEnv.Set(
     struct
         let name = "log_opt_ndelay"
         let switches = [ "--opt-ndelay"; "--ndelay" ]
         let desc = "Use the LOG_NDELAY flag"
     end)
-module UseNoWait = Env.Set(
+module UseNoWait = MEnv.Set(
     struct
         let name = "log_opt_nowait"
         let switches = [ "--opt-nowait"; "--nowait"; "--now" ]
@@ -55,7 +55,7 @@ module Prio = Syslog.EnvPrio(
         let desc = "Log priority value"
         let default () = Syslog.LOG_INFO
     end)
-module Message = Env.StrEmpty(
+module Message = MEnv.StrEmpty(
     struct
         let name = "log_message"
         let switches = [ "--log-message"; "--log-msg"; "--msg"; "-m"; "--message" ]
@@ -76,7 +76,7 @@ let addflag flags (get, flag) =
     else flags
 
 let rec main () = 
-    Env.config();
+    MEnv.config();
     let flags = List.fold_left addflag [] flags in
     openlog (Ident.get()) flags Syslog.LOG_USER;
     match Message.get() with

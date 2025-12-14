@@ -69,8 +69,6 @@ module Sem :
         val setall : t -> int list -> unit
 
         val create : ?num:int -> ?flags:getflag list -> ?perms:perms -> key_t -> t
-        val use : ?create:(?num:int -> ?flags:getflag list -> ?perms:perms -> key_t -> t) -> 
-                key_t -> (t -> 'a) -> 'a 
         
         val wait : ?num:int -> t -> unit
         val signal : ?num:int -> t -> unit
@@ -113,7 +111,6 @@ module Msg :
         val rmid : t -> unit 
 
         val create : ?flags:getflag list -> ?perms:perms -> key_t -> t
-        val use : ?create:(?flags:getflag list -> ?perms:perms -> key_t -> t) -> key_t -> (t -> 'a) -> 'a
 
         val send : ?max:int -> ?buf:bytes -> t -> int -> 'a -> unit
         val recv : ?max:int -> ?buf:bytes -> ?mtype:int -> t -> int * 'a

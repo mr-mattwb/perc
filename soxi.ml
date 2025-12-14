@@ -5,7 +5,7 @@ open Stdlib
 open Tools
 open EnvParam
 
-module Soxi = Env.Cmd(
+module Soxi = MEnv.Cmd(
     struct
         let name = "SOXI"
         let switches = [ "--cmd-soxi" ]

@@ -15,21 +15,21 @@ let date_of_strs y m d = make_date (int_of_string y) (int_of_string m) (int_of_s
 let time_of_strs h m s = make_time (int_of_string h) (int_of_string m) (int_of_string s)
 let date_time_of_strs y m d h mn s = (date_of_strs y m d, time_of_strs h mn s)
 
-module DateSep = Env.Rex(
+module DateSep = MEnv.Rex(
     struct
         let name = "date.sep"
         let switches = [ "--date-sep"; "--ds" ]
         let desc = "Separate date fields"
         let default () = "-"
     end)
-module TimeSep = Env.Rex(
+module TimeSep = MEnv.Rex(
     struct
         let name = "time.sep"
         let switches = [ "--time-sep"; "--ts" ]
         let desc = "Separate time fields"
         let default () = ":"
     end)
-module DateTimeSep = Env.Rex(
+module DateTimeSep = MEnv.Rex(
     struct
         let name = "date.time.sep"
         let switches = [ "--date-time-sep"; "--dts" ]
@@ -84,7 +84,7 @@ module Ser =
         let of_string = of_string
     end
     
-module EnvMake(P : EnvParam.PARAMS) = Env.Make(Ser)(
+module EnvMake(P : EnvParam.PARAMS) = MEnv.Make(Ser)(
     struct
         type elt = t
         include P

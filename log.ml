@@ -78,7 +78,7 @@ module LevelSer =
             | "FATAL" -> Fatal
             | lvl -> raise (Failure ("level_of_string:"^lvl))
     end
-module LevelEnv(LP : LEVEL_PARAMS) = Env.Make(LevelSer)(
+module LevelEnv(LP : LEVEL_PARAMS) = MEnv.Make(LevelSer)(
     struct
         type elt = level
         include LP
@@ -103,7 +103,7 @@ module OutSerItem =
 module OutSer = Ser.List(OutSerItem)
 module OutEnv(P : OUT_PARAMS) = 
     struct
-        include Env.Make(OutSer)(
+        include MEnv.Make(OutSer)(
             struct
                 type elt = out list
                 include P
@@ -224,14 +224,14 @@ module Stderr(P : PARAMS) = Make(
         let targets () = (Channel stderr) :: (P.targets())
     end)
 
-module ModName = Env.Hide(Env.Str(
+module ModName = MEnv.Hide(MEnv.Str(
     struct
         let name = "logging.modname"
         let default () = Tools.basename
         let switches = ["--log-mod-name"]
         let desc = "Log Mod Name"
     end))
-module ModSubName = Env.Hide(Env.Str(
+module ModSubName = MEnv.Hide(MEnv.Str(
     struct
         let name = "logging.modsubname"
         let default () = ""

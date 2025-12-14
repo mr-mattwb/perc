@@ -3,7 +3,7 @@ open Printf
 open Stdlib
 module OList = List
 
-open Env
+open MEnv
 
 module BuildCommand = Cmd(
     struct
@@ -83,7 +83,7 @@ module TestInt64 = Int64(
     end)
 
 let run () = 
-    Env.config();
+    MEnv.config();
     printf "%s [%s]\n%s [%s]\n%s [%s]\n" BuildCommand.name (BuildCommand.get()) DurCommand.name (DurCommand.get())
         PlayCommand.name (PlayCommand.get());
     printf "%s [%s]\n%s [%s]\n" OutFile.name (OutFile.get()) PercFile.name (PercFile.get());

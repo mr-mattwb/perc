@@ -73,15 +73,6 @@ module Sem =
         external setall : t -> int list -> unit = "cIpc_semctl_setall"
 
         let create ?(num=1) ?(flags=[Create]) ?(perms=0o777) key = semget key num flags perms
-        let use ?(create=create) key fn =
-            let sem = create key in
-            try
-                let rc = fn sem in
-                rmid sem;
-                rc
-            with e ->
-                (try rmid sem with _ -> ());
-                raise e
 
         let wait ?(num=0) sem = semop sem [{num=0; op=(-1); flg=[]}] 
         let signal ?(num=0) sem = semop sem [{num=0; op=1; flg=[]}]
@@ -131,15 +122,6 @@ module Msg =
         external rmid : t -> unit = "cIpc_msgctl_rmid"
 
         let create ?(flags=[Create]) ?(perms=0o777)  key = msgget key flags perms
-        let use ?(create=create) key fn = 
-            let msg = create key in
-            try
-                let rc = fn msg in
-                rmid msg;
-                rc
-            with e ->
-                (try rmid msg with _ -> ());
-                raise e
 
         let send ?(max=1024) ?(buf=Bytes.create max) mid mtype msg =
             let len = Marshal.to_buffer buf 0 (Bytes.length buf) msg [] in
@@ -221,12 +203,9 @@ module Shm =
             try
                 let rc = fn mem in
                 shmdt mem;
-                rmid shm;
                 rc
             with e ->
-                (try shmdt mem; rmid shm with _ -> ());
+                (try shmdt mem with _ -> ());
                 raise e
+
     end
-
-
-

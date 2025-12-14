@@ -13,7 +13,7 @@ let now () =
     let tm = Unix.localtime (Unix.time()) in
     of_ints (1900+tm.tm_year) (1+tm.tm_mon) tm.tm_mday
 
-module Sep = Env.Rex(
+module Sep = MEnv.Rex(
     struct
         let name = "date.sep"
         let switches = [ "--date-sep"; "--ds" ]
@@ -56,7 +56,7 @@ module type DEF_PARAM =
         include ENV_PARAM
         val default : unit -> t
     end
-module MakeEnv(P : DEF_PARAM) = Env.Make(Ser)(
+module MakeEnv(P : DEF_PARAM) = MEnv.Make(Ser)(
     struct
         type elt = t
         include P
