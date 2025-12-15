@@ -226,14 +226,14 @@ module Stderr(P : PARAMS) = Make(
 
 module ModName = MEnv.Hide(MEnv.Str(
     struct
-        let name = "logging.modname"
+        let name = "logging_modname"
         let default () = Tools.basename
         let switches = ["--log-mod-name"]
         let desc = "Log Mod Name"
     end))
 module ModSubName = MEnv.Hide(MEnv.Str(
     struct
-        let name = "logging.modsubname"
+        let name = "logging_modsubname"
         let default () = ""
         let switches = ["--log-mod-sub-name"]
         let desc = "Log module Sub name"
@@ -241,7 +241,7 @@ module ModSubName = MEnv.Hide(MEnv.Str(
 
 module Level = LevelEnv(
     struct
-        let name = "logging.level"
+        let name = "logging_level"
         let default () = Warn
         let switches = ["--log-level"]
         let desc = "Logging level"
@@ -249,7 +249,7 @@ module Level = LevelEnv(
 module Targets = OutEnv(
     struct
         type elt = out list
-        let name = "logging.targets"
+        let name = "logging_targets"
         let default () = [Channel stderr]
         let switches = ["--log-targets"]
         let desc = "Log targets"

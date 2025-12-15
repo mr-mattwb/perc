@@ -22,13 +22,6 @@
   (flags -keep-locs)
 )
 
-(executable
-  (name testspawn)
-  (modules cfg testspawn)
-  (libraries unix pcre str cfg)
-  (flags -keep-locs)
-)
-
 (executable 
   (name cfg)
   (modules cfg)
