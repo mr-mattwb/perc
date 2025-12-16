@@ -110,6 +110,8 @@ module Msg :
         val set : t -> msgset -> unit
         val rmid : t -> unit 
 
+        val cbytes : t -> int
+
         val create : ?flags:getflag list -> ?perms:perms -> key_t -> t
 
         val send : ?max:int -> ?buf:bytes -> t -> int -> 'a -> unit

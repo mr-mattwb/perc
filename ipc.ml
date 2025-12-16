@@ -121,6 +121,8 @@ module Msg =
         external set : t -> msgset -> unit = "cIpc_msgctl_set"
         external rmid : t -> unit = "cIpc_msgctl_rmid"
 
+        let cbytes mid = (stat mid).msg_cbytes
+
         let create ?(flags=[Create]) ?(perms=0o777)  key = msgget key flags perms
 
         let send ?(max=1024) ?(buf=Bytes.create max) mid mtype msg =

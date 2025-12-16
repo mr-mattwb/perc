@@ -23,7 +23,7 @@ module ProjId = MEnv.Int(
 module MType = MEnv.Int(
     struct
         let name = "MType"
-        let default () = 1
+        let default () = 1 + (getpid())
         let switches = [ "-t"; "--mtype" ]
         let desc = "Message type"
     end)
@@ -59,9 +59,18 @@ let verbose fmt =
     let aux msg = if (MEnv.Verbose.get()) then VLog.debug "%s" msg in
     ksprintf aux fmt
 
+let rec cleanq mid = 
+    match cbytes mid with
+    | n when n > 0 ->
+        verbose "[%d]:  Cleaning queue" n;
+        ignore (recv mid);
+        cleanq mid
+    | n ->
+        verbose "Queue is clean"
+
 let rec spawn_service key = 
     let pid, rsp = Tools.spawn spawned_service key in
-    verbose "%s" (str_of_proc_status pid rsp)
+    verbose "S %s" (str_of_proc_status pid rsp)
 and str_of_proc_status pid ps =
     match ps with
     | WEXITED s -> sprintf "WEXITED[%d][%d]" pid s
@@ -70,6 +79,8 @@ and str_of_proc_status pid ps =
   
 and spawned_service key = 
     let mid = msgget key [Create] 0o777 in
+    cleanq mid;
+    verbose "S The service is starting";
     try
         service mid;
         verbose "S Service exiting";
@@ -78,26 +89,26 @@ and spawned_service key =
         verbose "S Service exiting with error [%s]" (Printexc.to_string e);
         exit (-1)
 and service mid = 
-    let mt, msg = (Ipc.Msg.recv ~mtype:0 mid : int * string) in
-    verbose "S Received message type[%d] : [%s]" mt msg;
-    serve mid mt msg;
+    let mt, (rtype, msg) = (Ipc.Msg.recv ~mtype:(MType.get()) mid : int * (int * string)) in
+    verbose "S Received message type[%d] : [%d][%s]" mt rtype msg;
+    serve mid rtype msg;
     service mid
-and serve mid mt msg = 
+and serve mid rtype msg = 
     try
         match String.uppercase_ascii msg with
         | "EXIT"
-        | "QUIT" -> serve_exit mid mt
-        | _      -> serve_rsp mid mt msg
+        | "QUIT" -> serve_exit mid rtype
+        | _      -> serve_rsp mid rtype msg
     with e ->
-        verbose "S Failed with error [%s]" (Printexc.to_string e);
-        (try Ipc.Msg.send mid mt (Printexc.to_string e) with _ -> ())
-and serve_exit mid mt = 
-    verbose "S Exiting channel [%d]" mt;
-    Ipc.Msg.send mid mt "EXIT";
+        verbose "S Failed with error [%d] [%s]" rtype (Printexc.to_string e);
+        (try Ipc.Msg.send mid rtype (Printexc.to_string e) with _ -> ())
+and serve_exit mid rtype = 
+    verbose "S Exiting channel [%d]" rtype;
+    Ipc.Msg.send mid rtype "EXIT";
     exit 0
-and serve_rsp mid mt msg = 
-    verbose "S Serving channel [%d] Message [%s]" mt msg;
-    Ipc.Msg.send mid mt msg
+and serve_rsp mid rtype msg = 
+    verbose "S Serving channel [%d] Message [%s]" rtype msg;
+    Ipc.Msg.send mid rtype msg
 
 let rec run_client key =
     let mid = msgget key [Create] 0o777 in
@@ -106,24 +117,34 @@ let rec run_client key =
     | msg -> msg_client mid msg
 and msg_client mid msg = 
     let mtype = MType.get () in
-    verbose "C Msg client [%d] [%s]" mtype msg;
-    Ipc.Msg.send mid mtype msg;
-    let rc, rsp = (Ipc.Msg.recv ~mtype mid : int * string) in
+    let rtype = getpid() in
+    verbose "C Msg client [%d] [%d, %s]" mtype rtype msg;
+    printf "Sending to source type [%d] messaage [%d][%s]\n%!" mtype rtype msg;
+    Ipc.Msg.send mid mtype (rtype ,msg);
+    let rc, rsp = (Ipc.Msg.recv ~mtype:rtype mid : int * string) in
     verbose "C Response type[%d] : [%s]" rc rsp;
+    printf "Received response [%d] : [%s]\n%!" rc rsp;
     exit 0
 and stdin_client mid = 
     let mtype = MType.get() in
+    let rtype = getpid() in
     verbose "C stdin client [%d]" mtype;
+    printf "%d:In[%d]> %!" rtype mtype;
     match Tools.input_line stdin with
     | None -> exit 0
-    | Some msg -> submit_client mid mtype msg
-and submit_client mid mtype msg = 
-    verbose "C Handle msg type[%d] : [%s]" mtype msg;
-    Ipc.Msg.send mid mtype msg;
-    verbose "C Send msg type[%d] : [%s]" mtype msg;
-    let rc, rsp = (Ipc.Msg.recv ~mtype mid : int * string) in
+    | Some msg -> submit_client mid mtype (rtype, msg)
+and submit_client mid mtype (rtype, msg) = 
+    verbose "C Handle msg type[%d] : [%d, %s]" mtype rtype msg;
+    printf "Sending to channel [%d] Message [%d][%s]\n%!" mtype rtype msg;
+    Ipc.Msg.send mid mtype (rtype, msg);
+    verbose "C Send msg type[%d] : [%d, %s]%!" mtype rtype msg;
+    let rc, rsp = (Ipc.Msg.recv ~mtype:rtype mid : int * string) in
     verbose "C Received response [%d] : [%s]" rc rsp;
-    stdin_client mid
+    printf "    [%d] => [%s]\n%!" rc rsp;
+    match String.uppercase_ascii msg with
+    | "EXIT"
+    | "QUIT" -> exit 0
+    | _ -> stdin_client mid
 
 let main () = 
     MEnv.config();
