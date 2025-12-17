@@ -15,7 +15,7 @@ let xmsec = "[0-9][0-9][0-9]"
 let xcallid = "[0-9A-Fa-f]*"
 let xversion = "[0-9A-Z_\\.]+"
 let xpriority = "(DEBUG|INFO|WARN|ERROR)"
-let xfunc = "[A-Za-z_][0-9A-Za-z_]*"
+let xfunc = "[A-Za-z_][0-9A-Za-z_\\.]*"
 
 let xlink = "chaining from >(.*)< to >(.*)<"
 let xlabel = "Label: (.*)"
@@ -59,6 +59,11 @@ type data =
     | State of state
     | Other of string
 
+type 'a call = {
+    call_iden : string;
+    call_nodes : 'a list
+}
+
 module SerPrio =
     struct
         type elt = priority
@@ -88,7 +93,7 @@ let millisecs = ['0'-'9']['0'-'9']['0'-'9']
 let callid = ['0'-'9' 'A'-'F' 'a'-'f' ]
 let version = [ '0'-'9' 'A'-'Z' '_' '-' '.' ]
 let priority = ("DEBUG"|"INFO"|"WARN"|"ERROR")
-let funcname = ['A'-'Z' 'a'-'z' '_']['A'-'Z' 'a'-'z' '0'-'9' '_']*
+let funcname = ['A'-'Z' 'a'-'z' '_']['A'-'Z' 'a'-'z' '0'-'9' '_' '.']*
 let token = [ 'A'-'Z' 'a'-'z' '0'-'9' '_' ' ' '\t' ]
 
 rule entry = parse
@@ -121,4 +126,65 @@ and data = parse
     }
 {
 
+let parse_entry line = entry (Lexing.from_string line)
+let rec input_entry fin =
+    match Tools.input_line fin with
+    | None -> None
+    | Some line when Pcre.pmatch ~rex:rexentry line -> Some (parse_entry line)
+    | Some _ -> input_entry fin
+let input_channel fin =
+    let rec aux ls =
+        match input_entry fin with
+        | None -> ls
+        | Some e -> aux (e :: ls)
+    in
+    aux []
+let input_file fname = Tools.with_in_file input_channel fname
+
+module Ids = Set.Make(String)
+let get_ids entries = 
+    let aux set e = Ids.add e.entry_iden set in
+    Ids.elements (List.fold_left aux Ids.empty entries)
+let get_call id entries = 
+    let aux acc e = 
+        if e.entry_iden = id then e :: acc
+        else acc
+    in
+    {
+        call_iden = id;
+        call_nodes = List.fold_left aux [] entries
+    }
+let get_calls entries = 
+    let aux acc id = (get_call id entries) :: acc in
+    List.fold_left aux [] (get_ids entries)
+
+let input_calls fname = 
+    let entries = input_file fname in
+    get_calls entries
+
+module VLog = Log.Make(
+    struct
+        open Log
+        let mod_name = Tools.basename
+        let level () = Debug
+        let targets () = [Channel stderr; File (Tools.basename^".log") ]
+    end)
+let verbose fmt = 
+    let aux msg =
+        if MEnv.Verbose.get() then
+            VLog.debug "%s" msg
+        else
+            ()
+    in ksprintf aux fmt
+
+let main () = ()
+
+
+let () = 
+    if not !Sys.interactive then
+        main ()
+    else
+        ()
+
 }
+
