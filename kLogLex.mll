@@ -141,7 +141,7 @@ and read_entry fin line =
     | x -> Some x
 
 let input_channel fin = 
-    let aux ls = 
+    let rec aux ls = 
         match input_entry fin with
         | None -> ls
         | Some e -> aux (e :: ls)
