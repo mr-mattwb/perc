@@ -131,6 +131,9 @@ module PrioSer =
         | InvocationCounter of invocation
         | CatCodesSalesTransfer of int list
         | PlayTransferMsg of xfer_msg
+        | CatCodeEligibleSalesTransfer of bool
+        | ReturnValue of string
+        | CreatedToken of string
         | Other of string
 
     let string_of_null_string = function
@@ -342,7 +345,16 @@ and data = parse
             callType = callType_of_string callType;
             preAuthLastModule = preAuthLastModule
           }
-      }
+        }
+    | "catCodeEligigbleForSalesTransfer: " (boolval as elig) { 
+            CatCodeEligibleSalesTransfer (bool_of_string elig)
+        }
+    | "welcid0705_GetPhoneAccountNumber_DM returnValue >" (func* as id) "<" {
+            ReturnValue id
+        }
+    | "Created _TOKEN [" (func+ as token) "]" {
+            CreatedToken token
+        }
 
 
 and categoryCodeList = parse

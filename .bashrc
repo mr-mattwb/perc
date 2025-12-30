@@ -15,4 +15,4 @@ echo initialized
 
 alias ctop='ledit ./ccaml -I +unix -I +str -I +../pcre -I .'
 
-ocamlincdirs='-I +unix -I +str -I +../dbm -I +../pcre -I _build/default -I _build/default/.cfg.objs/byte str.cma'
+ocamlincdirs='-I +unix -I +str -I +../dbm -I +../pcre -I +../re -I _build/default -I _build/default/.cfg.objs/byte str.cma'
