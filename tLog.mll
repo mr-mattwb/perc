@@ -104,6 +104,17 @@ module PrioSer =
         preAuthLastModule : string
     }
 
+    type profile_acct = {
+        acct_no : string;
+        status : string
+    }
+
+    type business_unit = {
+        siteID : string;
+        businessUnit : string;
+        returnCode : string
+    }
+
     type data =
         | Link of link
         | Label of string
@@ -133,7 +144,14 @@ module PrioSer =
         | PlayTransferMsg of xfer_msg
         | CatCodeEligibleSalesTransfer of bool
         | ReturnValue of string
-        | CreatedToken of string
+        | CreatedToken of string 
+        | ANILookup of string
+        | DTMFOnly of bool
+        | CableProfileAcct of profile_acct
+        | Identified of bool
+        | IsVisitedNode of string * bool
+        | BusinessUnitReturnCode of string
+        | BusinessUnitInfo of business_unit
         | Other of string
 
     let string_of_null_string = function
@@ -190,6 +208,8 @@ let authstr = ("true"|"false"|"yes"|"no"|"T"|"F"|"Y"|"N"|"0"|"1")
 let namestr = [ 'A'-'Z' 'a'-'z' '0'-'9' ]
 let pathstr = [ 'A'-'Z' 'a'-'z' '0'-'9' '-' '_' '/' ]
 
+let url = ['A'-'Z' 'a'-'z' '0'-'9' '.' '&' '?' '%' '=' '/' ':' '_' '-' ]
+
 
 rule entry = parse
     | [ ' ' '\t' ]+                                         { entry lexbuf } 
@@ -197,18 +217,18 @@ rule entry = parse
       (hour as hr) ':' (minute as mi) ':' (second as sc) ','
       (msec as ms) '|' (iden* as id) '|' (vers+ as vs) '-'
       (prio as pr) [' ']* '|' (func* as fn) '|'
-      { 
-        {
-            entry_date = Date.of_strs yr mn dy;
-            entry_time = Time.of_strs hr mi sc;
-            entry_msec = int_of_string ms;
-            entry_iden = id;
-            entry_vers = vs;
-            entry_prio = PrioSer.of_string pr;
-            entry_func = fn;
-            entry_data = data lexbuf
+        { 
+            {
+                entry_date = Date.of_strs yr mn dy;
+                entry_time = Time.of_strs hr mi sc;
+                entry_msec = int_of_string ms;
+                entry_iden = id;
+                entry_vers = vs;
+                entry_prio = PrioSer.of_string pr;
+                entry_func = fn;
+                entry_data = data lexbuf
+            }
         }
-      }
 and data = parse
     | "chaining from >" (func* as nfrom) "< to >" (func* as nto) "<"  {
             Link { 
@@ -321,7 +341,7 @@ and data = parse
     | "InvocationCounter.valueUnbound: callend was called [0]  times but it should have been called exactly once"  {
             InvocationCounter InvocationEnd
         }
-    | "catCodesForSalesTransfer: " {
+    | "catCodesForSalesTransfer " {
             CatCodesSalesTransfer (categoryCodeList lexbuf)
         }
     | "routingCode[" (func* as routingCode) "] lastVisitedModule[" (func* as lastVisitedModule) "] "
@@ -355,7 +375,35 @@ and data = parse
     | "Created _TOKEN [" (func+ as token) "]" {
             CreatedToken token
         }
-
+    | "[" (hexes2* as iden) "] Performing ANI Lookup" {
+            ANILookup iden
+        }
+    | "dtmfOnly:[" (boolval as dtmfonly) "]" {
+            DTMFOnly (bool_of_string dtmfonly)
+        }
+    | "intent0110_Routing_DS: cableProfile (accountNumber[" (nums2* as acctno) "] accountStatus[" (func* as status) "])" {
+            CableProfileAcct {
+                acct_no = acctno;
+                status = status
+            }
+        }
+    | "identifiedFlag: [" (boolval as id) "]" {
+            Identified (bool_of_string id)
+        }
+    | "isVisitedNode(" (func+ as func) "): " (boolval as visited) {
+            IsVisitedNode(func, bool_of_string visited)
+        }
+    | "businessUnitReturnCode : " (func* as rc) {
+            BusinessUnitReturnCode rc
+        }
+    | "BusinessUnitInfo value: BusinessUnitInfo [siteID=" (nums2* as siteID) ", businessUnit=" (func* as busUnit)
+        ", returnCode=" (func* as retCode) "]"  {
+            BusinessUnitInfo {
+                siteID = siteID;
+                businessUnit = busUnit;
+                returnCode = retCode
+            }
+    }
 
 and categoryCodeList = parse
     | (nums2+ as code) ","                      { (int_of_string code) :: (categoryCodeList lexbuf) }
@@ -363,33 +411,6 @@ and categoryCodeList = parse
     | eof                                       { [] }
         
 {
-let linkline = "2025-08-25T10:59:33,343|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|reporting.CDRUtil|chaining from >end2025_BackendLogging_DB< to >end2030_ReportingLogging_DB<"
-let labelline = "2025-08-25T10:59:32,005|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|reporting.CDRUtil|Label: StartSession failure"
-let stateline = "2025-08-25T05:28:20,408|0B1AE898790FD83FFA8795DE1460D032|MOD25.09.0.004-DEBUG|reporting.CDRUtil|populateCDR: entering state"
-let otherline = "2025-08-25T05:28:20,408|0B1AE898790FD83FFA8795DE1460D032|MOD25.09.0.004-DEBUG|reporting.CDRUtil|welcid0100_Dummy_DM returnValue ><"
-let nextline = "2025-08-25T05:30:09,175|659E437BD782705B6FFEDA02E7FC6758|MOD25.09.0.004-DEBUG|decision.controller_return_DS|nextModule: [actall]"
-let returnline = "2025-08-25T05:38:24,123|DF9941BC970FB64FF98CB929644CD997|MOD25.09.0.004-INFO |reporting.CDRDialogModuleState|Return[portal0225_GenericInterceptQuestion_DM_No_DS]"
-let lastvisitedline = "2025-08-25T05:49:19,893|B65B8A99CF70FD9AA3F29042C65B820B|MOD25.09.0.004-DEBUG|decision.portal0110_Routing_DS|lastVisitedModule: [start]"
-let portalline = "2025-08-25T06:01:11,409|5115444DD196B688BBA0139DBF7354D5|MOD25.09.0.004-DEBUG|decision.welcid0705_GetPhoneAccountNumber_DM_DS|portalName: [MainResidential]"
-let stateline2 = "2025-08-25T06:05:05,512|87506A078C3752E95DE004603FD6BAEB|MOD25.09.0.004-DEBUG|reporting.CDRUtil|saveUtteranceToAudioHandleList: stateName: welcid0510_ConfirmAniYN_DM"
-let intent0110line = "2025-08-25T06:05:55,707|87506A078C3752E95DE004603FD6BAEB|MOD25.09.0.004-DEBUG|decision.intent0110_Routing_DS|intent0110_Routing_DS: returnValue[task_general_bcm] identifiedFlag[true] lastVisitedModule[bcm] appTag[] intentIntercept[]dialedPortalName[]"
-let returnValueline = "2025-08-25T10:58:47,558|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.Initialize|returnValue:[task_check_ani_match]"
-let nodehostnameline = "2025-08-25T10:58:47,498|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.start0110_GetCallInfoFromWrapper_DS|NODE_HOSTNAME [comswmncwunxq07]"
-let infouserline = "2025-08-25T10:58:47,498|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.start0110_GetCallInfoFromWrapper_DS|DNIS :11071905113 ANI :9542376966 UCID :119946ED68AC7A04 FIRSTHISTORYINFOUSER :8558955883 LASTHISTORYINFOUSER :8558955883 RECEIVED_UCID :null RECEIVED_UUI :null"
-let languageline = "2025-08-25T10:58:47,501|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.languageSwitchOB|language:[en-US]"
-let dnisline = "2025-08-25T05:34:47,451|50BE7C124CA2AA4580B0E6F38044AB4D|MOD25.09.0.004-DEBUG|decision.welcid0100_Initialize_DS|dnis:[11071900013]"
-let businessUnitline = "2025-08-25T05:34:47,451|50BE7C124CA2AA4580B0E6F38044AB4D|MOD25.09.0.004-DEBUG|decision.welcid0100_Initialize_DS|businessUnit:[CSGEAST]"
-let callTypeline = "2025-08-25T05:34:47,451|50BE7C124CA2AA4580B0E6F38044AB4D|MOD25.09.0.004-DEBUG|decision.welcid0100_Initialize_DS|callType:[Residential]"
-let aniline = "2025-08-25T05:34:47,494|50BE7C124CA2AA4580B0E6F38044AB4D|MOD25.09.0.004-DEBUG|dataaccess.ANILookup|ani:[9940830410]"
-let customerline = "2025-08-25T05:34:47,496||MOD25.09.0.004-DEBUG|client.AccountAndProfileSearchServiceClient|Executing findCustomerUsingGET ucid[1199290D68AC2E23] ani[9940830410] ced[] accountNumber[] dnis[11071900013] siteId[]"
-let acctnumberline = "2025-08-25T07:00:43,045|4745BB4ED85C393E89D328AAB47ACB76|MOD25.09.0.004-DEBUG|dataaccess.data0307_AccountDetailsAppointment_DB|accountNumber: 8337100240261185"
-let authline = "2025-08-25T07:00:56,737|4745BB4ED85C393E89D328AAB47ACB76|MOD25.09.0.004-DEBUG|decision.end0240_CheckAuthenticationStart_DS|authenticationEligible:[true],voiceBioEnrolled:[no]"
-let catcodeline = "2025-08-25T09:58:47,902|1176F1F498AA1DE50F8030B588BA7739|MOD25.09.0.004-DEBUG|audio.end0305_PlayTransferMessage_PP|categoryCode: 010"
-let initcfgline = "2025-08-25T05:17:55,485||MOD25.09.0.004-DEBUG|ivr.ConfigurationAccessor|initConfiguration: callerIntentConfigPath : /usr/local/shared/nuance-mod-v25-09-0_qa_ncw_app-1/nuance/external_config/nuancemoddockerconfig/caller_intent_config/qa//"
-let invstartline = "2025-08-25T13:01:26,927||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callstart was called [0]  times but it should have been called exactly once"
-let invendline = "2025-08-25T13:00:26,917||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callend was called [0]  times but it should have been called exactly once"
-let catcodessalesline = "2025-08-25T10:59:27,228|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|audio.end0305_PlayTransferMessage_PP|catCodesForSalesTransfer: 015,021,028,079,080,201,202,203,204,205,293,120,121"
-let playxferline = "2025-08-25T10:59:27,228|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-INFO |audio.end0305_PlayTransferMessage_PP|routingCode[Default] lastVisitedModule[portal] transferMsgPlayedFlag[false] portalName[Generic] identifiedFlag[false] delinquientLevel[] genericInterceptFOFlag[false] retryZipCode[false] botEligible[false] oofFlag[false] isPlayFreeSpecmoNotice[false] callType[Residential] preAuthLastModule[]"
 
 let parse_entry line = 
     try
@@ -406,16 +427,6 @@ let rec input_entry fin =
     match Tools.input_line fin with
     | None -> None
     | Some line -> aux line
-
-let rec read_entry fin = 
-    let aux e = 
-        match e.entry_data with
-        | Other _ -> read_entry fin
-        | _ -> Some e
-    in
-    match input_entry fin with
-    | None -> None
-    | Some e -> aux e
 
 let rec input_channel fin = 
     let rec aux ls = 
