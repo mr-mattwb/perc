@@ -85,8 +85,8 @@ module PrioSer =
     }
 
     type invocation = 
-        | InvocationStart
-        | InvocationEnd
+        | Start
+        | End
 
     type xfer_msg = {
         routingCode : string;
@@ -114,6 +114,10 @@ module PrioSer =
         businessUnit : string;
         returnCode : string
     }
+
+    type direction = 
+        | Enter
+        | Exit
 
     type data =
         | Link of link
@@ -152,6 +156,7 @@ module PrioSer =
         | IsVisitedNode of string * bool
         | BusinessUnitReturnCode of string
         | BusinessUnitInfo of business_unit
+        | Method of direction * string
         | Other of string
 
     let string_of_null_string = function
@@ -335,11 +340,8 @@ and data = parse
                 path = path
             }
         }
-    | "InvocationCounter.valueUnbound: callstart was called [0]  times but it should have been called exactly once"  {
-            InvocationCounter InvocationStart
-        }
-    | "InvocationCounter.valueUnbound: callend was called [0]  times but it should have been called exactly once"  {
-            InvocationCounter InvocationEnd
+    | "InvocationCounter.valueUnbound: call" (("start"|"end") as dir) " was called [0]  times but it should have been called exactly once"  {
+            InvocationCounter (match dir with "start" -> Start | _ -> End)
         }
     | "catCodesForSalesTransfer " {
             CatCodesSalesTransfer (categoryCodeList lexbuf)
@@ -392,7 +394,7 @@ and data = parse
         }
     | "isVisitedNode(" (func+ as func) "): " (boolval as visited) {
             IsVisitedNode(func, bool_of_string visited)
-        }
+       }
     | "businessUnitReturnCode : " (func* as rc) {
             BusinessUnitReturnCode rc
         }
@@ -403,7 +405,11 @@ and data = parse
                 businessUnit = busUnit;
                 returnCode = retCode
             }
-    }
+        }
+    | (func+ as meth) ": " ("Enter"|"Exit" as dir) "ing " ['M' 'm'] "ethod." {
+            Method ((match dir with "Enter" -> Enter | "Exit" -> Exit), meth)
+        }
+    | _+ as other { Other other }
 
 and categoryCodeList = parse
     | (nums2+ as code) ","                      { (int_of_string code) :: (categoryCodeList lexbuf) }
@@ -466,4 +472,6 @@ let get_call id entries =
 let get_calls entries = 
     let aux id = get_call id entries in
     List.map aux (get_ids entries)
+
+let input_calls fname = get_calls (input_file fname)
 }
