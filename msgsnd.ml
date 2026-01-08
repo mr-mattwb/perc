@@ -119,7 +119,7 @@ and msg_client mid msg =
     let mtype = MType.get () in
     let rtype = getpid() in
     verbose "C Msg client [%d] [%d, %s]" mtype rtype msg;
-    printf "Sending to source type [%d] messaage [%d][%s]\n%!" mtype rtype msg;
+    printf "Sending to source type [%d] message [%d][%s]\n%!" mtype rtype msg;
     Ipc.Msg.send mid mtype (rtype ,msg);
     let rc, rsp = (Ipc.Msg.recv ~mtype:rtype mid : int * string) in
     verbose "C Response type[%d] : [%s]" rc rsp;

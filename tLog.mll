@@ -407,7 +407,7 @@ and data = parse
             }
         }
     | (func+ as meth) ": " ("Enter"|"Exit" as dir) "ing " ['M' 'm'] "ethod." {
-            Method ((match dir with "Enter" -> Enter | "Exit" -> Exit), meth)
+            Method ((match dir with "Enter" -> Enter | "Exit" -> Exit | _ -> Exit), meth)
         }
     | _+ as other { Other other }
 
