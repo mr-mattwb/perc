@@ -119,6 +119,22 @@ module PrioSer =
         | Enter
         | Exit
 
+    module PMap = Map.Make(Int)
+
+    type config_flag_empty = {
+        callFlow : string;
+        fileName : string
+    }
+
+    module CatCodeTable = Map.Make(String)
+    type catCodeTable = int CatCodeTable.t
+
+    type account_details = {
+        ucid : string;
+        requestDate : DateTime.t;
+        rest : string
+    }
+
     type data =
         | Link of link
         | Label of string
@@ -157,6 +173,11 @@ module PrioSer =
         | BusinessUnitReturnCode of string
         | BusinessUnitInfo of business_unit
         | Method of direction * string
+        | PortalMap of string PMap.t
+        | ConfigFlagEmpty of config_flag_empty
+        | CatCodeTable of catCodeTable
+        | CallFlowFileName of string
+        | AccountDetails of account_details
         | Other of string
 
     let string_of_null_string = function
@@ -215,6 +236,16 @@ let pathstr = [ 'A'-'Z' 'a'-'z' '0'-'9' '-' '_' '/' ]
 
 let url = ['A'-'Z' 'a'-'z' '0'-'9' '.' '&' '?' '%' '=' '/' ':' '_' '-' ]
 
+let portalMapId = ['0'-'9']['0'-'9'] 
+let portalName = ['A'-'Z' '0'-'9' '-' '_' ]
+
+let callflow = ['A'-'Z']
+
+let catcodename = [^ '=' ',']
+let catcode = ['0'-'9']
+
+let datetime = ['0'-'9' '-' ':' ',' '+' 'T' '.']
+let dtmsec = ['0'-'9']+
 
 rule entry = parse
     | [ ' ' '\t' ]+                                         { entry lexbuf } 
@@ -409,13 +440,57 @@ and data = parse
     | (func+ as meth) ": " ("Enter"|"Exit" as dir) "ing " ['M' 'm'] "ethod." {
             Method ((match dir with "Enter" -> Enter | "Exit" -> Exit | _ -> Exit), meth)
         }
-    | _+ as other { Other other }
+    | "PortalMap[" (_* as pmap) "]"   {
+           PortalMap (portalMap (Lexing.from_string pmap))
+        }
+    | "DB Config Flag Map is Empty for Config ID: " (callflow+ as cflow) " with fileName: " (func+ as fname) {
+        ConfigFlagEmpty {
+                callFlow = cflow;
+                fileName = fname
+            }
+        }
+    | "categoryCodeTable={" (_* as tbl) "}" {
+            CatCodeTable (categoryCodeTable (Lexing.from_string tbl))
+        }
+    | "CallflowFileName=" (_+ as fname) {
+            CallFlowFileName fname
+        }
+    | "accountDetails: AccountDetails [UCID=" (hexes2+ as ucid) ", Request_Date=" (datetime+ as reqdate)
+        ", " (_+ as rest) {
+            AccountDetails {
+                ucid = ucid;
+                requestDate = (dateTime (Lexing.from_string reqdate));
+                rest = rest
+            }
+        }
+
+and dateTime = parse
+    | (year as yr) "-" (month as mn) "-" (day as dy) "T" 
+      (hour as hr) ":" (minute as mi) ":" (second as sc) "." (dtmsec as ms) {
+           DateTime.date_time_of_strs yr mn dy hr mi sc
+        }
 
 and categoryCodeList = parse
     | (nums2+ as code) ","                      { (int_of_string code) :: (categoryCodeList lexbuf) }
     | (nums2+ as code)                          { (int_of_string code) :: [] }
     | eof                                       { [] }
         
+and portalMap = parse
+    | "{"                                      { portalMap lexbuf }
+    | ", "                                     { portalMap lexbuf }
+    | "}"                                      { PMap.empty }
+    | eof                                      { PMap.empty }
+    | (portalMapId as id) '=' (portalName+ as name) { 
+            let map = portalMap lexbuf in
+            PMap.add (int_of_string id) name map
+        }
+and categoryCodeTable = parse
+    | (catcodename+ as name) "=" (catcode+ as ccode)    {
+            let rest = categoryCodeTable lexbuf in
+            CatCodeTable.add name (int_of_string ccode) rest
+        }
+    | [' ']* "," [' ']*         { categoryCodeTable lexbuf }
+    | eof                       { CatCodeTable.empty }
 {
 
 let parse_entry line = 
@@ -442,7 +517,7 @@ let rec input_channel fin =
     in
     aux []
 
-let rec input_file fname = Tools.with_in_file input_channel fname
+let rec input_entries fname = Tools.with_in_file input_channel fname
 
 let clean ls = 
     let aux acc e = 
@@ -473,5 +548,5 @@ let get_calls entries =
     let aux id = get_call id entries in
     List.map aux (get_ids entries)
 
-let input_calls fname = get_calls (input_file fname)
+let input_calls fname = get_calls (input_entries fname)
 }
