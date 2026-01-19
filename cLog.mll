@@ -154,6 +154,14 @@
         voiceBioEnrolled : bool
     }
 
+    type account_info = {
+        accountStatus : char;
+        delinquentLevel : char;
+        pastDueBalanceAmount : float;
+        yellowToGreenAmount : float;
+        intercept : bool
+    }
+
     type entry = {
         date : Date.t;
         time : Time.t;
@@ -197,6 +205,7 @@
         | CreatedToken of string 
         | IpAddress of string
         | SecondaryHostUrl of string
+        | AccountInformation of account_info
         | Other of string
 
     let bool_of_string str = 
@@ -269,6 +278,8 @@ let alphaDash = ['A'-'Z' 'a'-'z' '-']
 let alphaDig = ['A'-'Z' 'a'-'z' '0'-'9']
 let alphaDigNull = (['A'-'Z' 'a'-'z' '0'-'9']*|"null")
 let url = ['A'-'Z' 'a'-'z' '0'-'9' '/' ':' '.' '?']
+let alpha = ['A'-'Z' 'a'-'z']
+let real = ['0'-'9' '+' '-' '.']+
 
 rule entry = parse
     | (year as yr) '-' (month as mo) '-' (day as da) 'T'
@@ -488,6 +499,17 @@ and data = parse
     | "FreeSpeech client secondaryHostUrl successfully created: " (url+ as url) {
         SecondaryHostUrl url
     }
+    | "AccountStatus[" (alpha as acctstatus) "] DelinquentLevel[" (alpha as dlevel) 
+      "] PastDueBalanceAmount[" (real as pdba) "] YellowToGreenAmount[" (real as ytga) 
+      "] Intercept[" (boolval as icept) "]" {
+          AccountInformation {
+            accountStatus = acctstatus;
+            delinquentLevel = dlevel;
+            pastDueBalanceAmount = float_of_string pdba;
+            yellowToGreenAmount = float_of_string ytga;
+            intercept = bool_of_string icept
+          }
+      }
 
 and businessUnitTable = parse
     | [' ']* ',' [' ']*                             { businessUnitTable lexbuf }
