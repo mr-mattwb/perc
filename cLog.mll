@@ -206,6 +206,7 @@
         | IpAddress of string
         | SecondaryHostUrl of string
         | AccountInformation of account_info
+        | EnterState of string
         | Other of string
 
     let bool_of_string str = 
@@ -510,6 +511,10 @@ and data = parse
             intercept = bool_of_string icept
           }
       }
+    | (alphaDig+ as func) ": entering state" {
+        EnterState func
+    }
+
 
 and businessUnitTable = parse
     | [' ']* ',' [' ']*                             { businessUnitTable lexbuf }
