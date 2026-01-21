@@ -278,9 +278,8 @@ let digDash = ['0'-'9' '-']
 let alphaDash = ['A'-'Z' 'a'-'z' '-']
 let alphaDig = ['A'-'Z' 'a'-'z' '0'-'9']
 let alphaDigNull = (['A'-'Z' 'a'-'z' '0'-'9']*|"null")
-let url = ['A'-'Z' 'a'-'z' '0'-'9' '/' ':' '.' '?']
-let alpha = ['A'-'Z' 'a'-'z']
-let real = ['0'-'9' '+' '-' '.']+
+let alpha = ['A'-'z']
+let real = ['-' '+']? ['0'-'9']*'.'?['0'-'9']* 
 
 rule entry = parse
     | (year as yr) '-' (month as mo) '-' (day as da) 'T'
@@ -491,13 +490,13 @@ and data = parse
             voiceBioEnrolled = bool_of_string enrolled
         }
     }
-    | "Created _TOKEN [" (alpha_Dig+ as tok) "]" {
+    | "Created _TOKEN [" (['0'-'9' 'A'-'F' 'a'-'f' '-']+ as tok) "]" {
         CreatedToken tok
     }
-    | "execute: found ipAddress: " (alphaDig+ as ipaddr) {
+    | "execute: found ipAddress: " (['A'-'z' '0'-'9' '.']+ as ipaddr) {
         IpAddress ipaddr
     }
-    | "FreeSpeech client secondaryHostUrl successfully created: " (url+ as url) {
+    | "FreeSpeech client secondaryHostUrl successfully created: " (_+ as url) {
         SecondaryHostUrl url
     }
     | "AccountStatus[" (alpha as acctstatus) "] DelinquentLevel[" (alpha as dlevel) 
@@ -511,9 +510,9 @@ and data = parse
             intercept = bool_of_string icept
           }
       }
-    | (alphaDig+ as func) ": entering state" {
-        EnterState func
-    }
+    | (['A'-'z']* as func) ": entering state" {
+          EnterState func
+        }
 
 
 and businessUnitTable = parse
