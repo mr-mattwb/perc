@@ -14,6 +14,7 @@ type dir =
 
 module PortalMap = Map.Make(Int)
 module CatCodeTable = Map.Make(String)
+module BusinessUnitTable = Map.Make(String)
 
 type header = {
     date : Date.t;
@@ -47,6 +48,9 @@ and data =
     | NullItemPath of string * string
     | EmptyCallflowMap of string * string
     | LoadLocalConfig of string
+    | AppTag of string
+    | IpAddress of string
+    | BusinessUnitTable of business_unit_table
     | Other of string
 and link = {
     link_from : string;
@@ -71,3 +75,5 @@ and find_customer_using_get = {
 }
 and portalmap = string PortalMap.t
 and catcode_table = int CatCodeTable.t
+and business_unit_table = string BusinessUnitTable.t
+

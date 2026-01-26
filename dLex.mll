@@ -34,15 +34,14 @@ let hexnull = ['0'-'9' 'A'-'F']*|"null"
 let portalName = ['A'-'Z' '0'-'9' '-' '_']
 let boolval = "true"|"false"
 let alphaDig = ['A'-'z' '0'-'9' '_' '-']
+let comma = [' ']*','[' ']*
 
 rule header = parse
     | (year as yr) '-' (month as mo) '-' (day as da)            { DATE (Date.of_strs yr mo da) }
     | 'T' (hour as hr) ':' (minute as mi) ':' (second as se)    { TIME (Time.of_strs hr mi se) }
     | ',' (dig dig dig as ms)                                   { MSEC (int_of_string ms) }
-    | '|' (ucHex* as id) 
-      '|' (version+ as ver)                                     { IDEN (id, ver) }
-    | '-' (priority as prio) [' ']*
-      '|' (notbar+ as func) '|'                                 { PRIO (priority_of_string prio, func) }
+    | '|' (ucHex* as id) '|' (version+ as ver)                  { IDEN (id, ver) }
+    | '-' (priority as prio) [' ']* '|' (notbar+ as func) '|'   { PRIO (priority_of_string prio, func) }
 
 and data = parse
     | "chaining from >"([^'<']+ as nfrom)
@@ -51,10 +50,10 @@ and data = parse
     | "InvocationCounter.valueUnbound: call" ("start"|"end" as dir) " was called [0]  times but it should have been called exactly once" {
             INVOCATION (dir_of_string dir)
         }
-    | ([^':']+ as func)": entering state"                       { STATE func }
+    | ([^':']+ as func)": entering state"                        { STATE func }
     | "nextModule: ["(nobrack+ as nmod)"]"                       { NEXTMODULE nmod }
     | "Return["(nobrack+ as ret)"]"                              { RETURNFUNCTION ret }
-    | "lastVisitedModule" [' ']*':'[' ']* '['? (nobrack+ as lvm) ']'?        { LASTVISITEDMODULE lvm }
+    | "lastVisitedModule" [' ']*':'[' ']* '['? (nobrack+ as lvm) ']'? { LASTVISITEDMODULE lvm }
     | "portalName: ["(nobrack* as pn)"]"                           { PORTALNAME pn }
     | "returnValue:["(nobrack* as rv)"]"                         { RETURNVALUE rv }
     | "NODE_HOSTNAME ["(nobrack* as nh)"]"                       { NODEHOSTNAME nh } 
@@ -82,31 +81,59 @@ and data = parse
                 siteId = sid
             }
         }
-    | "catCodesForSalesTransfer: "                              { 
-            CATCODESFORSALESTRANSFER (catCodesForSalesTransfer lexbuf)
-        }
-    | "Created _TOKEN ["(nobrack+ as tkn)"]"                    { CREATEDTOKEN tkn }
-    | "PortalMap[{"                                             { PORTALMAP (portalMap lexbuf) }
-    | "isVisitedNode("([^')']+ as node)"): "(boolval as visited) {
-            VISITEDNODE (node, bool_of_string visited)
-        }
-    | "categoryCoeTable={"                                     { CATCODETABLE (catCodeTable lexbuf) }
-    | "executing >" (_* as sql) "<"                             { SQLEXECUTING sql }
+    | "catCodesForSalesTransfer: "                                  { CATCODESFORSALESTRANSFER (catCodesForSalesTransfer lexbuf) }
+    | "Created _TOKEN ["(nobrack+ as tkn)"]"                        { CREATEDTOKEN tkn }
+    | "PortalMap[{"                                                 { PORTALMAP (portalMap lexbuf) }
+    | "isVisitedNode("([^')']+ as node)"): "(boolval as visited)    { VISITEDNODE (node, bool_of_string visited) }
+    | "categoryCoeTable={"                                          { CATCODETABLE (catCodeTable lexbuf) }
+    | "executing >" (_* as sql) "<"                                 { SQLEXECUTING sql }
     | "Null value for "([^' ']+ as name)" in fileName: "(_* as path)    { NULLITEMPATH(name, path)  }
     | "DB Config Flag Map is Empty for Config ID: "([^' ']+ as cf)" with fileName: "(_+ as fn) { EMPTYCALLFLOWMAP(cf, fn) }
     | "loading configuration from local file repository: "(_+ as path) { LOADLOCALCONFIG path }
+    | "appTag : "(_+ as apptag)                                     { APPTAG apptag }
+    | "execute: found ipAddress: "(_+ as ip)                        { IPADDRESS ip }
+    | "businessUnitTable={"                                         { BUSINESSUNITTABLE (businessUnitTable lexbuf) }
 
-
+and businessUnitTable = parse
+    | "}"                                                           { BusinessUnitTable.empty }
+    | comma                                                         { businessUnitTable lexbuf }
+    | (alphaDig+ as num)'='(alphaDig+ as name)                      { BusinessUnitTable.add num name (businessUnitTable lexbuf) }
 and catCodeTable = parse
-    | "}"                                                       { CatCodeTable.empty }
-    | [' ']*','[' ']*                                           { catCodeTable lexbuf }
-    | (alphaDig+ as name)'='(dig+ as code)                      { CatCodeTable.add name (int_of_string code) (catCodeTable lexbuf) }
+    | "}"                                                           { CatCodeTable.empty }
+    | comma                                                         { catCodeTable lexbuf }
+    | (alphaDig+ as name)'='(dig+ as code)                          { CatCodeTable.add name (int_of_string code) (catCodeTable lexbuf) }
 and portalMap = parse
-    | "}]"                                                      { PortalMap.empty }
-    | [' ']*','[' ']*                                           { portalMap lexbuf }
-    | (dig+ as num)'='(portalName+ as name)                     { PortalMap.add (int_of_string num) name (portalMap lexbuf) }
+    | "}]"                                                          { PortalMap.empty }
+    | comma                                                         { portalMap lexbuf }
+    | (dig+ as num)'='(portalName+ as name)                         { PortalMap.add (int_of_string num) name (portalMap lexbuf) }
 and catCodesForSalesTransfer = parse
-    | ","                                   { catCodesForSalesTransfer lexbuf }
-    | eof                                   { [] }
-    | (dig+ as cc)                          { (int_of_string cc) :: (catCodesForSalesTransfer lexbuf) }
+    | ","                                                           { catCodesForSalesTransfer lexbuf }
+    | eof                                                           { [] }
+    | (dig+ as cc)                                                  { (int_of_string cc) :: (catCodesForSalesTransfer lexbuf) }
 
+
+{
+let parse_entry line = 
+    try
+        let lex = Lexing.from_string line in
+        let hdr = DParse.header header lex in
+        let data = DParse.data data lex in
+        Some (hdr, data)
+    with e ->
+        None
+
+let parse_channel fin = 
+    let rec aux ls = 
+        match Tools.input_line fin with
+        | None -> ls
+        | Some line -> aux (apply ls line)
+    and apply ls line = 
+        match parse_entry line with
+        | None -> ls
+        | Some e -> e :: ls
+    in
+    aux []
+
+let parse_file fname = Tools.with_in_file parse_channel fname 
+
+}

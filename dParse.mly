@@ -28,6 +28,9 @@ open DLog
 %token <string * string> NULLITEMPATH
 %token <string * string> EMPTYCALLFLOWMAP
 %token <string> LOADLOCALCONFIG
+%token <string> APPTAG
+%token <string> IPADDRESS
+%token <DLog.business_unit_table> BUSINESSUNITTABLE
 %token <string> OTHER
 %start header
 %start data
@@ -58,6 +61,9 @@ data:
     | NULLITEMPATH                          { let (v, p) = $1 in NullItemPath (v, p) }
     | EMPTYCALLFLOWMAP                      { let (v, p) = $1 in EmptyCallflowMap (v, p) }
     | LOADLOCALCONFIG                       { LoadLocalConfig $1 }
+    | APPTAG                                { AppTag $1 }
+    | IPADDRESS                             { IpAddress $1 }
+    | BUSINESSUNITTABLE                     { BusinessUnitTable $1 }
     | OTHER                                 { Other $1 }
 header:
     | DATE TIME MSEC IDEN PRIO { 

@@ -39,31 +39,31 @@
 (defmacro checktype (obj lt) `(typep (entry-data ,obj) ,lt))
 (defconstant *max-str-len* 200)
 
-(defparameter tests (input-file "logs/tests.log"))
-(defun print-obj (obj)
-  (cond
-    ((checktype obj 'link)  (format t "link-from [~A] link-to [~A]~%" (link-from (entry-data obj)) (link-to (entry-data obj))))
-    ((checktype obj 'label) (format t "label [~a] ~%" (label (entry-data obj))))
-    ((checktype obj 'state) (format t "state [~a] dir [~a]~%"(func (entry-data obj)) (direction (entry-data obj))))
-    ((checktype obj 'line) (format t "line type[~a] data[~a]~%" (line-type (entry-data obj)) (line-data (entry-data obj))))
-    ((checktype obj 'intentRoutingDS) (format t "IntentRoutingDS returnValue[~a] identifiedFlag[~a] lastVisitedModule[~a] appTag[~a] intentIntercept[~a] dialedPortalName[~a]~%" (returnValue (entry-data obj)) (identifiedFlag (entry-data obj)) (lastVisitedModule (entry-data obj)) (appTag (entry-data obj)) (intentIntercept (entry-data obj)) (dialedPortalName (entry-data obj))))
-    ((checktype obj 'callinfo) (format t "callinfo dnis[~a] ani[~a] ucid[~a] firstHistoryInfoUser[~a] lastHistoryInfoUser[~a] receivedUcid[~a] receivedUui[~a]~%" (dnis (entry-data obj)) (ani (entry-data obj)) (ucid (entry-data obj)) (firstHistoryInfoUser (entry-data obj)) (lastHistoryInfoUser (entry-data obj)) (receivedUcid (entry-data obj)) (receivedUui (entry-data obj))))
-    ((checktype obj 'authentication) (format t "authentication eligible[~a] voiceBio[~a]~%" (eligible (entry-data obj)) (voiceBio (entry-data obj))))
-    ((checktype obj 'play-transfer-msg) (format t "play-transfer-msg routingCode[~a] lastVisitedModule[~a] transferMsgPlayed[~a] portalName[~a] identified[~a] delinquentLevel[~a] genericInterceptFO[~a] retryZipCode[~a] botEligible[~a] oof[~a] isPlayFreeSpecmoNotice[~a] callType[~a] preAuthLastModule[~a]~%" (routingCode (entry-data obj)) (lastVisitedModule (entry-data obj)) (transferMsgPlayed (entry-data obj)) (portalName (entry-data obj)) (identified (entry-data obj)) (delinquentLevel (entry-data obj)) (genericInterceptFO (entry-data obj)) (retryZipCode (entry-data obj)) (botEligible (entry-data obj)) (oof (entry-data obj)) (isPlayFreeSpecmoNotice (entry-data obj)) (callType (entry-data obj)) (preAuthLastModule (entry-data obj))))
-    ((checktype obj 'profile-acct) (format t "profile-acct acct-no[~a] status[~a]~%" (acct-no (entry-data obj)) (status (entry-data obj))))
-    ((checktype obj 'visited-node) (format t "visited-node funcname[~a] visited[~a]~%" (funcname (entry-data obj)) (visited (entry-data obj))))
-    ((checktype obj 'business-unit) (format t "business-unit siteID[~a] businessUnit[~a] returnCode[~a]~%" (siteID (entry-data obj)) (businessUnit (entry-data obj)) (returnCode (entry-data obj))))
-    ((checktype obj 'init-config) (format t "init-config name[~a] path[~a]~%" (name (entry-data obj)) (path (entry-data obj))))
-    ((checktype obj 'string) (format t "string [~a]~%" (if (< (length (entry-data obj))  *max-str-len*) (entry-data obj) (subseq (entry-data obj) 0 *max-str-len*))))
-    (t (format t "Unsupported type [~a] ~%" obj))))
-
-(defun print-tests (testlist) 
-  (cond 
-    ((equal testlist nil) (format t "~%"))
-    (t (print-obj (car testlist)) (print-tests (cdr testlist)))))
-
-;;(print-tests tests)
-(defun looper (n maxi calls)
-    (cond
-      ((< n maxi) (print-obj (nth n (call-nodes (car calls)))) (looper (+ n 1) maxi calls))))
-
+;(defparameter tests (input-file "logs/tests.log"))
+;(defun print-obj (obj)
+;  (cond
+;    ((checktype obj 'link)  (format t "link-from [~A] link-to [~A]~%" (link-from (entry-data obj)) (link-to (entry-data obj))))
+;    ((checktype obj 'label) (format t "label [~a] ~%" (label (entry-data obj))))
+;    ((checktype obj 'state) (format t "state [~a] dir [~a]~%"(func (entry-data obj)) (direction (entry-data obj))))
+;    ((checktype obj 'line) (format t "line type[~a] data[~a]~%" (line-type (entry-data obj)) (line-data (entry-data obj))))
+;    ((checktype obj 'intentRoutingDS) (format t "IntentRoutingDS returnValue[~a] identifiedFlag[~a] lastVisitedModule[~a] appTag[~a] intentIntercept[~a] dialedPortalName[~a]~%" (returnValue (entry-data obj)) (identifiedFlag (entry-data obj)) (lastVisitedModule (entry-data obj)) (appTag (entry-data obj)) (intentIntercept (entry-data obj)) (dialedPortalName (entry-data obj))))
+;    ((checktype obj 'callinfo) (format t "callinfo dnis[~a] ani[~a] ucid[~a] firstHistoryInfoUser[~a] lastHistoryInfoUser[~a] receivedUcid[~a] receivedUui[~a]~%" (dnis (entry-data obj)) (ani (entry-data obj)) (ucid (entry-data obj)) (firstHistoryInfoUser (entry-data obj)) (lastHistoryInfoUser (entry-data obj)) (receivedUcid (entry-data obj)) (receivedUui (entry-data obj))))
+;    ((checktype obj 'authentication) (format t "authentication eligible[~a] voiceBio[~a]~%" (eligible (entry-data obj)) (voiceBio (entry-data obj))))
+;    ((checktype obj 'play-transfer-msg) (format t "play-transfer-msg routingCode[~a] lastVisitedModule[~a] transferMsgPlayed[~a] portalName[~a] identified[~a] delinquentLevel[~a] genericInterceptFO[~a] retryZipCode[~a] botEligible[~a] oof[~a] isPlayFreeSpecmoNotice[~a] callType[~a] preAuthLastModule[~a]~%" (routingCode (entry-data obj)) (lastVisitedModule (entry-data obj)) (transferMsgPlayed (entry-data obj)) (portalName (entry-data obj)) (identified (entry-data obj)) (delinquentLevel (entry-data obj)) (genericInterceptFO (entry-data obj)) (retryZipCode (entry-data obj)) (botEligible (entry-data obj)) (oof (entry-data obj)) (isPlayFreeSpecmoNotice (entry-data obj)) (callType (entry-data obj)) (preAuthLastModule (entry-data obj))))
+;    ((checktype obj 'profile-acct) (format t "profile-acct acct-no[~a] status[~a]~%" (acct-no (entry-data obj)) (status (entry-data obj))))
+;    ((checktype obj 'visited-node) (format t "visited-node funcname[~a] visited[~a]~%" (funcname (entry-data obj)) (visited (entry-data obj))))
+;    ((checktype obj 'business-unit) (format t "business-unit siteID[~a] businessUnit[~a] returnCode[~a]~%" (siteID (entry-data obj)) (businessUnit (entry-data obj)) (returnCode (entry-data obj))))
+;    ((checktype obj 'init-config) (format t "init-config name[~a] path[~a]~%" (name (entry-data obj)) (path (entry-data obj))))
+;    ((checktype obj 'string) (format t "string [~a]~%" (if (< (length (entry-data obj))  *max-str-len*) (entry-data obj) (subseq (entry-data obj) 0 *max-str-len*))))
+;    (t (format t "Unsupported type [~a] ~%" obj))))
+;
+;(defun print-tests (testlist) 
+;  (cond 
+;    ((equal testlist nil) (format t "~%"))
+;    (t (print-obj (car testlist)) (print-tests (cdr testlist)))))
+;
+;;;(print-tests tests)
+;(defun looper (n maxi calls)
+;    (cond
+;      ((< n maxi) (print-obj (nth n (call-nodes (car calls)))) (looper (+ n 1) maxi calls))))
+;
