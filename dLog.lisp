@@ -360,7 +360,6 @@
     ((ppcre:scan identifiedFlag-pat line)       (parse-identifiedFlag line))
     ((ppcre:scan visitedNode-pat line)          (parse-visitedNode line))
     ((ppcre:scan businessUnitReturnCode-pat line) (parse-businessUnitReturnCode line))
-    ((ppcre:scan businessUnitInfo-pat line)     (parse-businessUnitInfo line))
     ((ppcre:scan playTransfer-pat line)         (parse-playTransfer line))
     (t                                          line)))
 
