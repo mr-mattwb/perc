@@ -1,6 +1,6 @@
-import dLog
+import dLog as DLog
 
-entry = dLog.Entry("")
+entry = DLog.Entry("")
 entry.parse("2025-08-25T10:59:32,005|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|reporting.CDRUtil|Label: StartSession failure")
 entry.data.print_data()
 entry.parse("2025-08-25T05:28:20,408|0B1AE898790FD83FFA8795DE1460D032|MOD25.09.0.004-DEBUG|reporting.CDRUtil|populateCDR: entering state")
