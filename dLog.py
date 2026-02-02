@@ -397,9 +397,11 @@ class Entry:
             self.funcName = m.group(11)
             self.data = self.parse_data(m.group(12))
 
+    def to_str(self):
+        return(f"{self.__class__.__name__} date[{self.date}] time[{self.time}] msec[{self.msec}] identifier[{self.identifier}] version[{self.version}] priority[{self.priority}] function[{self.funcName}] data[{self.data.to_str()}]")
+
     def print_data(self):
-        print(f"{self.__class__.__name__} date[{self.date}] time[{self.time}] msec[{self.msec}] identifier[{self.identifier}] version[{self.version}] priority[{self.priority}] function[{self.funcName}]")
-        self.data.print_data()
+        print(self.to_str())
 
     def parse_data(self, msg):
         if (re.search(Label.pat, msg)):
