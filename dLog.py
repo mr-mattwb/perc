@@ -6,9 +6,6 @@ class Data:
     def __init__(self, msg):
         self.parse(msg)
 
-    def print_data(self):
-        print(f"{self.__class__.__name__}")
-
     def bool_of_str(self, b):
         match (b.upper()):
             case "TRUE":
@@ -39,6 +36,16 @@ class Data:
         else:
             return b
 
+    def to_str(self):
+        return f"{self.__class__.__name__}"
+
+    def print_data(self):
+        print(self.to_str())
+
+    def parse(self, msg):
+        f"{self.__class__.__name__}"
+
+
 class Line(Data):
     item = ""
     pat = r""
@@ -54,10 +61,14 @@ class Line(Data):
         self.item = a.group(1)
 
     def print_data(self):
-        print(f"{self.__class__.__name__} item[{self.item}]")
+        print(self.to_str())
+
+    def to_str(self):
+        return f"{self.__class__.__name__} item[{self.item}]"
+        
 
 class Label(Line):
-    pat = r"Label: (.*)"
+    pat = r"^Label: (.*)"
 
 class State(Line):
     pat = r"(.*): entering state"
@@ -73,17 +84,17 @@ class Link(Data):
         a = re.match(self.pat, msg)
         self.link_from = a.group(1)
         self.link_to = a.group(2)
-    def print_data(self):
-        print(f"Link from[{self.link_from}] to[{self.link_to}]")
+    def to_str(self):
+        return f"Link from[{self.link_from}] to[{self.link_to}]"
 
 class LastVisitedModule(Line):
-    pat = r"lastVisitedModule: \[(.*)\]"
+    pat = r"^lastVisitedModule: \[(.*)\]"
 
 class PortalName(Line):
-    pat = r"portalName: \[(.*)\]"
+    pat = r"^portalName: \[(.*)\]"
 
 class ReturnNode(Line):
-    pat = r"Return\[(.*)\]"
+    pat = r"^Return\[(.*)\]"
 
 class RoutingDS(Data):
     returnValue = ""
@@ -101,14 +112,14 @@ class RoutingDS(Data):
         self.appTag = a.group(4)
         self.intentIntercept = a.group(5)
         self.dialedPortalName = a.group(6)
-    def print_data(self):
-        print(f"{self.__class__.__name__} returnValue[{self.returnValue}] identifiedFlag[{self.identifiedFlag}] lastVisitedModule[{self.lastVisitedModule}] appTag[{self.appTag}] intentIntercept[{self.intentIntercept}] dialedPortalName[{self.dialedPortalName}]")
+    def to_str(self):
+        return(f"{self.__class__.__name__} returnValue[{self.returnValue}] identifiedFlag[{self.identifiedFlag}] lastVisitedModule[{self.lastVisitedModule}] appTag[{self.appTag}] intentIntercept[{self.intentIntercept}] dialedPortalName[{self.dialedPortalName}]")
 
 class ReturnValue(Line):
-    pat = r"returnValue:\[(.*)\]"
+    pat = r"^returnValue:\[(.*)\]"
 
 class NodeHostname(Line):
-    pat = r"NODE_HOSTNAME \[(.*)\]"
+    pat = r"^NODE_HOSTNAME \[(.*)\]"
 
 class InfoUser(Data):
     dnis = ""
@@ -128,23 +139,23 @@ class InfoUser(Data):
         self.lastHistoryInfoUser = a.group(5)
         self.receivedUcid = Data.nullstr(a.group(6))
         self.receivedUui = Data.nullstr(a.group(7))
-    def print_data(self):
-        print(f"{self.__class__.__name__} dnis[{self.dnis}] ani[{self.ani}] ucid[{self.ucid}] firstHistoryInfoUser[{self.firstHistoryInfoUser}] lastHistoryInfoUser[{self.lastHistoryInfoUser}] receivedUcid[{self.receivedUcid}] receivedUui[{self.receivedUui}]")
+    def to_str(self):
+        return(f"{self.__class__.__name__} dnis[{self.dnis}] ani[{self.ani}] ucid[{self.ucid}] firstHistoryInfoUser[{self.firstHistoryInfoUser}] lastHistoryInfoUser[{self.lastHistoryInfoUser}] receivedUcid[{self.receivedUcid}] receivedUui[{self.receivedUui}]")
 
 class Language(Line):
-    pat = r"language:\[(.*)\]"
+    pat = r"^language:\[(.*)\]"
 
 class Dnis(Line):
-    pat = r"dnis:\[(.*)\]"
+    pat = r"^dnis:\[(.*)\]"
 
 class Ani(Line):
-    pat = r"ani:\[(.*)\]"
+    pat = r"^ani:\[(.*)\]"
 
 class CallType(Line):
-    pat = r"callType:\[(.*)\]"
+    pat = r"^callType:\[(.*)\]"
 
 class BusinessUnit(Line):
-    pat = r"businessUnit:\[(.*)\]"
+    pat = r"^businessUnit:\[(.*)\]"
 
 class CustomerUsingGet(Data):
     ucid = ""
@@ -163,25 +174,26 @@ class CustomerUsingGet(Data):
         self.dnis = a.group(5)
         self.siteId = a.group(6)
 
-    def print_data(self):
-        print(f"{self.__class__.__name__} ucid[{self.ucid}] ani[{self.ani}] ced[{self.ced}] acct[{self.acct}] dnis[{self.dnis}] siteId[{self.siteId}]")
+    def to_str(self):
+        return(f"{self.__class__.__name__} ucid[{self.ucid}] ani[{self.ani}] ced[{self.ced}] acct[{self.acct}] dnis[{self.dnis}] siteId[{self.siteId}]")
  
 class AcctNumber(Line):
-    pat = r"accountNumber: (.*)"
+    pat = r"^accountNumber: (.*)"
 
 class Authentication(Data):
     authEligible = False
     voiceBioEnrolled = False
-    pat = r"authenticationEligible:\[(.*)\],voiceBioEnrolled:\[(.*)\]"
+    pat = r"^authenticationEligible:\[(.*)\],voiceBioEnrolled:\[(.*)\]"
     def parse(self, msg):
         a = re.match(self.pat, msg)
         self.authEligible = self.bool_of_str(a.group(1))
         self.voiceBioEnrolled = self.bool_of_str(a.group(2))
-    def print_data(self):
-        print(f"{self.__class__.__name__} authEligible[{self.authEligible}] voiceBioEnrolled[{self.voiceBioEnrolled}]")
+    
+    def to_str(self):
+        return(f"{self.__class__.__name__} authEligible[{self.authEligible}] voiceBioEnrolled[{self.voiceBioEnrolled}]")
 
 class CategoryCode(Line):
-    pat = r"categoryCode: (.*)"
+    pat = r"^categoryCode: (.*)"
 
 class InitConfig(Data):
     name = ""
@@ -191,8 +203,8 @@ class InitConfig(Data):
         a = re.match(self.pat, msg)
         self.name = a.group(1)
         self.path = a.group(2)
-    def print_data(self):
-        print(f"{self.__class__.__name__} name[{self.name}] path[{self.path}]")
+    def to_str(self):
+        return(f"{self.__class__.__name__} name[{self.name}] path[{self.path}]")
 
 class InvocationCounter(Line):
     pat = r"InvocationCounter.valueUnbound: call(start|end) was called \[0\]  times but it should have been called exactly once"
@@ -217,7 +229,7 @@ class PlayTransfer(Data):
     isPlayFreeSpecmoNotice = False
     callType = "Residential"
     preAuthLastModule = ""
-    pat = "routingCode\[(.*)\] lastVisitedModule\[(.*)\] transferMsgPlayedFlag\[(.*)\] portalName\[(.*)\] identifiedFlag\[(.*)\] delinquientLevel\[(.*)\] genericInterceptFOFlag\[(.*)\] retryZipCode\[(.*)\] botEligible\[(.*)\] oofFlag\[(.*)\] isPlayFreeSpecmoNotice\[(.*)\] callType\[(.*)\] preAuthLastModule\[(.*)\]"
+    pat = r"routingCode\[(.*)\] lastVisitedModule\[(.*)\] transferMsgPlayedFlag\[(.*)\] portalName\[(.*)\] identifiedFlag\[(.*)\] delinquientLevel\[(.*)\] genericInterceptFOFlag\[(.*)\] retryZipCode\[(.*)\] botEligible\[(.*)\] oofFlag\[(.*)\] isPlayFreeSpecmoNotice\[(.*)\] callType\[(.*)\] preAuthLastModule\[(.*)\]"
     def parse(self, msg):
         a = re.match(self.pat, msg)
         self.routingCode = a.group(1)
@@ -233,23 +245,23 @@ class PlayTransfer(Data):
         self.isPlayFreeSpecmoNotice = self.bool_of_str(a.group(11))
         self.callType = a.group(12)
         self.preAuthLastModule = a.group(13)
-    def print_data(self):
-        print(f"{self.__class__.__name__} routingCode[{self.routingCode}] lastVisitedModule[{self.lastVisitedModule}] transferMsgPlayedFlag[{self.transferMsgPlayedFlag}] portalName[{self.portalName}] identifiedFlag[{self.identifiedFlag}] delinquientLevel[{self.delinquientLevel}] genericInterceptFOFlag[{self.genericInterceptFOFlag}] retryZipCode[{self.retryZipCode}] botEligible[{self.botEligible}] oofFlag[{self.oofFlag}] isPlayFreeSpecmoNotice[{self.isPlayFreeSpecmoNotice}] callType[{self.callType}] preAuthLastModule[{self.preAuthLastModule}]")
+    def to_str(self):
+        return(f"{self.__class__.__name__} routingCode[{self.routingCode}] lastVisitedModule[{self.lastVisitedModule}] transferMsgPlayedFlag[{self.transferMsgPlayedFlag}] portalName[{self.portalName}] identifiedFlag[{self.identifiedFlag}] delinquientLevel[{self.delinquientLevel}] genericInterceptFOFlag[{self.genericInterceptFOFlag}] retryZipCode[{self.retryZipCode}] botEligible[{self.botEligible}] oofFlag[{self.oofFlag}] isPlayFreeSpecmoNotice[{self.isPlayFreeSpecmoNotice}] callType[{self.callType}] preAuthLastModule[{self.preAuthLastModule}]")
 
 class CatCodeEligTransfer(Line):
-    pat = r"catCodeEligigbleForSalesTransfer: (.*)"
+    pat = r"^catCodeEligigbleForSalesTransfer: (.*)"
     def parse(self, msg):
         a = re.match(self.pat, msg)
         self.item = self.bool_of_str(a.group(1))
 
 class CreatedToken(Line):
-    pat = r"Created _TOKEN \[(.*)\]"
+    pat = r"^Created _TOKEN \[(.*)\]"
 
 class AniLookup(Line):
-    pat = r"\[(.*)\] Performing ANI Lookup"
+    pat = r"^\[(.*)\] Performing ANI Lookup"
 
 class DtmfOnly(Line):
-    pat = r"dtmfOnly:\[(.*)\]"
+    pat = r"^dtmfOnly:\[(.*)\]"
     def parse(self, msg):
         a = re.match(self.pat, msg)
         self.item = self.bool_of_str(a.group(1))
@@ -262,11 +274,11 @@ class CableProfileAccount(Data):
         a = re.match(self.pat, msg)
         self.acctNumber = a.group(1)
         self.acctStatus = a.group(2)
-    def print_data(self):
-        print(f"{self.__class__.__name__} Number[{self.acctNumber}] Status[{self.acctStatus}]")
+    def to_str(self):
+        return(f"{self.__class__.__name__} Number[{self.acctNumber}] Status[{self.acctStatus}]")
 
 class IdentifiedFlag(Line):
-    pat = r"identifiedFlag: \[(.*)\]"
+    pat = r"^identifiedFlag: \[(.*)\]"
     def parse(self, msg):
         a = re.match(self.pat, msg)
         self.item = self.bool_of_str(a.group(1))
@@ -279,8 +291,8 @@ class VisitedNode(Data):
         a = re.match(self.pat, msg)
         self.node = a.group(1)
         self.visited = self.bool_of_str(a.group(2))
-    def print_data(self):
-        print(f"{self.__class__.__name__} Node[{self.node}] Visited[{self.visited}]")
+    def to_str(self):
+        return(f"{self.__class__.__name__} Node[{self.node}] Visited[{self.visited}]")
 
 class BusinessUnitReturnCode(Line):
     pat = r"businessUnitReturnCode : (.*)"
@@ -295,19 +307,61 @@ class BusinessUnitInfo(Data):
         self.siteId = a.group(1)
         self.businessUnit = a.group(2)
         self.returnCode = a.group(3)
-    def print_data(self):
-        print(f"{self.__class__.__name__} siteId[{self.siteId}] businessUnit[{self.businessUnit}] returnCode[{self.returnCode}]")
+    def to_str(self):
+        return(f"{self.__class__.__name__} siteId[{self.siteId}] businessUnit[{self.businessUnit}] returnCode[{self.returnCode}]")
+
+class ExecSql(Line):
+    pat = r"executing >(.*)<"
+
+class Table(Data):
+    table = {}
+    pat = r""
+    def parse(self, msg):
+        a = re.match(self.pat, msg)
+        b = a.group(1).split(", ")
+        for item in b:
+            kv = item.split("=")
+            self.table[kv[0]] = kv[1]
+    def to_str(self):
+        return f"{self.__class__.__name__} table [{self.table}]"
+
+class BusinessUnitTable(Table):
+    pat = r"businessUnitTable={(.*)}"
+
+class PortalMap(Table):
+    pat = r"PortalMap\[{(.*)}\]"
+
+class CatCodeTable(Table):
+    pat = r"categoryCodeTable={(.*)}"
+
+class ProfileInfoUsingGet(Data):
+    ucid = ""
+    acctNumber = ""
+    businessUnit = ""
+    siteId = ""
+    mobileAcctNumber = ""
+    dnis = ""
+    pat = r"Executing getProfileInfoUsingGET ucid\[(.*)\] accountNumber\[(.*)\] businessUnit\[(.*)\] siteId\[(.*)\] mobileAccountNumber\[(.*)\] dnis\[(.*)\]"
+    def parse(self, msg):
+        a = re.match(self.pat, msg)
+        self.ucid = a.group(1)
+        self.acctNummber = a.group(2)
+        self.businessUnit = a.group(3)
+        self.siteId = a.group(4)
+        self.mobileAcctNumber = a.group(5)
+        self.dnis = a.group(6)
+    def to_str(self):
+        return f"{self.__class__.__name__} ucid[{self.ucid}] acctNumber[{self.acctNumber}] businessUnit[{self.businessUnit}] siteId[{self.siteId}] mobileAcctNumber[{self.mobileAcctNumber}] dnis[{self.dnis}]"
 
 class Entry:
     date = ""
     time = ""
     msec = 0
-    iden = ""
-    vers = ""
-    prio = ""
-    func = ""
+    identifier = ""
+    version = ""
+    priority = ""
+    funcName = ""
     data = ""
-
     pattern = r"([1-2][0-9][0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]),([0-9][0-9][0-9])\|([0-9A-F]*)\|([^\-]+)-(DEBUG|INFO|WARN|ERROR)[ ]*\|([^\|]+)\|(.*)"
 
     def __init__(self):
@@ -315,6 +369,9 @@ class Entry:
         self.date = self.date_of_strs(items[0], items[1], items[2])
         items = str(datetime.today().strftime("%H:%M:%S")).split(":")
         self.time = self.time_of_strs(items[0], items[1], items[2])
+
+    def __init__(self, line):
+        self.parse(line)
 
     def date_of_ints(self, yr, mo, da):
         return (yr * 10000) + (mo * 100) + da
@@ -329,16 +386,20 @@ class Entry:
         return self.time_of_ints(int(hr), int(mi), int(se))
 
     def parse(self, msg):
-        m = re.match(self.pattern, msg)
-        self.date = self.date_of_strs(m.group(1), m.group(2), m.group(3))
-        self.time = self.time_of_strs(m.group(4), m.group(5), m.group(6))
-        self.msec = int(m.group(7))
-        self.iden = m.group(8)
-        self.vers = m.group(9)
-        self.prio = m.group(10)
-        self.func = m.group(11)
-        self.data = self.parse_data(m.group(12))
+        if (re.search(self.pattern, msg)):
+            m = re.match(self.pattern, msg)
+            self.date = self.date_of_strs(m.group(1), m.group(2), m.group(3))
+            self.time = self.time_of_strs(m.group(4), m.group(5), m.group(6))
+            self.msec = int(m.group(7))
+            self.identifier = m.group(8)
+            self.version = m.group(9)
+            self.priority = m.group(10)
+            self.funcName = m.group(11)
+            self.data = self.parse_data(m.group(12))
 
+    def print_data(self):
+        print(f"{self.__class__.__name__} date[{self.date}] time[{self.time}] msec[{self.msec}] identifier[{self.identifier}] version[{self.version}] priority[{self.priority}] function[{self.funcName}]")
+        self.data.print_data()
 
     def parse_data(self, msg):
         if (re.search(Label.pat, msg)):
@@ -407,76 +468,33 @@ class Entry:
             return BusinessUnitReturnCode(msg)
         elif (re.search(BusinessUnitInfo.pat, msg)):
             return BusinessUnitInfo(msg)
+        elif (re.search(ExecSql.pat, msg)):
+            return ExecSql(msg)
+        elif (re.search(BusinessUnitTable.pat, msg)):
+            return BusinessUnitTable(msg)
+        elif (re.search(PortalMap.pat, msg)):
+            return PortalMap(msg)
+        elif (re.search(CatCodeTable.pat, msg)):
+            return CatCodeTable(msg)
+        elif (re.search(ProfileInfoUsingGet.pat, msg)):
+            return ProfileInfoUsingGet(msg)
         else:
-            return msg
+            return Data(msg)
 
-entry = Entry()
+class Entries:
+    infile = "entries.log" 
+    entries = {}
 
-entry.parse("2025-08-25T10:59:32,005|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|reporting.CDRUtil|Label: StartSession failure")
-entry.data.print_data()
-entry.parse("2025-08-25T05:28:20,408|0B1AE898790FD83FFA8795DE1460D032|MOD25.09.0.004-DEBUG|reporting.CDRUtil|populateCDR: entering state")
-entry.data.print_data()
-entry.parse("2025-08-25T05:30:09,175|659E437BD782705B6FFEDA02E7FC6758|MOD25.09.0.004-DEBUG|decision.controller_return_DS|nextModule: [actall]")
-entry.data.print_data()
-entry.parse("2025-08-25T10:59:33,343|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|reporting.CDRUtil|chaining from >end2025_BackendLogging_DB< to >end2030_ReportingLogging_DB<")
-entry.data.print_data()
-entry.parse("2025-08-25T05:49:19,893|B65B8A99CF70FD9AA3F29042C65B820B|MOD25.09.0.004-DEBUG|decision.portal0110_Routing_DS|lastVisitedModule: [start]")
-entry.data.print_data()
-entry.parse("2025-08-25T06:01:11,409|5115444DD196B688BBA0139DBF7354D5|MOD25.09.0.004-DEBUG|decision.welcid0705_GetPhoneAccountNumber_DM_DS|portalName: [MainResidential]")
-entry.data.print_data()
-entry.parse("2025-08-25T05:38:24,123|DF9941BC970FB64FF98CB929644CD997|MOD25.09.0.004-INFO |reporting.CDRDialogModuleState|Return[portal0225_GenericInterceptQuestion_DM_No_DS]")
-entry.data.print_data()
-entry.parse("2025-08-25T06:05:55,707|87506A078C3752E95DE004603FD6BAEB|MOD25.09.0.004-DEBUG|decision.intent0110_Routing_DS|intent0110_Routing_DS: returnValue[task_general_bcm] identifiedFlag[true] lastVisitedModule[bcm] appTag[] intentIntercept[]dialedPortalName[]")
-entry.data.print_data()
-entry.parse(r"2025-08-25T10:58:47,558|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.Initialize|returnValue:[task_check_ani_match]")
-entry.data.print_data()
-entry.parse("2025-08-25T10:58:47,498|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.start0110_GetCallInfoFromWrapper_DS|NODE_HOSTNAME [comswmncwunxq07]")
-entry.data.print_data()
-entry.parse("2025-08-25T10:58:47,498|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.start0110_GetCallInfoFromWrapper_DS|DNIS :11071905113 ANI :9542376966 UCID :119946ED68AC7A04 FIRSTHISTORYINFOUSER :8558955883 LASTHISTORYINFOUSER :8558955883 RECEIVED_UCID :null RECEIVED_UUI :null")
-entry.data.print_data()
-entry.parse("2025-08-25T10:58:47,501|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.languageSwitchOB|language:[en-US]")
-entry.data.print_data()
-entry.parse("2025-08-25T05:34:47,451|50BE7C124CA2AA4580B0E6F38044AB4D|MOD25.09.0.004-DEBUG|decision.welcid0100_Initialize_DS|dnis:[11071900013]")
-entry.data.print_data()
-entry.parse("2025-08-25T05:34:47,494|50BE7C124CA2AA4580B0E6F38044AB4D|MOD25.09.0.004-DEBUG|dataaccess.ANILookup|ani:[9940830410]")
-entry.data.print_data()
-entry.parse("2025-08-25T05:34:47,451|50BE7C124CA2AA4580B0E6F38044AB4D|MOD25.09.0.004-DEBUG|decision.welcid0100_Initialize_DS|businessUnit:[CSGEAST]")
-entry.data.print_data()
-entry.parse("2025-08-25T05:34:47,451|50BE7C124CA2AA4580B0E6F38044AB4D|MOD25.09.0.004-DEBUG|decision.welcid0100_Initialize_DS|callType:[Residential]")
-entry.data.print_data()
-entry.parse("2025-08-25T05:34:47,496||MOD25.09.0.004-DEBUG|client.AccountAndProfileSearchServiceClient|Executing findCustomerUsingGET ucid[1199290D68AC2E23] ani[9940830410] ced[] accountNumber[] dnis[11071900013] siteId[]")
-entry.data.print_data()
-entry.parse("2025-08-25T07:00:43,045|4745BB4ED85C393E89D328AAB47ACB76|MOD25.09.0.004-DEBUG|dataaccess.data0307_AccountDetailsAppointment_DB|accountNumber: 8337100240261185")
-entry.data.print_data()
-entry.parse("2025-08-25T07:00:56,737|4745BB4ED85C393E89D328AAB47ACB76|MOD25.09.0.004-DEBUG|decision.end0240_CheckAuthenticationStart_DS|authenticationEligible:[true],voiceBioEnrolled:[no]")
-entry.data.print_data()
-entry.parse("2025-08-25T09:58:47,902|1176F1F498AA1DE50F8030B588BA7739|MOD25.09.0.004-DEBUG|audio.end0305_PlayTransferMessage_PP|categoryCode: 010")
-entry.data.print_data()
-entry.parse("2025-08-25T05:17:55,485||MOD25.09.0.004-DEBUG|ivr.ConfigurationAccessor|initConfiguration: callerIntentConfigPath : /usr/local/shared/nuance-mod-v25-09-0_qa_ncw_app-1/nuance/external_config/nuancemoddockerconfig/caller_intent_config/qa//")
-entry.data.print_data()
-entry.parse("2025-08-25T13:01:26,927||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callstart was called [0]  times but it should have been called exactly once")
-entry.data.print_data()
-entry.parse("2025-08-25T13:00:26,917||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callend was called [0]  times but it should have been called exactly once")
-entry.data.print_data()
-entry.parse("2025-08-25T10:59:27,228|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|audio.end0305_PlayTransferMessage_PP|catCodesForSalesTransfer: 015,021,028,079,080,201,202,203,204,205,293,120,121")
-entry.data.print_data()
-entry.parse("2025-08-25T10:59:27,228|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-INFO |audio.end0305_PlayTransferMessage_PP|routingCode[Default] lastVisitedModule[portal] transferMsgPlayedFlag[false] portalName[Generic] identifiedFlag[false] delinquientLevel[] genericInterceptFOFlag[false] retryZipCode[false] botEligible[false] oofFlag[false] isPlayFreeSpecmoNotice[false] callType[Residential] preAuthLastModule[]")
-entry.data.print_data()
-entry.parse("2025-08-25T10:59:27,228|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|audio.end0305_PlayTransferMessage_PP|catCodeEligigbleForSalesTransfer: true")
-entry.data.print_data()
-entry.parse("2025-08-25T07:00:07,602|4745BB4ED85C393E89D328AAB47ACB76|MOD25.09.0.004-INFO |dataaccess.StartAccountLookup|Created _TOKEN [4694b802-366c-43a0-b703-a8476d58770f]")
-entry.data.print_data()
-entry.parse("2025-08-25T09:21:05,771||MOD25.09.0.004-DEBUG|dataaccess.AsyncAccountLookup|[0E03F170AD334C4ECB217F4246909BF9] Performing ANI Lookup")
-entry.data.print_data()
-entry.parse("2025-08-25T09:20:39,545|8892925AB30D1038F22E901166F2B7CE|MOD25.09.0.004-DEBUG|decision.languageSwitchOB|dtmfOnly:[false]")
-entry.data.print_data()
-entry.parse("2025-08-25T07:06:18,994|E1EBCED197E3AE395E6DB676B29A98DF|MOD25.09.0.004-DEBUG|decision.intent0110_Routing_DS|intent0110_Routing_DS: cableProfile (accountNumber[8286101002450512] accountStatus[A])")
-entry.data.print_data()
-entry.parse("2025-08-25T10:58:58,934|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|decision.portal0110_Routing_DS|identifiedFlag: [false]")
-entry.data.print_data()
-entry.parse("2025-08-25T10:59:26,998|502254645BAB9D0F2EA85C87D9AAFF36|MOD25.09.0.004-DEBUG|ivr.GlobalAppUtil|isVisitedNode(intent0320_AccountDetailsOutageBCM_DB): false")
-entry.data.print_data()
-entry.parse("2025-08-25T05:50:31,867|B65B8A99CF70FD9AA3F29042C65B820B|MOD25.09.0.004-DEBUG|decision.end0515_ZipCodeBUHandling_DS|businessUnitReturnCode : zipcode")
-entry.data.print_data()
-entry.parse("2025-08-25T05:50:31,865|B65B8A99CF70FD9AA3F29042C65B820B|MOD25.09.0.004-INFO |dataaccess.end0510_ZipCodeBULookup_DB|BusinessUnitInfo value: BusinessUnitInfo [siteID=87811000, businessUnit=NCHTR, returnCode=zipcode]")
-entry.data.print_data()
+    def __init__(self, fname):
+        self.infile = fname
+        self.load()
+
+    def load(self):
+        i = 1
+        with open(self.infile, 'r') as fin:
+            for line in fin:
+                if (len(line) <= 2000):
+                    self.entries[i] = Entry(line)
+                    i = i + 1
+
+#entries = Entries("logs/ndf.log")
