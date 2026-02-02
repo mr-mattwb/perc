@@ -45,6 +45,9 @@ class Data:
     def parse(self, msg):
         f"{self.__class__.__name__}"
 
+    def print(self):
+        print(self.to_str())
+
 
 class Line(Data):
     item = ""
@@ -386,7 +389,7 @@ class Entry:
         return self.time_of_ints(int(hr), int(mi), int(se))
 
     def parse(self, msg):
-        if (re.search(self.pattern, msg)):
+        if (msg != "" and re.search(self.pattern, msg)):
             m = re.match(self.pattern, msg)
             self.date = self.date_of_strs(m.group(1), m.group(2), m.group(3))
             self.time = self.time_of_strs(m.group(4), m.group(5), m.group(6))
@@ -396,6 +399,18 @@ class Entry:
             self.priority = m.group(10)
             self.funcName = m.group(11)
             self.data = self.parse_data(m.group(12))
+        else:
+            self.date = 0
+            self.time = 0
+            self.msec = 0
+            self.identifier = ""
+            self.version = ""
+            self.priority = ""
+            self.funcName = ""
+            self.data = Data("")
+
+    def print(self):
+        print(self.to_str())
 
     def to_str(self):
         return(f"{self.__class__.__name__} date[{self.date}] time[{self.time}] msec[{self.msec}] identifier[{self.identifier}] version[{self.version}] priority[{self.priority}] function[{self.funcName}] data[{self.data.to_str()}]")
