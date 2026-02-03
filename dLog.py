@@ -39,6 +39,9 @@ class Data:
     def to_str(self):
         return f"{self.__class__.__name__}"
 
+    def __str__(self):
+        return self.to_str()
+
     def print_data(self):
         print(self.to_str())
 
@@ -47,7 +50,6 @@ class Data:
 
     def print(self):
         print(self.to_str())
-
 
 class Line(Data):
     item = ""
@@ -89,6 +91,9 @@ class Link(Data):
         self.link_to = a.group(2)
     def to_str(self):
         return f"Link from[{self.link_from}] to[{self.link_to}]"
+    def __str__(self):
+        return self.to_str()
+
 
 class LastVisitedModule(Line):
     pat = r"^lastVisitedModule: \[(.*)\]"
@@ -356,6 +361,72 @@ class ProfileInfoUsingGet(Data):
     def to_str(self):
         return f"{self.__class__.__name__} ucid[{self.ucid}] acctNumber[{self.acctNumber}] businessUnit[{self.businessUnit}] siteId[{self.siteId}] mobileAcctNumber[{self.mobileAcctNumber}] dnis[{self.dnis}]"
 
+class DbConfigFlag(Data):
+    callFlow = ""
+    fileName = ""
+    pat = r"DB Config Flag Map is Empty for Config ID: (.*) with fileName: (.*)"
+    def parse(self, msg):
+        a = re.match(self.pat, msg)
+        self.callFlow = a.group(1)
+        self.fileName = a.group(2)
+    def to_str(self):
+        return f"{self.__class__.__name__} callFlow[{self.callFlow}] fileName[{self.fileName}]"
+
+class SecondaryHostUrl(Line):
+    pat = r"FreeSpeech client secondaryHostUrl successfully created: (.*)"
+
+class AccountInfo(Data):
+    acctStatus = ""
+    delinquentLevel = ""
+    pastDueBalance = 0.0
+    yellowToGreen = 0.0
+    intercept = False
+    pat = r"AccountStatus\[(.*)\] DelinquentLevel\[(.*)\] PastDueBalanceAmount\[(.*)\] YellowToGreenAmount\[(.*)\] Intercept\[(.*)\]"
+    def parse(self, msg):
+        a = re.match(self.pat, msg)
+        self.acctStatus = a.group(1)
+        self.delinquentLevel = a.group(2)
+        self.pastDueBalance = float(a.group(3))
+        self.yellowToGreen = float(a.group(4))
+        self.intercept = self.bool_of_str(a.group(5))
+    def to_str(self):
+        return f"{self.__class__.__name__} acctStatus[{self.acctStatus}] delinquentLevel[{self.delinquentLevel}] pastDueBalance[{self.pastDueBalance}] yellowToGreen[{self.yellowToGreen}] intercept[{self.intercept}]"
+
+class NiiCallInfo(Data):
+    portalName = ""
+    regionById = ""
+    poc = ""
+    regionByDnis = ""
+    isFromTargus = False
+    callType = ""
+    isIdentifiedDegraded = False
+    appTag = ""
+    customerType = ""
+    version = ""
+    aniMatch = False
+    endStatus = ""
+    isIdentified = False
+    unid = ""
+    pat = r"CALL_INFO:PortalName=(.*)\|RegionByID=(.*)\|POC=(.*)\|RegionByDNIS=(.*)\|IsFromTargus=(.*)\|callType=(.*)\|IsIdentifiedDegraded=(.*)\|AppTag=(.*)\|customerType=(.*)\|Version=(.*)\|AniMatch=(.*)\|EndStatus=(.*)\|IsIdentified=(.*)\|Unid=(.*)\|"
+    def parse(self, msg):
+        a = re.match(self.pat, msg)
+        self.portalName = a.group(1)
+        self.regionById = a.group(2)
+        self.poc = a.group(3)
+        self.regionByDnis = a.group(4)
+        self.isFromTargus = self.bool_of_str(a.group(5))
+        self.callType = a.group(6)
+        self.isIdentifiedDegraded = self.bool_of_str(a.group(7))
+        self.appTag = a.group(8)
+        self.customerType = a.group(9)
+        self.version = a.group(10)
+        self.aniMatch = self.bool_of_str(a.group(11))
+        self.endStatus = a.group(12)
+        self.isIdentified = self.bool_of_str(a.group(13))
+        self.unid = a.group(14)
+    def to_str(self):
+        return f"{self.__class__.__name__} portalName[{self.portalName}] regionById{self.regionById}] poc[{self.poc}] regionByDnis[{self.regionByDnis}] isFromTargus[{self.isFromTargus}] callType[{self.callType}] isIdentifiedDegraded[{self.isIdentifiedDegraded}] appTag[{self.appTag}] customerType[{self.customerType}] version[{self.version}] aniMatch[{self.aniMatch}] endStatus[{self.endStatus}] isIdentiifed[{self.isIdentified}] unid[{self.unid}]"
+
 class Entry:
     date = ""
     time = ""
@@ -411,6 +482,9 @@ class Entry:
 
     def print(self):
         print(self.to_str())
+
+    def __str__(self):
+        return(self.to_str())
 
     def to_str(self):
         return(f"{self.__class__.__name__} date[{self.date}] time[{self.time}] msec[{self.msec}] identifier[{self.identifier}] version[{self.version}] priority[{self.priority}] function[{self.funcName}] data[{self.data.to_str()}]")
@@ -495,23 +569,37 @@ class Entry:
             return CatCodeTable(msg)
         elif (re.search(ProfileInfoUsingGet.pat, msg)):
             return ProfileInfoUsingGet(msg)
+        elif (re.search(SecondaryHostUrl.pat, msg)):
+            return SecondaryHostUrl(msg)
+        elif (re.search(AccountInfo.pat, msg)):
+            return AccountInfo(msg)
+        elif (re.search(DbConfigFlag.pat, msg)):
+            return DbConfigFlag(msg)
+        elif (re.search(NiiCallInfo.pat, msg)):
+            return NiiCallInfo(msg)
         else:
             return Data(msg)
 
 class Entries:
     infile = "entries.log" 
-    entries = {}
+    entries = []
 
     def __init__(self, fname):
         self.infile = fname
         self.load()
 
     def load(self):
-        i = 1
+        lineno = 0
         with open(self.infile, 'r') as fin:
             for line in fin:
-                if (len(line) <= 2000):
-                    self.entries[i] = Entry(line)
-                    i = i + 1
+                lineno = lineno + 1
+                if (len(line) <= 16000):
+                    self.entries.append(Entry(line))
+                else:
+                    print(f"[{lineno}] Line too long.")
 
-#entries = Entries("logs/ndf.log")
+
+
+entry = Entry("")
+entry.parse("2025-08-25T05:25:13,829|6CF7AC02C98898345960E7A47D41C6E1|MOD25.09.0.004-DEBUG|scripts.NIICallInfoLogging|CALL_INFO:PortalName=Generic|RegionByID=EAST_CSG|POC=Customer_Loyalty_Offers|RegionByDNIS=EAST_CSG|IsFromTargus=false|callType=Residential|IsIdentifiedDegraded=false|AppTag=|customerType=|Version=MOD25.09.0.004-0|AniMatch=false|EndStatus=TRANSFER_REASON_HANGUP|IsIdentified=false|Unid=aepmppncwavaq04-2025237092427-11|")
+print(entry)
