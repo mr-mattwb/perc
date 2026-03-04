@@ -217,6 +217,11 @@ module Log =
             end
         include Elt
     end
+
+module PortalMap = Map.Make(Int)
+type portal = string
+type portal_map = portal PortalMap.t
+
 }
 
 rule token = parse
@@ -233,6 +238,13 @@ and righthandside lhs = parse
     | '#' _ eof                                         { righthandside lhs lexbuf }
     | '"' (([^'"']|"\\\"")* as rhs) '"'                 { lhs, String.trim (Pcre.replace ~pat:"\\\\\"" ~templ:"\"" rhs) }
     | [' ''\t']*([^'#' '"' ]* as rhs)[' ' '\t']*        { lhs, String.trim rhs }
+
+and portalMapEntries = parse
+    | eof                                               { PortalMap.empty }
+    | [' ''\t']*','[' ''\t']*                            { portalMapEntries lexbuf }
+    | ((['0'-'9']['0'-'9']) as key) '=' (['A'-'z' '0'-'9' '-' '_' ]* as portal) {
+        PortalMap.add (int_of_string key) portal (portalMapEntries lexbuf)
+    }
 
 {
 module Config = 
@@ -291,6 +303,16 @@ class type service_url =
         method url : string
         method path : string
     end
+class type db_config_flag = 
+    object
+        method configId : string
+        method fileName : string
+    end
+class type init_configuration =
+    object
+        method path : string
+        method fileName : string
+    end
 
 type data =
     | Default of string
@@ -302,6 +324,10 @@ type data =
     | ExecutingSQL of string
     | WebServiceURL of service_url
     | ClientServiceURL of service_url
+    | PortalMap of portal_map
+    | DBConfigFlag of db_config_flag
+    | InitConfiguration of init_configuration
+    | LoadConfiguration of string
 
 class type entry_t = 
     object
@@ -359,6 +385,10 @@ let initClient_pat = "Initializing (.*) Restful [sS]ervice [cC]lient"
 let executingSQL_pat = "^executing >(.*)<"
 let webServiceURL_pat = "([^ ]URL)[ ]*: (.*)"
 let clientServiceURL_pat = "(.*) Service URL: (.*)"
+let portalMap_pat = "PortalMap\\[{(.*)}\\]"
+let dbConfigFlag_pat = "DB Config Flag Map is Empty for Config ID: (.*) with fileName: (.*)"
+let initConfiguration_pat = "initConfiguration: (.*) : (.*)"
+let loadConfiguration_pat = "loading configuration from local file repository: (.*)"
 
 let parse1 pat line = 
     let ss = Pcre.get_substrings (Pcre.exec ~pat line) in
@@ -407,6 +437,26 @@ let parse_clientServiceURL line =
         method url = ss.(1)
         method path = ss.(2)
     end)
+let parse_portalMap line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:portalMap_pat line) in
+    PortalMap (portalMapEntries (Lexing.from_string ss.(1))) 
+let parse_dbConfigFlag line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:dbConfigFlag_pat line) in
+    DBConfigFlag (
+    object
+        method configId = ss.(1)
+        method fileName = ss.(2)
+    end)
+let parse_initConfiguration line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:initConfiguration_pat line) in
+    InitConfiguration (
+    object
+        method path = ss.(1)
+        method fileName = ss.(2)
+    end)
+let parse_loadConfiguration line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:loadConfiguration_pat line) in
+    LoadConfiguration ss.(1)
 
 exception Unsupported_node of string
 
@@ -420,6 +470,10 @@ let new_data line =
     | line when Pcre.pmatch ~pat:executingSQL_pat line -> parse_executingSQL line
     | line when Pcre.pmatch ~pat:webServiceURL_pat line -> parse_webServiceURL line
     | line when Pcre.pmatch ~pat:clientServiceURL_pat line -> parse_clientServiceURL line
+    | line when Pcre.pmatch ~pat:portalMap_pat line -> parse_portalMap line
+    | line when Pcre.pmatch ~pat:dbConfigFlag_pat line -> parse_dbConfigFlag line 
+    | line when Pcre.pmatch ~pat:initConfiguration_pat line -> parse_initConfiguration line
+    | line when Pcre.pmatch ~pat:loadConfiguration_pat line -> parse_loadConfiguration line
     | _ -> raise (Unsupported_node line)
 
 let parse_entry line : entry_t =
@@ -456,4 +510,7 @@ let parse_channel fin =
     aux 0 []
 
 let parse_file fname = Tools.with_in_file parse_channel fname
+
+let tester = "initConfiguration: billingConfigPath : /usr/local/shared/nuance-mod-v25-09-0_qa_ncw_app-1/nuance/external_config/nuancemoddockerconfig/billingandpayment_config/qa/"
+
 }
