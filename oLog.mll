@@ -222,6 +222,12 @@ module PortalMap = Map.Make(Int)
 type portal = string
 type portal_map = portal PortalMap.t
 
+module BusinessUnitTable = Map.Make(String)
+type business_unit_table = string BusinessUnitTable.t
+
+module CategoryCodeTable = Map.Make(String)
+type category_code_table = string CategoryCodeTable.t
+
 }
 
 rule token = parse
@@ -245,6 +251,15 @@ and portalMapEntries = parse
     | ((['0'-'9']['0'-'9']) as key) '=' (['A'-'z' '0'-'9' '-' '_' ]* as portal) {
         PortalMap.add (int_of_string key) portal (portalMapEntries lexbuf)
     }
+and businessUnitEntries = parse
+    | eof                                               { BusinessUnitTable.empty }
+    | [' ''\t']*','[' ''\t']*                           { businessUnitEntries lexbuf }
+    | ([^'=']* as key) '=' ([^',']* as code)            { BusinessUnitTable.add key code (businessUnitEntries lexbuf) }
+
+and categoryCodeEntries = parse
+    | eof                                               { CategoryCodeTable.empty }
+    | [' ''\t']*','[' ''\t']*                           { categoryCodeEntries lexbuf }
+    | ([^'=']* as key) '=' ([^',']* as code)            { CategoryCodeTable.add key code (categoryCodeEntries lexbuf) }
 
 {
 module Config = 
@@ -313,6 +328,12 @@ class type init_configuration =
         method path : string
         method fileName : string
     end
+class type null_value = 
+    object
+        method nullValue : string
+        method fileName : string
+    end
+
 
 type data =
     | Default of string
@@ -328,6 +349,14 @@ type data =
     | DBConfigFlag of db_config_flag
     | InitConfiguration of init_configuration
     | LoadConfiguration of string
+    | BusinessUnitTable of business_unit_table
+    | CategoryCodeTable of category_code_table
+    | NullValue of null_value
+    | InitServiceClient of string
+    | ReadFromDBFinished of int
+    | NoResourceMethods of string
+    | CatCodesForSalesTransfer of int list
+    | ReturnValue of string
 
 class type entry_t = 
     object
@@ -372,7 +401,7 @@ let prio_of_string s =
 
 let calldir_of_string s =
    match String.uppercase_ascii s with
-    | "START" -> Start
+    | "START" -> Start 
     | "END" -> End
     | _ -> raise (Failure ("Invalid call direction ["^s^"]"))
 
@@ -385,10 +414,18 @@ let initClient_pat = "Initializing (.*) Restful [sS]ervice [cC]lient"
 let executingSQL_pat = "^executing >(.*)<"
 let webServiceURL_pat = "([^ ]URL)[ ]*: (.*)"
 let clientServiceURL_pat = "(.*) Service URL: (.*)"
-let portalMap_pat = "PortalMap\\[{(.*)}\\]"
+let portalMap_pat = "^PortalMap\\[{(.*)}\\]"
 let dbConfigFlag_pat = "DB Config Flag Map is Empty for Config ID: (.*) with fileName: (.*)"
 let initConfiguration_pat = "initConfiguration: (.*) : (.*)"
 let loadConfiguration_pat = "loading configuration from local file repository: (.*)"
+let businessUnitTable_pat = "businessUnitTable={(.*)}"
+let categoryCodeTable_pat = "categoryCodeTable={(.*)}"
+let nullValue_pat = "Null value for (.*) in fileName: (.*)"
+let initServiceClient_pat = "Initializing (.*) [sS]ervice [cC]lient"
+let readFromDBFinished_pat = "readFromDB finished. It took (.*) milliseconds to complete."
+let noResourceMethods_pat = "No resource methods have been found for resource class (.*)"
+let catCodesForSalesTransfer_pat = "^catCodesForSalesTransfer: (.*)"
+let returnValue_pat = "^returnValue:\\[(.*)\\]"
 
 let parse1 pat line = 
     let ss = Pcre.get_substrings (Pcre.exec ~pat line) in
@@ -453,10 +490,38 @@ let parse_initConfiguration line =
     object
         method path = ss.(1)
         method fileName = ss.(2)
-    end)
+    end) 
 let parse_loadConfiguration line = 
     let ss = Pcre.get_substrings (Pcre.exec ~pat:loadConfiguration_pat line) in
     LoadConfiguration ss.(1)
+let parse_businessUnitTable line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:businessUnitTable_pat line) in
+    BusinessUnitTable (businessUnitEntries (Lexing.from_string ss.(1)))
+let parse_categoryCodeTable line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:categoryCodeTable_pat line) in
+    CategoryCodeTable (categoryCodeEntries (Lexing.from_string ss.(1)))
+let parse_nullValue line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:nullValue_pat line) in
+    NullValue (
+    object
+        method nullValue = ss.(1)
+        method fileName = ss.(2)
+    end)
+let parse_initServiceClient line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:initServiceClient_pat line) in
+    InitServiceClient ss.(1)
+let parse_readFromDBFinished line =
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:readFromDBFinished_pat line) in
+    ReadFromDBFinished (int_of_string ss.(1))
+let parse_noResourceMethods line =
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:noResourceMethods_pat line) in
+    NoResourceMethods ss.(1)
+let parse_catCodesForSalesTransfer line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:catCodesForSalesTransfer_pat line) in
+    CatCodesForSalesTransfer (List.map int_of_string (Pcre.split ~pat:"," ss.(1)))
+let parse_returnValue line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:returnValue_pat line) in
+    ReturnValue ss.(1)
 
 exception Unsupported_node of string
 
@@ -472,8 +537,14 @@ let new_data line =
     | line when Pcre.pmatch ~pat:clientServiceURL_pat line -> parse_clientServiceURL line
     | line when Pcre.pmatch ~pat:portalMap_pat line -> parse_portalMap line
     | line when Pcre.pmatch ~pat:dbConfigFlag_pat line -> parse_dbConfigFlag line 
-    | line when Pcre.pmatch ~pat:initConfiguration_pat line -> parse_initConfiguration line
-    | line when Pcre.pmatch ~pat:loadConfiguration_pat line -> parse_loadConfiguration line
+    | line when Pcre.pmatch ~pat:businessUnitTable_pat line -> parse_businessUnitTable line
+    | line when Pcre.pmatch ~pat:categoryCodeTable_pat line -> parse_categoryCodeTable line
+    | line when Pcre.pmatch ~pat:nullValue_pat line -> parse_nullValue line
+    | line when Pcre.pmatch ~pat:initServiceClient_pat line -> parse_initServiceClient line
+    | line when Pcre.pmatch ~pat:readFromDBFinished_pat line -> parse_readFromDBFinished line
+    | line when Pcre.pmatch ~pat:noResourceMethods_pat line -> parse_noResourceMethods line
+    | line when Pcre.pmatch ~pat:catCodesForSalesTransfer_pat line -> parse_catCodesForSalesTransfer line
+    | line when Pcre.pmatch ~pat:returnValue_pat line -> parse_returnValue line
     | _ -> raise (Unsupported_node line)
 
 let parse_entry line : entry_t =
@@ -510,7 +581,5 @@ let parse_channel fin =
     aux 0 []
 
 let parse_file fname = Tools.with_in_file parse_channel fname
-
-let tester = "initConfiguration: billingConfigPath : /usr/local/shared/nuance-mod-v25-09-0_qa_ncw_app-1/nuance/external_config/nuancemoddockerconfig/billingandpayment_config/qa/"
-
 }
+
