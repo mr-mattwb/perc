@@ -357,6 +357,7 @@ type data =
     | NoResourceMethods of string
     | CatCodesForSalesTransfer of int list
     | ReturnValue of string
+    | IsVisited of string * bool
 
 class type entry_t = 
     object
@@ -426,6 +427,7 @@ let readFromDBFinished_pat = "readFromDB finished. It took (.*) milliseconds to 
 let noResourceMethods_pat = "No resource methods have been found for resource class (.*)"
 let catCodesForSalesTransfer_pat = "^catCodesForSalesTransfer: (.*)"
 let returnValue_pat = "^returnValue:\\[(.*)\\]"
+let isVisited_pat = "^isVisitedNode\\((.*)\\): (.*)"
 
 let parse1 pat line = 
     let ss = Pcre.get_substrings (Pcre.exec ~pat line) in
@@ -520,8 +522,11 @@ let parse_catCodesForSalesTransfer line =
     let ss = Pcre.get_substrings (Pcre.exec ~pat:catCodesForSalesTransfer_pat line) in
     CatCodesForSalesTransfer (List.map int_of_string (Pcre.split ~pat:"," ss.(1)))
 let parse_returnValue line = 
-    let ss = Pcre.get_substrings (Pcre.exec ~pat:returnValue_pat line) in
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:returnValue_pat line) in 
     ReturnValue ss.(1)
+let parse_isVisited line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:isVisited_pat line) in
+    IsVisited (ss.(1), bool_of_string ss.(2))
 
 exception Unsupported_node of string
 
@@ -545,6 +550,7 @@ let new_data line =
     | line when Pcre.pmatch ~pat:noResourceMethods_pat line -> parse_noResourceMethods line
     | line when Pcre.pmatch ~pat:catCodesForSalesTransfer_pat line -> parse_catCodesForSalesTransfer line
     | line when Pcre.pmatch ~pat:returnValue_pat line -> parse_returnValue line
+    | line when Pcre.pmatch ~pat:isVisited_pat line -> parse_isVisited line
     | _ -> raise (Unsupported_node line)
 
 let parse_entry line : entry_t =
