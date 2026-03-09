@@ -21,8 +21,78 @@ class Line(Data):
         self.data = m.group(1)
         return self
 
+class Table(Data):
+    table = {}
+    pat = r"{(.*)}"
+    def parse(self, line):
+        m = re.match(self.pat,line)
+        keyval = re.split(", ", m.group(1));
+        for item in keyval:
+            items = re.split("=", item);
+            self.table[items[0]] = items[1]
+        return self
+    def __str__(self):
+        return f"{self.__class__.__name__} Table[{self.table}]"
+
 class Label(Line):
     pat = r"^Label: (.*)"
+
+class Link(Data):
+    pat = r"chaining from >(.*)< to >(.*)<"
+    link_from = ""
+    link_to = ""
+    def __str__(self):
+        return f"{self.__class__.__name__} from[{self.link_from}] to[{self.link_to}]"
+    def parse(self, line):
+        m = re.match(self.pat, line)
+        self.link_from = m.group(1)
+        self.link_to = m.group(2)
+        return self
+
+class ResponseCode(Data):
+    pat = r"^responseCode: (.*)"
+    code = 0
+    def parse(self, line):
+        m = re.match(self.pat, line)
+        self.code = int(m.group(1))
+        return self
+    def __str__(self):
+        return f"{self.__class__.__name__} Code[{self.code}]"
+
+class AccountStatus(Line):
+    pat = r"^accountStatus:\[(.*)\]"
+
+class AccntNum(Line):
+    pat = r"^accntNum:\[(.*)\]"
+
+class CustomerType(Line):
+    pat = r"^customerType:\[(.*)\]"
+
+class AniType(Line):
+    pat = r"^aniType:\[(.*)\]"
+
+class AccntMatchSource(Line):
+    pat = r"^accntMatchSource:\[(.*)\]"
+
+class PortalName(Line):
+    pat = r"^portalName :(.*)"
+
+class Direction(Enum):
+    Start = 0
+    End = 1
+
+class InvocationCounter(Data):
+    pat = r"InvocationCounter.valueUnbound: call(start|end) was called \[0\]  times but it should have been called exactly once"
+    direction = Direction.Start
+    def parse(self, line):
+        m = re.match(self.pat, line)
+        if m.group(1) == "start":
+            self.direction = Direction.Start
+        else:
+            self.direction = Direction.End
+        return self
+    def __str__(self):
+        return f"{self.__class__.__name__} Direction[{self.direction}]"
 
 class Priority(Enum):
     DEBUG = 0
@@ -68,6 +138,24 @@ class Entry:
     def parseData(self, line):
         if re.search(Label.pat, line):
             return Label(line)
+        elif re.search(Link.pat, line):
+            return Link(line)
+        elif re.search(ResponseCode.pat, line):
+            return ResponseCode(line)
+        elif re.search(AccountStatus.pat, line):
+            return AccountStatus(line)
+        elif re.search(AccntNum.pat, line):
+            return AccntNum(line)
+        elif re.search(CustomerType.pat, line):
+            return CustomerType(line)
+        elif re.search(AniType.pat, line):
+            return AniType(line)
+        elif re.search(AccntMatchSource.pat, line):
+            return AccntMatchSource(line)
+        elif re.search(PortalName.pat, line):
+            return PortalName(line)
+        elif re.search(InvocationCounter.pat, line):
+            return InvocationCounter(line)
         else:
             return Data(line)
 
@@ -87,12 +175,32 @@ class Entries:
                 else:
                     print(f"[{lineno}]:  Line too long.")
 
+
+entry = Entry()
+entry.parse("2025-08-25T05:28:57,084|659E437BD782705B6FFEDA02E7FC6758|MOD25.09.0.004-DEBUG|reporting.CDRUtil|chaining from >welcid0810_CheckAccountMatchLogic_DS< to >welcid1005_CheckNumAccounts_DS<")
+print(entry)
+entry.parse("2025-08-25T06:12:03,779|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|client.AccountAndProfileSearchServiceClient|responseCode: 200")
+print(entry)
+entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|accountStatus:[A]")
+print(entry)
+entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|accntNum:[8313200011869345]")
+print(entry)
+entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|customerType:[R]")
+print(entry)
+entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|aniType:[null]")
+print(entry)
+entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|accntMatchSource:[MASTERDB]")
+print(entry)
+entry.parse("2025-08-25T13:05:26,965||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callstart was called [0]  times but it should have been called exactly once")
+print(entry)
+entry.parse("2025-08-25T13:05:26,966||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callend was called [0]  times but it should have been called exactly once")
+print(entry)
+
 entries = Entries()
 entries.load("logs/ndf.log")
-labels = { x for x in entries.entries if not type(x.data) is Data  }
-for entry in labels:
+nodata = { x for x in entries.entries if type(x.data) is Data }
+for entry in nodata:
     print(entry)
-
 
 
 

@@ -334,7 +334,6 @@ class type null_value =
         method fileName : string
     end
 
-
 type data =
     | Default of string
     | Label of string
@@ -358,6 +357,10 @@ type data =
     | CatCodesForSalesTransfer of int list
     | ReturnValue of string
     | IsVisited of string * bool
+    | LoadingProperties of string
+    | ResponseCode of int
+    | End0505_ReturnValue of int
+    | CreatedTOKEN of string
 
 class type entry_t = 
     object
@@ -428,6 +431,10 @@ let noResourceMethods_pat = "No resource methods have been found for resource cl
 let catCodesForSalesTransfer_pat = "^catCodesForSalesTransfer: (.*)"
 let returnValue_pat = "^returnValue:\\[(.*)\\]"
 let isVisited_pat = "^isVisitedNode\\((.*)\\): (.*)"
+let loadingProperties_pat = "^Loading: (.*)"
+let responseCode_pat = "responseCode: (.*)"
+let end0505_ReturnValue_pat = "end0505_AskSiteZipCode_DM returnValue >(.*)<"
+let createdToken_pat = "Created _TOKEN \\[(.*)\\]"
 
 let parse1 pat line = 
     let ss = Pcre.get_substrings (Pcre.exec ~pat line) in
@@ -527,6 +534,18 @@ let parse_returnValue line =
 let parse_isVisited line = 
     let ss = Pcre.get_substrings (Pcre.exec ~pat:isVisited_pat line) in
     IsVisited (ss.(1), bool_of_string ss.(2))
+let parse_loadingProperties line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:loadingProperties_pat line) in
+    LoadingProperties ss.(1)
+let parse_responseCode line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:responseCode_pat line) in
+    ResponseCode (int_of_string ss.(1)) 
+let parse_end0505_ReturnValue line = 
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:end0505_ReturnValue_pat line) in
+    End0505_ReturnValue (int_of_string ss.(1))
+let parse_createdToken line =
+    let ss = Pcre.get_subtrings (Pcre.exec ~pat:createdToken_pat line) in
+    CreatedToken ss.(1)
 
 exception Unsupported_node of string
 
@@ -551,6 +570,12 @@ let new_data line =
     | line when Pcre.pmatch ~pat:catCodesForSalesTransfer_pat line -> parse_catCodesForSalesTransfer line
     | line when Pcre.pmatch ~pat:returnValue_pat line -> parse_returnValue line
     | line when Pcre.pmatch ~pat:isVisited_pat line -> parse_isVisited line
+    | line when Pcre.pmatch ~pat:initConfiguration_pat line -> parse_initConfiguration line
+    | line when Pcre.pmatch ~pat:loadConfiguration_pat line -> parse_loadConfiguration line
+    | line when Pcre.pmatch ~pat:loadingProperties_pat line -> parse_loadingProperties line
+    | line when Pcre.pmatch ~pat:responseCode_pat line -> parse_responseCode line
+    | line when Pcre.pmatch ~pat:end0505_ReturnValue_pat line -> parse_end0505_ReturnValue line
+    | line when Pcre.pmatch ~pat:createdToken_pat line -> parse_createdToken line
     | _ -> raise (Unsupported_node line)
 
 let parse_entry line : entry_t =
