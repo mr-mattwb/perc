@@ -11,6 +11,9 @@ class Data:
     def parse(self,line):
         self.data = line
         return self
+    def nullstr(self,item):
+        if item == "null":
+            return ""
 
 class Line(Data):
     pat = r"(.*)"
@@ -94,6 +97,49 @@ class InvocationCounter(Data):
     def __str__(self):
         return f"{self.__class__.__name__} Direction[{self.direction}]"
 
+class CallInfo(Data):
+    dnis = ""
+    ani = ""
+    ucid = ""
+    firstHistoryInfoUser = ""
+    lastHistoryInfoUser = ""
+    receivedUcid = ""
+    receivedUui = ""
+    pat = r"DNIS :(.*) ANI :(.*) UCID :(.*) FIRSTHISTORYINFOUSER :(.*) LASTHISTORYINFOUSER :(.*) RECEIVED_UCID :(.*) RECEIVED_UUI :(.*)" 
+    def parse(self, line):
+        m = re.match(self.pat, line)
+        self.dnis = m.group(1)
+        self.ani = m.group(2)
+        self.ucid = m.group(3)
+        self.firstHistoryInfoUser = m.group(4)
+        self.lastHistoryInfoUser = m.group(5)
+        self.receivedUcid = self.nullstr(m.group(6))
+        self.receivedUui = self.nullstr(m.group(7))
+        return self
+    def __str__(self):
+        return f"{self.__class__.__name__} dnis[{self.dnis}] ani[{self.ani}] ucid[{self.ucid}] firstHistoryInfoUser[{self.firstHistoryInfoUser}] lastHistoryInfoUser[{self.lastHistoryInfoUser}] receivedUcid[{self.receivedUcid}] receivedUuip[{self.receivedUui}]"
+
+class InitClient(Line):
+    pat = r"Initializing (.*) Restful [sS]ervice [cC]lient"
+
+class ExecutingSQL(Line):
+    pat = r"executing >(.*)<"
+
+class WebServiceURL(Data):
+    name = ""
+    url = ""
+    pat = r"([^\ ]*URL)[ ]*: (.*)"
+    def parse(self,line):
+        m = re.match(self.pat, line)
+        if m:
+            self.name = m.group(1)
+            self.url = m.group(2)
+        else:
+            print(f"Parsing failed [{line}]")
+        return self
+    def __str__(self):
+        return f"{self.__class__.__name__} name[{self.name}] url[{self.url}]"
+
 class Priority(Enum):
     DEBUG = 0
     INFO = 1
@@ -156,6 +202,14 @@ class Entry:
             return PortalName(line)
         elif re.search(InvocationCounter.pat, line):
             return InvocationCounter(line)
+        elif re.search(CallInfo.pat, line):
+            return CallInfo(line)
+        elif re.search(InitClient.pat, line):
+            return InitClient(line)
+        elif re.search(ExecutingSQL.pat, line):
+            return ExecutingSQL(line)
+        elif re.search(WebServiceURL.pat, line):
+            return WebServiceURL(line)
         else:
             return Data(line)
 
@@ -195,12 +249,20 @@ entry.parse("2025-08-25T13:05:26,965||MOD25.09.0.004-WARN |calllog.InvocationCou
 print(entry)
 entry.parse("2025-08-25T13:05:26,966||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callend was called [0]  times but it should have been called exactly once")
 print(entry)
+entry.parse("2025-08-25T05:24:35,138|6CF7AC02C98898345960E7A47D41C6E1|MOD25.09.0.004-DEBUG|decision.start0110_GetCallInfoFromWrapper_DS|DNIS :11071905113 ANI :9542376966 UCID :1299376E68AC2BC1 FIRSTHISTORYINFOUSER :8558955883 LASTHISTORYINFOUSER :8558955883 RECEIVED_UCID :null RECEIVED_UUI :null")
+print(entry)
+entry.parse("2025-08-25T06:02:37,551|4FE522579C14D098CDC7D6D6620B8CAF|MOD25.09.0.004-DEBUG|client.OutageServiceClientV2|Initializing Outage Services Restful service client")
+print(entry)
+entry.parse("2025-08-25T06:07:05,813|4FE522579C14D098CDC7D6D6620B8CAF|MOD25.09.0.004-DEBUG|dataaccess.DatabaseWrapper|executing >SELECT PORTAL_NAME, LASTHISTORYINFOUSER,WELCOME_PROMPT,INTERCEPT_PROMPT,TRANSFER_VDN,LANGUAGE,CUSTOMER_TYPE,CATEGORY_CODE,POC,LOB,TRANSFER_VDN_SECONDLANGUAGE,LANGUAGE_SWITCH,INTERCEPT_PROMPT_SECONDLANG,INTERCEPT_DTMF_ONLY,INTERCEPT_SKIP_ID,INTERCEPT_PORTAL_AFTER_NO FROM IVR_CALLFLOW.IVR_GENERIC_PORTAL_INFO WHERE PORTAL_NAME NOT LIKE 'bulk_portal%'<")
+print(entry)
+entry.parse("2025-08-25T11:58:22,023||MOD25.09.0.004-DEBUG|ivr.ConfigurationAccessor|FreeSpeechServiceWSDLURL: nss-vas.est.qa.desk.spctrm.netSecuritySuite/FreeSpeechServer.asmx?wsdl")
+print(entry)
 
 entries = Entries()
-entries.load("logs/ndf.log")
-nodata = { x for x in entries.entries if type(x.data) is Data }
-for entry in nodata:
-    print(entry)
+#entries.load("logs/ndf.log")
+#nodata = { x for x in entries.entries if type(x.data) is Data }
+#for entry in nodata:
+#    print(entry)
 
 
 
