@@ -94,6 +94,9 @@ type init_configuration = {
 module BusinessUnitTable = Map.Make(String)
 type business_unit_table = string BusinessUnitTable.t
 
+module PortalMap = Map.Make(Int)
+type portal_map = string PortalMap.t
+
 type data = 
     | Other of string
     | InvocationCounter of dir
@@ -101,6 +104,8 @@ type data =
     | ReadFromDBFinished of int
     | InitConfiguration of init_configuration
     | BusinessUnitTable of business_unit_table
+    | PortalMap of portal_map
+
 type entry = {
     date : int;
     time : int;
@@ -111,13 +116,15 @@ type entry = {
     func : string;
     data : data
 }
-
 let dir_of_string = function
     | "start" -> Start
     | "end" -> End
     | s -> raise (Failure ("Invalid dir ["^s^"]"))
-
 }
+
+let dig = ['0'-'9']
+let pmkey = dig dig
+
 rule entry = parse
     | (['1''2']['0'-'9']['0'-'9']['0'-'9'] as year) 
         '-' (('0'['1'-'9']|'1'['0'-'2']) as month)
@@ -156,15 +163,22 @@ and data = parse
     | "businessUnitTable={" (_* as but) "}"  {
         BusinessUnitTable (businessUnitEntries (Lexing.from_string but))
     }
+    | "PortalMap[{" (_* as pm) "}]" {
+        PortalMap (portalMapEntries (Lexing.from_string pm))
+    }
     | (_* as other)               { Other other }
-
+and portalMapEntries = parse
+    | ","[' ']*                     { portalMapEntries lexbuf }
+    | eof                           { PortalMap.empty }
+    | (pmkey as key) '=' ([^',']* as value) { 
+        PortalMap.add (int_of_string key) value (portalMapEntries lexbuf) 
+    }
 and businessUnitEntries = parse
     | ", "                          { businessUnitEntries lexbuf }
     | eof                           { BusinessUnitTable.empty  }
     | ([^'='',']* as key)'='([^',']* as value) {
         BusinessUnitTable.add key value (businessUnitEntries lexbuf)
     }
-
 {
 type rsp = 
     | Entry of entry
@@ -181,5 +195,8 @@ let executing_sql = "2025-08-25T11:58:20,199||MOD25.09.0.004-DEBUG|dataaccess.Da
 let readfromdbfinished = "2025-08-25T11:58:19,804||MOD25.09.0.004-DEBUG|dataaccess.DatabaseWrapper|readFromDB finished. It took 3939 milliseconds to complete."
 let initconfiguration = "2025-08-25T05:17:55,486||MOD25.09.0.004-DEBUG|ivr.ConfigurationAccessor|initConfiguration: outageConfigPath : /usr/local/shared/nuance-mod-v25-09-0_qa_ncw_app-1/nuance/external_config/nuancemoddockerconfig/outage_config/qa//"
 let busunittable = "2025-08-25T05:17:55,499||MOD25.09.0.004-INFO |ivr.ConfigurationManager|businessUnitTable={00=NAT, 24=81091000, 50=NAT, 51=CSGEAST, 52=CSGOHIO, 53=CSGEAST, 10=NAT, 54=NYC, 11=CSGEAST, 55=TX, 12=CSGOHIO, 56=CSGBHN, 13=CSGEAST, 57=NCHTR, 14=NYC, 58=PAC, 15=TX, 16=CSGBHN, 17=NCHTR, 18=PAC, 61=83471000, DEFAULT=NAT, 64=81091000, 21=83471000}"
+let portalmaptable = "2025-08-25T05:17:55,612||MOD25.09.0.004-INFO |ivr.ConfigurationManager|PortalMap[{00=RESIDENTIAL, 88=GENERICINTERCEPTFO, 01=COMMERCIAL, 89=SMBOUTBOUNDCOLLECTIONS, 02=PAYMENTPORTAL, 47=SPECMOPOCIVR, 06=OUTBOUNDCOLLECTIONS, 08=COMMERCIALDIRECTTOSALESACQ, 51=GENERICINTERCEPT, 75=OBDAY25, 54=OUTBOUNDRETURNEDITEM, 11=EASYCONNECT, 33=PLAYA-VISTA, 55=RESIDENTIALOTHERIVR, 78=BOT-TO-PAYMENT, 34=BULKTENANT, 12=MOVER, 57=COMMERCIALSALES, 13=ECOMMERCE-DIRECTDIAL, 35=RESIDENTIALDIRECTTOSALES, 36=COMMERCIALDIRECTTOSALES, 14=ECOMMERCE-IVR, 58=RESIDENTIALSSD, 15=ECOMMERCE-LANDINGPAGE, 37=MOBILEDIRECTTOSALES, 59=RESIDENTIALDSCSSD, 38=BULKMASTER, 16=ECOMMERCE-SIGNATUREHOME, 17=ECOMMERCE-PROMO, 39=ETAIL, 80=ENTTOCOREID, 81=ENTTOCORESMB, 60=ENTTOCOREIDANI, 82=ENTTOCORERESI, 40=FORMERWRITEOFF, 84=SALES, 85=DSCSALES, 41=MANAGEDWIFI, 42=CTAC, 20=OUTBOUNDCOLLECTIONS2, 86=SCSSSD}]"
 
 }
+
+
