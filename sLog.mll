@@ -76,6 +76,37 @@ module Log =
 
     end 
 
+module type SER = 
+    sig
+        type elt
+        val of_str : string -> elt
+        val to_str : elt -> string
+    end
+module type ELT =
+    sig
+      type elt
+      val name : string
+      val default : elt
+      val switch : string
+      val desc : string
+    end
+module type ENV =
+    sig
+        type elt 
+        val get : unit -> elt
+        val set : elt -> unit
+    end
+module MakeEnv(Ser : SER)(Elt : ELT with type elt = Ser.elt) : ENV =
+    struct
+        type elt = Elt.elt
+        let rec get () = 
+            try Ser.of_str (Unix.getenv Elt.name)
+            with _ -> set Elt.default; get()
+        and set v =
+            Unix.putenv Elt.name (Ser.to_str v)
+    end
+module MakeStr(E : ELT with type elt = string) = MakeEnv(struct type elt = string let to_str s = s let of_str s = s end)(E)
+
 let date_of_ints yr mo da = (yr * 10000) + (mo * 100) + da
 let time_of_ints hr mi se = (hr * 10000) + (mi * 100) + se
 
@@ -97,6 +128,18 @@ type business_unit_table = string BusinessUnitTable.t
 module PortalMap = Map.Make(Int)
 type portal_map = string PortalMap.t
 
+module CatCodeTable = Map.Make(String)
+type cat_code_table = string CatCodeTable.t
+
+type config_id = {
+    configID : string;
+    fileName : string
+}
+type null_value = {
+    value : string;
+    fileName : string
+}
+
 type data = 
     | Other of string
     | InvocationCounter of dir
@@ -105,6 +148,11 @@ type data =
     | InitConfiguration of init_configuration
     | BusinessUnitTable of business_unit_table
     | PortalMap of portal_map
+    | CatCodeTable of cat_code_table
+    | DBConfigFlagEmpty of config_id
+    | NullValue of null_value
+    | LoadConfiguration of string
+    | Link of string * string
 
 type entry = {
     date : int;
@@ -157,7 +205,7 @@ and data = parse
     | "readFromDB finished. It took "(['0'-'9']+ as msec)" milliseconds to complete." {
         ReadFromDBFinished (int_of_string msec)
     }
-    | "initConfiguration: "(_* as path) ':' (_* as dir) {
+    | "initConfiguration: "(_* as path) ": " (_* as dir) {
         InitConfiguration { path = path; dir = dir }
     }
     | "businessUnitTable={" (_* as but) "}"  {
@@ -166,7 +214,28 @@ and data = parse
     | "PortalMap[{" (_* as pm) "}]" {
         PortalMap (portalMapEntries (Lexing.from_string pm))
     }
+    | "categoryCodeTable={" (_* as cct) "}" {
+        CatCodeTable (catCodeEntries (Lexing.from_string cct))
+    }
+    | "DB Config Flag Map is Empty for Config ID: " (_* as cfgID) " with fileName: " (_* as fname) {
+        DBConfigFlagEmpty { configID = cfgID; fileName = fname }
+    } 
+    | "Null value for " (_* as nval) " in fileName: " (_* as fname)_ {
+        NullValue { value = nval; fileName = fname }
+    }
+    | "loading configuration from local file repository: " (_* as fname) {
+        LoadConfiguration fname
+    }
+    | "chaining from >" (_* as nfrom) "< to >" (_* as nto) "<" {
+        Link (nfrom, nto)
+}
     | (_* as other)               { Other other }
+and catCodeEntries = parse
+    | ',' [' ']*                    { catCodeEntries lexbuf }
+    | eof                           { CatCodeTable.empty }
+    | ([^'='',']* as key)'='([^',']* as value) {
+        CatCodeTable.add key value (catCodeEntries lexbuf)
+    }
 and portalMapEntries = parse
     | ","[' ']*                     { portalMapEntries lexbuf }
     | eof                           { PortalMap.empty }
@@ -179,6 +248,19 @@ and businessUnitEntries = parse
     | ([^'='',']* as key)'='([^',']* as value) {
         BusinessUnitTable.add key value (businessUnitEntries lexbuf)
     }
+
+and envPair = parse
+    | [' ''\t']*                    { envPair lexbuf }
+    | ([^ ' ' '\t' '=' '#']+ as key)[' ' '\t']* { equalpart key lexbuf }
+    | '#' _*                        { envPair lexbuf }
+and equalpart key = parse
+    | [' ''\t']*                    { equalpart key lexbuf }
+    | '='                           { valuepart key lexbuf }
+    | '#' _*                        { key, "" }             
+and valuepart key = parse
+    | [' ' '\t']*                   { valuepart key lexbuf }
+    | ([^ ' ' '\t'][^ '#']* as value)[' ' '\t']* { key, String.trim value }
+
 {
 type rsp = 
     | Entry of entry
@@ -187,16 +269,35 @@ type rsp =
 let parse_entry line = 
     try Entry (entry (Lexing.from_string line))
     with e -> Exc e
-        
 
-let tester = "2025-08-25T12:11:26,371||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callstart was called [0]  times but it should have been called exactly once"
-let tester_data = "InvocationCounter.valueUnbound: callstart was called [0]  times but it should have been called exactly once"
-let executing_sql = "2025-08-25T11:58:20,199||MOD25.09.0.004-DEBUG|dataaccess.DatabaseWrapper|executing >SELECT LASTHISTORYINFOUSER,PORTAL_NAME,WELCOME_PROMPT FROM IVR_CALLFLOW.IVR_GENERIC_PORTAL_INFO WHERE PORTAL_NAME LIKE 'bulk_portal%'<"
-let readfromdbfinished = "2025-08-25T11:58:19,804||MOD25.09.0.004-DEBUG|dataaccess.DatabaseWrapper|readFromDB finished. It took 3939 milliseconds to complete."
-let initconfiguration = "2025-08-25T05:17:55,486||MOD25.09.0.004-DEBUG|ivr.ConfigurationAccessor|initConfiguration: outageConfigPath : /usr/local/shared/nuance-mod-v25-09-0_qa_ncw_app-1/nuance/external_config/nuancemoddockerconfig/outage_config/qa//"
-let busunittable = "2025-08-25T05:17:55,499||MOD25.09.0.004-INFO |ivr.ConfigurationManager|businessUnitTable={00=NAT, 24=81091000, 50=NAT, 51=CSGEAST, 52=CSGOHIO, 53=CSGEAST, 10=NAT, 54=NYC, 11=CSGEAST, 55=TX, 12=CSGOHIO, 56=CSGBHN, 13=CSGEAST, 57=NCHTR, 14=NYC, 58=PAC, 15=TX, 16=CSGBHN, 17=NCHTR, 18=PAC, 61=83471000, DEFAULT=NAT, 64=81091000, 21=83471000}"
-let portalmaptable = "2025-08-25T05:17:55,612||MOD25.09.0.004-INFO |ivr.ConfigurationManager|PortalMap[{00=RESIDENTIAL, 88=GENERICINTERCEPTFO, 01=COMMERCIAL, 89=SMBOUTBOUNDCOLLECTIONS, 02=PAYMENTPORTAL, 47=SPECMOPOCIVR, 06=OUTBOUNDCOLLECTIONS, 08=COMMERCIALDIRECTTOSALESACQ, 51=GENERICINTERCEPT, 75=OBDAY25, 54=OUTBOUNDRETURNEDITEM, 11=EASYCONNECT, 33=PLAYA-VISTA, 55=RESIDENTIALOTHERIVR, 78=BOT-TO-PAYMENT, 34=BULKTENANT, 12=MOVER, 57=COMMERCIALSALES, 13=ECOMMERCE-DIRECTDIAL, 35=RESIDENTIALDIRECTTOSALES, 36=COMMERCIALDIRECTTOSALES, 14=ECOMMERCE-IVR, 58=RESIDENTIALSSD, 15=ECOMMERCE-LANDINGPAGE, 37=MOBILEDIRECTTOSALES, 59=RESIDENTIALDSCSSD, 38=BULKMASTER, 16=ECOMMERCE-SIGNATUREHOME, 17=ECOMMERCE-PROMO, 39=ETAIL, 80=ENTTOCOREID, 81=ENTTOCORESMB, 60=ENTTOCOREIDANI, 82=ENTTOCORERESI, 40=FORMERWRITEOFF, 84=SALES, 85=DSCSALES, 41=MANAGEDWIFI, 42=CTAC, 20=OUTBOUNDCOLLECTIONS2, 86=SCSSSD}]"
+let err = Log.defaults Tools.basename
+
+let rec parse_channel fin = 
+    let rec aux ?(lineno=0) ls = 
+        match Tools.input_line fin with
+        | None -> ls
+        | Some line ->
+            aux ~lineno:(lineno+1) 
+                (match parse_entry line with 
+                | Entry e -> e :: ls
+                | Exc e -> 
+                    Log.error err "%d:  Failure [%s]" lineno (Printexc.to_string e);
+                    ls)
+    in aux []
+let parse_file fname = Tools.with_in_file parse_channel fname
+
+module CallSet = Set.Make(String)
+module CallMap = Map.Make(String)
+
+let all_links ls = List.fold_left (fun acc v -> match v.data with Link _ -> v :: acc | _ -> acc) [] ls
+let call_ids ls = CallSet.elements (List.fold_left (fun acc v -> CallSet.add v.iden acc) CallSet.empty ls)
+
+let call_links ls = 
+    let folder map v = 
+        match CallMap.find_opt v.iden map with
+        | None -> CallMap.add v.iden (v.data :: []) map
+        | Some ls -> CallMap.add v.iden (v.data :: ls) map
+    in
+    List.fold_left folder CallMap.empty ls
 
 }
-
-
