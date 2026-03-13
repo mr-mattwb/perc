@@ -153,6 +153,7 @@ type data =
     | NullValue of null_value
     | LoadConfiguration of string
     | Link of string * string
+    | Label of string
 
 type entry = {
     date : int;
@@ -228,7 +229,10 @@ and data = parse
     }
     | "chaining from >" (_* as nfrom) "< to >" (_* as nto) "<" {
         Link (nfrom, nto)
-}
+    }
+    | "Label: " (_* as lbl) {
+        Label lbl
+    }
     | (_* as other)               { Other other }
 and catCodeEntries = parse
     | ',' [' ']*                    { catCodeEntries lexbuf }
@@ -289,15 +293,14 @@ let parse_file fname = Tools.with_in_file parse_channel fname
 module CallSet = Set.Make(String)
 module CallMap = Map.Make(String)
 
-let all_links ls = List.fold_left (fun acc v -> match v.data with Link _ -> v :: acc | _ -> acc) [] ls
-let call_ids ls = CallSet.elements (List.fold_left (fun acc v -> CallSet.add v.iden acc) CallSet.empty ls)
-
-let call_links ls = 
-    let folder map v = 
-        match CallMap.find_opt v.iden map with
-        | None -> CallMap.add v.iden (v.data :: []) map
-        | Some ls -> CallMap.add v.iden (v.data :: ls) map
+let links ps = 
+    let aux acc v =
+        match v.data with
+        | Link _ -> v :: acc
+        | _ -> acc
     in
-    List.fold_left folder CallMap.empty ls
+    List.fold_left aux [] ps
+
+let tester = "2025-08-25T05:24:35,162|6CF7AC02C98898345960E7A47D41C6E1|MOD25.09.0.004-DEBUG|reporting.CDRUtil|Label: Always"
 
 }

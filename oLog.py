@@ -230,39 +230,38 @@ class Entries:
                     print(f"[{lineno}]:  Line too long.")
 
 
-entry = Entry()
-entry.parse("2025-08-25T05:28:57,084|659E437BD782705B6FFEDA02E7FC6758|MOD25.09.0.004-DEBUG|reporting.CDRUtil|chaining from >welcid0810_CheckAccountMatchLogic_DS< to >welcid1005_CheckNumAccounts_DS<")
-print(entry)
-entry.parse("2025-08-25T06:12:03,779|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|client.AccountAndProfileSearchServiceClient|responseCode: 200")
-print(entry)
-entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|accountStatus:[A]")
-print(entry)
-entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|accntNum:[8313200011869345]")
-print(entry)
-entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|customerType:[R]")
-print(entry)
-entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|aniType:[null]")
-print(entry)
-entry.parse("2025-08-25T06:12:03,781|D48854B07B315F9C657793B05D17D540|MOD25.09.0.004-DEBUG|welcomeid.WelcomeIDAppUtil|accntMatchSource:[MASTERDB]")
-print(entry)
-entry.parse("2025-08-25T13:05:26,965||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callstart was called [0]  times but it should have been called exactly once")
-print(entry)
-entry.parse("2025-08-25T13:05:26,966||MOD25.09.0.004-WARN |calllog.InvocationCounter|InvocationCounter.valueUnbound: callend was called [0]  times but it should have been called exactly once")
-print(entry)
-entry.parse("2025-08-25T05:24:35,138|6CF7AC02C98898345960E7A47D41C6E1|MOD25.09.0.004-DEBUG|decision.start0110_GetCallInfoFromWrapper_DS|DNIS :11071905113 ANI :9542376966 UCID :1299376E68AC2BC1 FIRSTHISTORYINFOUSER :8558955883 LASTHISTORYINFOUSER :8558955883 RECEIVED_UCID :null RECEIVED_UUI :null")
-print(entry)
-entry.parse("2025-08-25T06:02:37,551|4FE522579C14D098CDC7D6D6620B8CAF|MOD25.09.0.004-DEBUG|client.OutageServiceClientV2|Initializing Outage Services Restful service client")
-print(entry)
-entry.parse("2025-08-25T06:07:05,813|4FE522579C14D098CDC7D6D6620B8CAF|MOD25.09.0.004-DEBUG|dataaccess.DatabaseWrapper|executing >SELECT PORTAL_NAME, LASTHISTORYINFOUSER,WELCOME_PROMPT,INTERCEPT_PROMPT,TRANSFER_VDN,LANGUAGE,CUSTOMER_TYPE,CATEGORY_CODE,POC,LOB,TRANSFER_VDN_SECONDLANGUAGE,LANGUAGE_SWITCH,INTERCEPT_PROMPT_SECONDLANG,INTERCEPT_DTMF_ONLY,INTERCEPT_SKIP_ID,INTERCEPT_PORTAL_AFTER_NO FROM IVR_CALLFLOW.IVR_GENERIC_PORTAL_INFO WHERE PORTAL_NAME NOT LIKE 'bulk_portal%'<")
-print(entry)
-entry.parse("2025-08-25T11:58:22,023||MOD25.09.0.004-DEBUG|ivr.ConfigurationAccessor|FreeSpeechServiceWSDLURL: nss-vas.est.qa.desk.spctrm.netSecuritySuite/FreeSpeechServer.asmx?wsdl")
-print(entry)
 
 entries = Entries()
-#entries.load("logs/ndf.log")
-#nodata = { x for x in entries.entries if type(x.data) is Data }
-#for entry in nodata:
-#    print(entry)
+entries.load("logs/ndf.log")
+nodata = { x for x in entries.entries if type(x.data) is Data }
+links = { x for x in entries.entries if type(x.data) is Link }
+# Group links by identity field
+links_by_identity = {}
+for entry in links:
+    identity = entry.identity
+    if identity not in links_by_identity:
+        links_by_identity[identity] = []
+    links_by_identity[identity].append(entry)
 
+for iden in links_by_identity:
+    entries = links_by_identity[iden]
 
+    # Create the link map
+    link_map = {}
+    for node in entries:
+        link_map[node.data.link_from] = node.data.link_to
 
+    links_to = set()
+    links_from = set()
+    for e in entries:
+        links_to.add(e.data.link_to)
+        links_from.add(e.data.link_from)
+    starters = links_from - links_to
+    print(f"{iden}")
+    for starter in starters:
+        current = starter
+        while current in link_map:
+            next_node = link_map[current]
+            print(f"    {current}")
+            link_map.pop(current)
+            current = next_node
