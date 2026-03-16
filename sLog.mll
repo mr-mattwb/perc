@@ -293,13 +293,51 @@ let parse_file fname = Tools.with_in_file parse_channel fname
 module CallSet = Set.Make(String)
 module CallMap = Map.Make(String)
 
-let links ps = 
+let get_links ps = 
     let aux acc v =
         match v.data with
         | Link _ -> v :: acc
         | _ -> acc
     in
     List.fold_left aux [] ps
+
+let map_links ps =
+    let rec aux map v =
+        let add_link nf nt =
+            match CallMap.find_opt v.iden map with
+            | None -> CallMap.add v.iden (CallMap.add nf nt CallMap.empty) map
+            | Some map' -> CallMap.add v.iden (CallMap.add nf nt map') map
+        in
+        match v.data with
+        | Link (nf, nt) -> add_link nf nt
+        | _ -> map
+    in
+    List.fold_left aux CallMap.empty ps
+
+let callsets map =
+    let adder (ks, vs) (k, v) = CallSet.add k ks, CallSet.add v vs in
+    let keys, vals = List.fold_left adder (CallSet.empty, CallSet.empty) (CallMap.bindings map) in
+    keys, vals
+
+let traverse start map =
+    let rec aux current map' = 
+        match CallMap.find_opt current map' with
+        | None -> ()
+        | Some node ->
+            eprintf "   %s\n%!" node;
+            aux node  
+    in
+    aux start map 
+
+let traverse_all map =
+    let ks, vs = callsets map in
+    let ds = CallSet.diff ks vs in
+    let aux node =
+        eprintf "%s\n%!" node;
+        traverse node map
+    in
+    List.iter aux (CallSet.elements ds)
+
 
 let tester = "2025-08-25T05:24:35,162|6CF7AC02C98898345960E7A47D41C6E1|MOD25.09.0.004-DEBUG|reporting.CDRUtil|Label: Always"
 
