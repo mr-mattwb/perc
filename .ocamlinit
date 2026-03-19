@@ -23,13 +23,14 @@ module MV = MultiValue(Ser.Str)(
 *)
 
 #use "tests.ml";;
+(*
 let test line = 
     let lex = Lexing.from_string line in
     let hdr = DParse.header DLex.header lex in
     let data = DParse.data DLex.data lex in
     (hdr, data)
 ;;
-
+*)
 
 
 

@@ -285,7 +285,9 @@ module Config =
                 method descr = "Configuration file name"
                 method switches = [ "--cfg-file" ]
             end
-        let parse_env () = parse_file (file_env#get())
+        let parse_env () = 
+            try parse_file (file_env#get())
+            with Sys_error _ -> ()
     end
 
 type prio = 
@@ -360,7 +362,7 @@ type data =
     | LoadingProperties of string
     | ResponseCode of int
     | End0505_ReturnValue of int
-    | CreatedTOKEN of string
+    | CreatedToken of string
 
 class type entry_t = 
     object
@@ -544,7 +546,7 @@ let parse_end0505_ReturnValue line =
     let ss = Pcre.get_substrings (Pcre.exec ~pat:end0505_ReturnValue_pat line) in
     End0505_ReturnValue (int_of_string ss.(1))
 let parse_createdToken line =
-    let ss = Pcre.get_subtrings (Pcre.exec ~pat:createdToken_pat line) in
+    let ss = Pcre.get_substrings (Pcre.exec ~pat:createdToken_pat line) in
     CreatedToken ss.(1)
 
 exception Unsupported_node of string
@@ -612,5 +614,78 @@ let parse_channel fin =
     aux 0 []
 
 let parse_file fname = Tools.with_in_file parse_channel fname
-}
 
+module CallSet = Set.Make(String)
+module CallMap = Map.Make(String)
+
+let callmaps entries =
+    let aux map v =
+        let add_link link =
+            match CallMap.find_opt v#iden map with
+            | None -> CallMap.add v#iden (CallMap.add link#link_from link#link_to CallMap.empty) map
+            | Some map' -> CallMap.add v#iden (CallMap.add link#link_from link#link_to map') map
+        in
+        match v#data with
+        | Link link -> add_link link
+        | _ -> map
+    in
+    List.fold_left aux CallMap.empty entries
+
+let traverse maps fout = 
+    let rec travel current map =
+        fprintf fout "\t%s\n%!" current;
+        match CallMap.find_opt current map with
+        | None -> fprintf fout "\t_____\n%!"
+        | Some node -> travel node (CallMap.remove current map)
+    in
+    let aux (iden, map) =
+        fprintf fout "%s\n%!" iden;
+        travel "Initialize" map
+    in
+    List.iter aux (CallMap.bindings maps) 
+
+type target = 
+    | File of string
+    | Chan of out_channel
+
+let target_ser =
+    object
+        method of_str = function
+            | "CHAN:STDOUT" -> Chan stdout
+            | "CHAN:STDERR" -> Chan stderr
+            | fname -> File fname
+        method to_str = function
+            | Chan fout when fout = stdout -> "CHAN:STDOUT"
+            | Chan fout when fout = stderr -> "CHAN:STDERR"
+            | File fname -> fname
+            | _ -> raise (Failure "Invalid channel")
+    end
+let target = Env.new_var target_ser
+    (object
+        method name = "TARGET"
+        method default = Chan stderr
+        method descr = "Output channel"
+        method switches = [ "-f"; "--target" ]
+    end)
+let inputfile = Env.str_var
+    (object
+        method name = "INPUT_FILE"
+        method default = "logs/ndf.log"
+        method descr = "Input file name"
+        method switches = [ "-i"; "--input-file" ]
+    end)
+
+let main () =
+    Config.parse_env();
+    let logger = new Log.def_env_log Tools.basename in
+    let entries = parse_file (inputfile#get()) in
+    Log.debug logger "Created the entries.";
+    let maps = callmaps entries in
+    Log.debug logger "Created the maps.";
+    match target#get () with                                                                                                                                                                                             
+    | Chan fout -> traverse maps fout
+    | File fname -> Tools.with_out_file (traverse maps) fname
+
+let () =
+    if not !Sys.interactive then main()
+}
