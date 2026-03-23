@@ -244,7 +244,7 @@ for entry in links:
     links_by_identity[identity].append(entry)
 
 for iden in links_by_identity:
-    entries = links_by_identity[iden]
+    entries = links_by_identity[iden]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 
     # Create the link map
     link_map = {}

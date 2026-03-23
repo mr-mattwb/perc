@@ -41,3 +41,10 @@
   (libraries unix pcre str cfg)
   (flags -keep-locs)
 )
+
+(executable
+  (name aLog)
+  (modules cfg aLog)
+  (libraries unix pcre str cfg)
+  (flags -keep-locs)
+)
