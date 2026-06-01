@@ -13,6 +13,6 @@ export PATH=$HOME/mine/perc/_build/default:$PATH
 
 echo initialized
 
-alias ctop='ledit ./ccaml -I +unix -I +str -I +../pcre -I .'
+alias ctop='ledit ./ccaml -I +unix -I +str -I +../pcre -I +../sqlite3 -I .'
 
-ocamlincdirs='-I +unix -I +str -I +../dbm -I +../pcre -I +../re -I _build/default -I _build/default/.cfg.objs/byte str.cma'
+ocamlincdirs='-I +unix -I +str -I +../dbm -I +../pcre -I +../re -I +../sqlite3 -I _build/default -I _build/default/.cfg.objs/byte str.cma'

@@ -109,7 +109,19 @@ let spawn fn arg =
     | 0 -> forkagain ()
     | pid -> Unix.waitpid [] (-1)
 
+let cmd_iter fn cmd =
+    let fin = open_process_in cmd in
+    try
+        let rec aux = function
+            | None -> ()
+            | Some line -> fn line; aux (input_line fin)
+        in
+        aux (input_line fin)
+    with _ ->
+        ignore (close_process_in fin)
+
 let int_of_string s = int_of_string (String.trim s)
+
 
 let tolerint_of_string str = 
     let rex = Str.regexp {|^\([0-9]*\).*$|} in

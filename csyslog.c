@@ -44,7 +44,10 @@ int facilitiesMap[] = {
 
 value csyslog_openlog(value v_ident, value v_opt, value v_fac) {
     CAMLparam3(v_ident, v_opt, v_fac);
-    openlog(String_val(v_ident), caml_convert_flag_list(v_opt, optionsMap), Facility_val(v_fac));
+    char *ident;
+    ident = (char *)malloc(caml_string_length(v_ident));
+    strncpy(ident, String_val(v_ident), caml_string_length(v_ident));
+    openlog(ident, caml_convert_flag_list(v_opt, optionsMap), Facility_val(v_fac));
     CAMLreturn(Val_unit);
 }
 value csyslog_closelog() {

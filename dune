@@ -2,18 +2,13 @@
 (library
     (name cfg)
     (wrapped false)
-    (modules tools lex propBase propParse iniParse propLex iniLex ser fileOps envParam mEnv log time date dateTime soxi perc5sWav syslog nLog ipc dLog dParse dLex oLog)
+    (modules tools lex propBase propParse iniParse propLex iniLex ser fileOps envParam mEnv log time date dateTime soxi perc5sWav syslog nLog ipc dLog dParse dLex)
     (libraries unix pcre ctypes)
     (foreign_stubs (language c) (names csyslog cIpc)) 
-    (flags -keep-locs -I +unix -I +str -I +../pcre -I +../ctypes -I +../ctypes-foreign)
+    (flags -keep-locs -I +unix -I +str -I +../pcre -I +../ctypes -I +../ctypes-foreign )
 )
 (ocamlyacc (modules iniParse propParse dParse))
-(ocamllex (modules iniLex propLex lex dLex oLog))
-
-(toplevel
-  (name craml)
-  (libraries str unix pcre cfg)
-)
+(ocamllex (modules iniLex propLex lex dLex aLog))
 
 (executable
   (name msgsnd)
@@ -28,16 +23,10 @@
   (libraries unix pcre str cfg)
   (flags -keep-locs)
 )
+
 (executable
   (name mlog)
   (modules cfg mlog)
-  (libraries unix pcre str cfg)
-  (flags -keep-locs)
-)
-
-(executable
-  (name omog)
-  (modules cfg omog)
   (libraries unix pcre str cfg)
   (flags -keep-locs)
 )

@@ -568,7 +568,7 @@ let new_data line =
     | line when Pcre.pmatch ~pat:nullValue_pat line -> parse_nullValue line
     | line when Pcre.pmatch ~pat:initServiceClient_pat line -> parse_initServiceClient line
     | line when Pcre.pmatch ~pat:readFromDBFinished_pat line -> parse_readFromDBFinished line
-    | line when Pcre.pmatch ~pat:noResourceMethods_pat line -> parse_noResourceMethods line
+
     | line when Pcre.pmatch ~pat:catCodesForSalesTransfer_pat line -> parse_catCodesForSalesTransfer line
     | line when Pcre.pmatch ~pat:returnValue_pat line -> parse_returnValue line
     | line when Pcre.pmatch ~pat:isVisited_pat line -> parse_isVisited line
@@ -607,10 +607,10 @@ let parse_channel fin =
         with 
         | Unsupported_node line ->
             eprintf "%d:  Unsupported node [%s]\n%!" lineno line;
-            aux (lineno+1) ls
+
         | e ->
             aux (lineno+1) ls
-    in
+
     aux 0 []
 
 let parse_file fname = Tools.with_in_file parse_channel fname
